@@ -29,6 +29,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   double _height = 178.0;
   FitnessLevel _fitnessLevel = FitnessLevel.casual;
 
+  // Text controller to avoid rebuild issues
+  late TextEditingController _nameController;
+
   @override
   void initState() {
     super.initState();
@@ -41,15 +44,20 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       _height = p.heightCm;
       _fitnessLevel = p.fitnessLevel;
     }
+    _nameController = TextEditingController(text: _name);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
   void _nextPage() {
+    // Dismiss keyboard
+    FocusScope.of(context).unfocus();
+
     if (_currentPage < 2) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
@@ -57,6 +65,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
     } else {
       _saveProfile();
+    }
+  }
+
+  void _previousPage() {
+    if (_currentPage > 0) {
+      FocusScope.of(context).unfocus();
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
+      );
     }
   }
 
@@ -76,29 +94,47 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Progress indicator
+            // Top row: Back + Progress
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
-                children: List.generate(3, (index) {
-                  return Expanded(
-                    child: Container(
-                      height: 4,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        color: index <= _currentPage
-                            ? AppTheme.accent
-                            : AppTheme.surfaceLight,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                children: [
+                  // Back button
+                  if (_currentPage > 0)
+                    IconButton(
+                      onPressed: _previousPage,
+                      icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+                    )
+                  else
+                    const SizedBox(width: 48),
+
+                  // Progress indicator
+                  Expanded(
+                    child: Row(
+                      children: List.generate(3, (index) {
+                        return Expanded(
+                          child: Container(
+                            height: 4,
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              color: index <= _currentPage
+                                  ? AppTheme.accent
+                                  : AppTheme.surfaceLight,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        );
+                      }),
                     ),
-                  );
-                }),
+                  ),
+                  const SizedBox(width: 48),
+                ],
               ),
             ),
 
@@ -118,7 +154,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
             // Bottom button
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
               child: SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -141,12 +177,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   // PAGE 1: Name, Age, Sex
   // ═══════════════════════════════════════════
   Widget _buildNameAgePage() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
+          const SizedBox(height: 24),
           Text(
             'Welcome to',
             style: TextStyle(fontSize: 16, color: AppTheme.textSecondary),
@@ -164,18 +200,18 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             'Let\'s personalize your experience',
             style: TextStyle(fontSize: 14, color: AppTheme.textMuted),
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 36),
 
           // Name
           Text('Your name', style: _labelStyle),
           const SizedBox(height: 8),
           TextField(
+            controller: _nameController,
             onChanged: (v) => _name = v,
-            controller: TextEditingController(text: _name),
             style: const TextStyle(color: Colors.white, fontSize: 18),
             decoration: _inputDecoration('Enter your name'),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
           // Age
           Text('Age: $_age years', style: _labelStyle),
@@ -191,7 +227,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               onChanged: (v) => setState(() => _age = v.round()),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
           // Sex
           Text('Sex', style: _labelStyle),
@@ -232,6 +268,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               );
             }).toList(),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -241,12 +278,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   // PAGE 2: Weight, Height
   // ═══════════════════════════════════════════
   Widget _buildBodyPage() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
+          const SizedBox(height: 24),
           const Text(
             'Body Metrics',
             style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
@@ -256,7 +293,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             'Used for accurate calorie calculation',
             style: TextStyle(fontSize: 14, color: AppTheme.textMuted),
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 36),
 
           // Weight
           Text('Weight: ${_weight.toStringAsFixed(1)} kg', style: _labelStyle),
@@ -270,10 +307,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               divisions: 240,
               label: '${_weight.toStringAsFixed(1)} kg',
               onChanged: (v) =>
-                  setState(() => _weight = (v * 2).round() / 2), // 0.5 steps
+                  setState(() => _weight = (v * 2).round() / 2),
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 32),
 
           // Height
           Text('Height: ${_height.round()} cm', style: _labelStyle),
@@ -289,7 +326,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               onChanged: (v) => setState(() => _height = v.roundToDouble()),
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 32),
 
           // HRmax Preview
           Container(
@@ -308,10 +345,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   children: [
                     Text(
                       'Estimated HRmax',
-                      style: TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                     ),
                     Text(
                       '${_calculatePreviewHrMax()} BPM',
@@ -326,14 +360,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 const Spacer(),
                 Text(
                   _sex == Sex.female ? 'Gulati' : 'Tanaka',
-                  style: TextStyle(
-                    color: AppTheme.textMuted,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -349,12 +381,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   // PAGE 3: Fitness Level
   // ═══════════════════════════════════════════
   Widget _buildFitnessPage() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
+          const SizedBox(height: 24),
           const Text(
             'Fitness Level',
             style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
@@ -364,7 +396,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             'Helps calibrate your Training Effect',
             style: TextStyle(fontSize: 14, color: AppTheme.textMuted),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 32),
 
           ...FitnessLevel.values.map((level) {
             final isSelected = level == _fitnessLevel;
@@ -424,10 +456,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           const SizedBox(height: 4),
                           Text(
                             level.description,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.textMuted,
-                            ),
+                            style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
                           ),
                         ],
                       ),
@@ -439,6 +468,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
             );
           }),
+          const SizedBox(height: 16),
         ],
       ),
     );

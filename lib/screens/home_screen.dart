@@ -26,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<ScanResult> _scanResults = [];
   int _currentBpm = 0;
   int _currentZone = 0;
+  String? _connectingDeviceId;
 
   // Animation
   late AnimationController _pulseController;
@@ -50,6 +51,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     _connSub = _bleService.connectionState.listen((state) {
       setState(() => _connectionState = state);
+
+      // Show error feedback
+      if (state == BleConnectionState.error && mounted) {
+        _connectingDeviceId = null;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Connection failed. Tried GATT + advertisement mode. Check device is actively broadcasting HR.'),
+            backgroundColor: HrZones.colors[5],
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+      if (state == BleConnectionState.connected) {
+        _connectingDeviceId = null;
+      }
+      if (state == BleConnectionState.disconnected) {
+        _connectingDeviceId = null;
+      }
     });
 
     _scanSub = _bleService.scanResults.listen((results) {
@@ -216,10 +236,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text('Signal: ${result.rssi} dBm',
             style: TextStyle(color: AppTheme.textMuted, fontSize: 12)),
-        trailing: _connectionState == BleConnectionState.connecting
+        trailing: _connectingDeviceId == result.device.remoteId.str
             ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
             : Icon(Icons.arrow_forward_ios, size: 16, color: AppTheme.textMuted),
-        onTap: () => _bleService.connectToDevice(result.device),
+        onTap: _connectionState == BleConnectionState.connecting
+            ? null
+            : () {
+                setState(() => _connectingDeviceId = result.device.remoteId.str);
+                _bleService.connectToDevice(result.device);
+              },
       ),
     );
   }

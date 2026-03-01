@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../models/hr_data.dart';
 
@@ -36,14 +37,13 @@ class BleHrService {
   bool get isConnected => _connectedDevice != null;
   String? get connectedDeviceName => _connectedDevice?.platformName;
 
-  /// Start scanning for BLE Heart Rate devices
-  Future<void> startScan({Duration timeout = const Duration(seconds: 10)}) async {
-    // Stop any existing scan
+  /// Start scanning for BLE Heart Rate devices only
+  Future<void> startScan({Duration timeout = const Duration(seconds: 15)}) async {
     await stopScan();
 
     _connectionStateController.add(BleConnectionState.scanning);
 
-    // Scan for devices advertising the HR Service
+    // Only scan for devices that advertise Heart Rate Service
     await FlutterBluePlus.startScan(
       withServices: [_hrServiceUuid],
       timeout: timeout,
@@ -54,9 +54,9 @@ class BleHrService {
       _scanResultsController.add(results);
     });
 
-    // Auto-stop after timeout
+    // After scan timeout, reset state only if not connected
     Future.delayed(timeout, () {
-      if (!_hrDataController.isClosed) {
+      if (!_hrDataController.isClosed && _connectedDevice == null) {
         _connectionStateController.add(BleConnectionState.disconnected);
       }
     });
@@ -72,70 +72,78 @@ class BleHrService {
   /// Connect to a specific BLE device and start reading HR data
   Future<void> connectToDevice(BluetoothDevice device) async {
     try {
+      debugPrint('[BeatSync] Connecting to ${device.platformName} (${device.remoteId})...');
       _connectionStateController.add(BleConnectionState.connecting);
       await stopScan();
 
-      // Connect (license: empty string for non-commercial/hobby use)
+      // Connect — skip MTU negotiation (Garmin doesn't support it)
       await device.connect(
         autoConnect: false,
         timeout: const Duration(seconds: 10),
         license: License.free,
+        mtu: null, // Skip MTU negotiation — fixes Garmin timeout
       );
+      debugPrint('[BeatSync] ✅ Connected! Discovering services...');
       _connectedDevice = device;
 
       // Monitor connection state
+      _connectionSubscription?.cancel();
       _connectionSubscription = device.connectionState.listen((state) {
         if (state == BluetoothConnectionState.disconnected) {
+          debugPrint('[BeatSync] Device disconnected');
           _connectionStateController.add(BleConnectionState.disconnected);
           _connectedDevice = null;
         }
       });
 
       // Discover services and find HR characteristic
-      await _discoverAndSubscribe(device);
+      final found = await _discoverAndSubscribe(device);
 
-      _connectionStateController.add(BleConnectionState.connected);
+      if (found) {
+        debugPrint('[BeatSync] ✅ HR data streaming!');
+        _connectionStateController.add(BleConnectionState.connected);
+      } else {
+        debugPrint('[BeatSync] ❌ HR Service not found');
+        await device.disconnect();
+        _connectedDevice = null;
+        _connectionStateController.add(BleConnectionState.error);
+      }
     } catch (e) {
+      debugPrint('[BeatSync] ❌ Connection error: $e');
       _connectionStateController.add(BleConnectionState.error);
       _connectedDevice = null;
-      rethrow;
+      try { await device.disconnect(); } catch (_) {}
     }
   }
 
   /// Discover HR service and subscribe to notifications
-  Future<void> _discoverAndSubscribe(BluetoothDevice device) async {
+  Future<bool> _discoverAndSubscribe(BluetoothDevice device) async {
     final services = await device.discoverServices();
 
+    debugPrint('[BeatSync] Found ${services.length} services');
     for (final service in services) {
+      debugPrint('[BeatSync]   Service: ${service.uuid}');
       if (service.uuid == _hrServiceUuid) {
         for (final char in service.characteristics) {
+          debugPrint('[BeatSync]     Char: ${char.uuid} notify=${char.properties.notify}');
           if (char.uuid == _hrCharacteristicUuid) {
-            // Enable notifications
             await char.setNotifyValue(true);
 
-            // Listen for HR data
             _hrSubscription = char.onValueReceived.listen((value) {
               final hrData = _parseHrData(value);
               if (hrData != null) {
                 _hrDataController.add(hrData);
               }
             });
-            return;
+            return true;
           }
         }
       }
     }
-
-    throw Exception('Heart Rate Service not found on device.');
+    return false;
   }
 
   /// Parse raw BLE Heart Rate Measurement data
-  /// BLE HR Measurement format:
-  ///   Byte 0: Flags
-  ///     Bit 0: 0 = HR uint8, 1 = HR uint16
-  ///     Bit 4: 1 = RR interval present
-  ///   Byte 1(-2): Heart rate value
-  ///   Remaining: RR intervals (uint16, units of 1/1024 sec)
   HrData? _parseHrData(List<int> data) {
     if (data.isEmpty) return null;
 
@@ -156,11 +164,11 @@ class BleHrService {
       offset = 2;
     }
 
-    // Parse RR intervals if present
+    if (bpm < 20 || bpm > 250) return null;
+
     final rrIntervals = <int>[];
     if (hasRrInterval) {
       while (offset + 1 < data.length) {
-        // RR interval in 1/1024 seconds, convert to milliseconds
         final rr = data[offset] + (data[offset + 1] << 8);
         rrIntervals.add((rr * 1000 / 1024).round());
         offset += 2;
