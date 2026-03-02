@@ -24,6 +24,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   late double _weight;
   late double _height;
   late FitnessLevel _fitnessLevel;
+  late UserRole _role;
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _weight = widget.profile.weightKg;
     _height = widget.profile.heightCm;
     _fitnessLevel = widget.profile.fitnessLevel;
+    _role = widget.profile.role;
   }
 
   @override
@@ -56,6 +58,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       weightKg: _weight,
       heightCm: _height,
       fitnessLevel: _fitnessLevel,
+      role: _role,
       manualHrMax: widget.profile.manualHrMax,
     );
     await StorageService.saveProfile(updated);
@@ -228,6 +231,41 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 ),
               );
             }),
+            const SizedBox(height: 24),
+
+            // Role
+            _label('Role'),
+            const SizedBox(height: 8),
+            Row(
+              children: UserRole.values.map((role) {
+                final sel = role == _role;
+                final color = role == UserRole.trainer
+                    ? const Color(0xFF22C55E) : AppTheme.accent;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _role = role),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: sel ? color.withValues(alpha: 0.2) : AppTheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: sel ? color : AppTheme.surfaceLight,
+                          width: sel ? 2 : 1,
+                        ),
+                      ),
+                      child: Text(role.displayName,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: sel ? color : AppTheme.textSecondary,
+                            fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
+                          )),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
             const SizedBox(height: 32),
           ],
         ),

@@ -28,6 +28,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   double _weight = 75.0;
   double _height = 178.0;
   FitnessLevel _fitnessLevel = FitnessLevel.casual;
+  UserRole _role = UserRole.athlete;
 
   // Text controller to avoid rebuild issues
   late TextEditingController _nameController;
@@ -43,6 +44,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       _weight = p.weightKg;
       _height = p.heightCm;
       _fitnessLevel = p.fitnessLevel;
+      _role = p.role;
     }
     _nameController = TextEditingController(text: _name);
   }
@@ -58,7 +60,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     // Dismiss keyboard
     FocusScope.of(context).unfocus();
 
-    if (_currentPage < 2) {
+    if (_currentPage < 3) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOutCubic,
@@ -86,6 +88,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       weightKg: _weight,
       heightCm: _height,
       fitnessLevel: _fitnessLevel,
+      role: _role,
     );
     await StorageService.saveProfile(profile);
     widget.onComplete();
@@ -117,7 +120,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   // Progress indicator
                   Expanded(
                     child: Row(
-                      children: List.generate(3, (index) {
+                      children: List.generate(4, (index) {
                         return Expanded(
                           child: Container(
                             height: 4,
@@ -148,6 +151,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   _buildNameAgePage(),
                   _buildBodyPage(),
                   _buildFitnessPage(),
+                  _buildRolePage(),
                 ],
               ),
             ),
@@ -161,7 +165,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 child: ElevatedButton(
                   onPressed: _nextPage,
                   child: Text(
-                    _currentPage < 2 ? 'Continue' : 'Start Training',
+                    _currentPage < 3 ? 'Continue' : 'Start Training',
                     style: const TextStyle(fontSize: 18),
                   ),
                 ),
@@ -463,6 +467,111 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     ),
                     if (isSelected)
                       Icon(Icons.check_circle, color: AppTheme.accent),
+                  ],
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  // PAGE 4: Role
+  // ═══════════════════════════════════════════
+  Widget _buildRolePage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 24),
+          const Text(
+            'Your Role',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'How will you use BeatSync?',
+            style: TextStyle(fontSize: 14, color: AppTheme.textMuted),
+          ),
+          const SizedBox(height: 32),
+
+          ...UserRole.values.map((role) {
+            final isSelected = role == _role;
+            final icons = {
+              UserRole.athlete: Icons.favorite,
+              UserRole.trainer: Icons.groups,
+            };
+            final colors = {
+              UserRole.athlete: AppTheme.accent,
+              UserRole.trainer: const Color(0xFF22C55E),
+            };
+            final details = {
+              UserRole.athlete: 'Connect your HR monitor, join group sessions, and track your workouts.',
+              UserRole.trainer: 'Host group sessions, display HR on TV, and manage your athletes.',
+            };
+            final color = colors[role] ?? AppTheme.accent;
+
+            return GestureDetector(
+              onTap: () => setState(() => _role = role),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? color.withValues(alpha: 0.15)
+                      : AppTheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected ? color : AppTheme.surfaceLight,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? color.withValues(alpha: 0.2)
+                            : AppTheme.surfaceLight,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        icons[role],
+                        color: isSelected ? color : AppTheme.textMuted,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            role.displayName,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppTheme.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            details[role]!,
+                            style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isSelected)
+                      Icon(Icons.check_circle, color: color),
                   ],
                 ),
               ),

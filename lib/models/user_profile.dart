@@ -7,6 +7,7 @@ class UserProfile {
   final double heightCm;
   final int? restingHr;
   final FitnessLevel fitnessLevel;
+  final UserRole role;
   final int? manualHrMax; // User override
   int _dynamicHrMax; // Adjusted during workouts
 
@@ -18,6 +19,7 @@ class UserProfile {
     required this.heightCm,
     this.restingHr,
     this.fitnessLevel = FitnessLevel.casual,
+    this.role = UserRole.athlete,
     this.manualHrMax,
   }) : _dynamicHrMax = 0 {
     _dynamicHrMax = calculatedHrMax;
@@ -86,6 +88,7 @@ class UserProfile {
         'heightCm': heightCm,
         'restingHr': restingHr,
         'fitnessLevel': fitnessLevel.name,
+        'role': role.name,
         'manualHrMax': manualHrMax,
         'dynamicHrMax': _dynamicHrMax,
       };
@@ -102,6 +105,10 @@ class UserProfile {
       fitnessLevel: FitnessLevel.values.firstWhere(
         (e) => e.name == json['fitnessLevel'],
         orElse: () => FitnessLevel.casual,
+      ),
+      role: UserRole.values.firstWhere(
+        (e) => e.name == json['role'],
+        orElse: () => UserRole.athlete,
       ),
       manualHrMax: json['manualHrMax'] as int?,
     );
@@ -151,6 +158,29 @@ enum FitnessLevel {
         return 'Exercise 2-3 times/week';
       case FitnessLevel.advanced:
         return 'Train 5+ times/week';
+    }
+  }
+}
+
+enum UserRole {
+  athlete,
+  trainer;
+
+  String get displayName {
+    switch (this) {
+      case UserRole.athlete:
+        return 'Athlete';
+      case UserRole.trainer:
+        return 'Trainer';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case UserRole.athlete:
+        return 'Join group sessions';
+      case UserRole.trainer:
+        return 'Host & manage group sessions';
     }
   }
 }

@@ -147,25 +147,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 20),
             const Text('Group Session', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
             const SizedBox(height: 20),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.accent.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
+
+            // Host Session — only for trainers
+            if (widget.profile.role == UserRole.trainer) ...[
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.groups, color: AppTheme.accent),
                 ),
-                child: Icon(Icons.groups, color: AppTheme.accent),
+                title: const Text('Host Session', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text('Start a group workout as trainer', style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => SessionHostScreen(tvServer: _tvServer)));
+                },
               ),
-              title: const Text('Host Session', style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Text('Start a group workout as trainer', style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => SessionHostScreen(tvServer: _tvServer)));
-              },
-            ),
-            const SizedBox(height: 8),
+              const SizedBox(height: 8),
+            ],
+
+            // Join Session — available for everyone
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(10),
