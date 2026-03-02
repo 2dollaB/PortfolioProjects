@@ -10,6 +10,8 @@ import '../config/theme.dart';
 import 'workout_screen.dart';
 import 'workout_history_screen.dart';
 import 'profile_edit_screen.dart';
+import 'tv_host_screen.dart';
+import '../services/tv_server.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserProfile profile;
@@ -23,6 +25,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final BleHrService _bleService = BleHrService();
+  final TvServer _tvServer = TvServer();
 
   // State
   BleConnectionState _connectionState = BleConnectionState.disconnected;
@@ -117,6 +120,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         builder: (_) => WorkoutScreen(
           profile: widget.profile,
           bleService: _bleService,
+          tvServer: _tvServer,
         ),
       ),
     );
@@ -151,14 +155,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   icon: Icon(Icons.history, color: AppTheme.textSecondary),
                   tooltip: 'Workout History',
                 ),
-                IconButton(
-                  onPressed: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => ProfileEditScreen(
-                      profile: widget.profile,
-                      onSaved: (p) => widget.onProfileUpdated?.call(p),
-                    ))),
-                  icon: Icon(Icons.person_outline, color: AppTheme.textSecondary),
-                  tooltip: 'Edit Profile',
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => TvHostScreen(tvServer: _tvServer))),
+                      icon: Icon(Icons.tv,
+                        color: _tvServer.isRunning ? AppTheme.accent : AppTheme.textSecondary),
+                      tooltip: 'TV Display',
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => ProfileEditScreen(
+                          profile: widget.profile,
+                          onSaved: (p) => widget.onProfileUpdated?.call(p),
+                        ))),
+                      icon: Icon(Icons.person_outline, color: AppTheme.textSecondary),
+                      tooltip: 'Edit Profile',
+                    ),
+                  ],
                 ),
               ],
             ),

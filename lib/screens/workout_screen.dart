@@ -7,16 +7,19 @@ import '../models/user_profile.dart';
 import '../models/workout.dart';
 import '../services/ble_hr_service.dart';
 import '../services/storage_service.dart';
+import '../services/tv_server.dart';
 import 'workout_summary_screen.dart';
 
 class WorkoutScreen extends StatefulWidget {
   final UserProfile profile;
   final BleHrService bleService;
+  final TvServer? tvServer;
 
   const WorkoutScreen({
     super.key,
     required this.profile,
     required this.bleService,
+    this.tvServer,
   });
 
   @override
@@ -93,6 +96,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           _chartSpots.removeAt(0);
         }
       });
+
+      // Send to TV server if running
+      if (widget.tvServer != null && widget.tvServer!.isRunning) {
+        widget.tvServer!.updateUserHr(
+          userId: widget.profile.name,
+          name: widget.profile.name,
+          bpm: data.bpm,
+          zone: zone,
+          hrMax: widget.profile.hrMax,
+        );
+      }
     });
   }
 
@@ -123,6 +137,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
     if (confirm == true) {
       _timer?.cancel();
+
+      // Remove from TV
+      widget.tvServer?.removeUser(widget.profile.name);
 
       // Calculate analytics
       final analytics = AnalyticsEngine.calculate(
