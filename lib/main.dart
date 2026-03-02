@@ -63,7 +63,10 @@ class _BeatSyncAppState extends State<BeatSyncApp> {
       theme: AppTheme.darkTheme,
       home: _profile == null
           ? ProfileSetupScreen(onComplete: _onProfileComplete)
-          : HomeScreen(profile: _profile!),
+          : HomeScreen(
+              profile: _profile!,
+              onProfileUpdated: (p) => setState(() => _profile = p),
+            ),
     );
   }
 }

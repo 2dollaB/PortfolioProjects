@@ -8,11 +8,14 @@ import '../models/user_profile.dart';
 import '../config/hr_zones.dart';
 import '../config/theme.dart';
 import 'workout_screen.dart';
+import 'workout_history_screen.dart';
+import 'profile_edit_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserProfile profile;
+  final Function(UserProfile)? onProfileUpdated;
 
-  const HomeScreen({super.key, required this.profile});
+  const HomeScreen({super.key, required this.profile, this.onProfileUpdated});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -138,7 +141,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 40),
+            // Top bar with History + Profile
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const WorkoutHistoryScreen())),
+                  icon: Icon(Icons.history, color: AppTheme.textSecondary),
+                  tooltip: 'Workout History',
+                ),
+                IconButton(
+                  onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => ProfileEditScreen(
+                      profile: widget.profile,
+                      onSaved: (p) => widget.onProfileUpdated?.call(p),
+                    ))),
+                  icon: Icon(Icons.person_outline, color: AppTheme.textSecondary),
+                  tooltip: 'Edit Profile',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             Icon(Icons.monitor_heart_outlined, size: 64, color: AppTheme.accent),
             const SizedBox(height: 16),
             const Text(
