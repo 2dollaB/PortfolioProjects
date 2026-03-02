@@ -5,6 +5,7 @@ import 'models/user_profile.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_setup_screen.dart';
 import 'services/ble_hr_service.dart';
+import 'services/foreground_service.dart';
 import 'services/storage_service.dart';
 
 void main() async {
@@ -12,6 +13,9 @@ void main() async {
 
   // Initialize BLE
   await initBle();
+
+  // Initialize foreground task for background workout tracking
+  initForegroundTask();
 
   // Lock to portrait mode
   SystemChrome.setPreferredOrientations([

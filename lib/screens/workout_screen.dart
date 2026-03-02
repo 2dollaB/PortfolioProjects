@@ -6,6 +6,7 @@ import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../models/workout.dart';
 import '../services/ble_hr_service.dart';
+import '../services/foreground_service.dart';
 import '../services/storage_service.dart';
 import '../services/tv_server.dart';
 import 'workout_summary_screen.dart';
@@ -51,6 +52,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     _startTime = DateTime.now();
     _startTimer();
     _listenToHr();
+    // Keep app alive in background
+    startForegroundService();
   }
 
   void _startTimer() {
@@ -107,6 +110,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           hrMax: widget.profile.hrMax,
         );
       }
+
+      // Update notification with current BPM
+      updateForegroundNotification('${data.bpm} BPM — Zone $zone');
     });
   }
 
@@ -137,6 +143,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
     if (confirm == true) {
       _timer?.cancel();
+
+      // Stop foreground service
+      stopForegroundService();
 
       // Remove from TV
       widget.tvServer?.removeUser(widget.profile.name);
