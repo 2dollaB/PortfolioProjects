@@ -10,8 +10,10 @@ import '../config/theme.dart';
 import 'workout_screen.dart';
 import 'workout_history_screen.dart';
 import 'profile_edit_screen.dart';
-import 'tv_host_screen.dart';
+import 'session_host_screen.dart';
+import 'join_session_screen.dart';
 import '../services/tv_server.dart';
+import '../services/session_client.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserProfile profile;
@@ -26,6 +28,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final BleHrService _bleService = BleHrService();
   final TvServer _tvServer = TvServer();
+  final SessionClient _sessionClient = SessionClient();
 
   // State
   BleConnectionState _connectionState = BleConnectionState.disconnected;
@@ -121,6 +124,74 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           profile: widget.profile,
           bleService: _bleService,
           tvServer: _tvServer,
+          sessionClient: _sessionClient,
+        ),
+      ),
+    );
+  }
+
+  void _showGroupOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: AppTheme.surfaceLight, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            const Text('Group Session', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.groups, color: AppTheme.accent),
+              ),
+              title: const Text('Host Session', style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text('Start a group workout as trainer', style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => SessionHostScreen(tvServer: _tvServer)));
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF22C55E).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.qr_code_scanner, color: Color(0xFF22C55E)),
+              ),
+              title: const Text('Join Session', style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text('Scan QR to join a group', style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final joined = await Navigator.push<bool>(context,
+                  MaterialPageRoute(builder: (_) => JoinSessionScreen(sessionClient: _sessionClient)));
+                if (joined == true && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Connected to group session!'),
+                      backgroundColor: Color(0xFF22C55E)),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
@@ -158,11 +229,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Row(
                   children: [
                     IconButton(
-                      onPressed: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => TvHostScreen(tvServer: _tvServer))),
-                      icon: Icon(Icons.tv,
-                        color: _tvServer.isRunning ? AppTheme.accent : AppTheme.textSecondary),
-                      tooltip: 'TV Display',
+                      onPressed: _showGroupOptions,
+                      icon: Icon(Icons.groups,
+                        color: (_tvServer.isRunning || _sessionClient.isConnected)
+                            ? AppTheme.accent : AppTheme.textSecondary),
+                      tooltip: 'Group Session',
                     ),
                     IconButton(
                       onPressed: () => Navigator.push(context,

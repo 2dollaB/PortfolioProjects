@@ -7,6 +7,7 @@ import '../models/user_profile.dart';
 import '../models/workout.dart';
 import '../services/ble_hr_service.dart';
 import '../services/foreground_service.dart';
+import '../services/session_client.dart';
 import '../services/storage_service.dart';
 import '../services/tv_server.dart';
 import 'workout_summary_screen.dart';
@@ -15,12 +16,14 @@ class WorkoutScreen extends StatefulWidget {
   final UserProfile profile;
   final BleHrService bleService;
   final TvServer? tvServer;
+  final SessionClient? sessionClient;
 
   const WorkoutScreen({
     super.key,
     required this.profile,
     required this.bleService,
     this.tvServer,
+    this.sessionClient,
   });
 
   @override
@@ -100,9 +103,20 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         }
       });
 
-      // Send to TV server if running
+      // Send to TV server if running (host mode)
       if (widget.tvServer != null && widget.tvServer!.isRunning) {
         widget.tvServer!.updateUserHr(
+          userId: widget.profile.name,
+          name: widget.profile.name,
+          bpm: data.bpm,
+          zone: zone,
+          hrMax: widget.profile.hrMax,
+        );
+      }
+
+      // Send to session hub if connected (participant mode)
+      if (widget.sessionClient != null && widget.sessionClient!.isConnected) {
+        widget.sessionClient!.sendHrUpdate(
           userId: widget.profile.name,
           name: widget.profile.name,
           bpm: data.bpm,
@@ -149,6 +163,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
       // Remove from TV
       widget.tvServer?.removeUser(widget.profile.name);
+      // Notify hub if participant
+      widget.sessionClient?.sendRemove(widget.profile.name);
 
       // Calculate analytics
       final analytics = AnalyticsEngine.calculate(

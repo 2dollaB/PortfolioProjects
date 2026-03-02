@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 
 /// BeatSync App Theme — Dark, Premium, Fitness-focused
+/// Palette v2 (2025/26) — Deeper darks, brighter accents
 class AppTheme {
-  static const Color background = Color(0xFF0A0E1A);
-  static const Color surface = Color(0xFF141929);
-  static const Color surfaceLight = Color(0xFF1E2438);
-  static const Color accent = Color(0xFF6366F1); // Indigo
-  static const Color accentLight = Color(0xFF818CF8);
+  // Core surfaces
+  static const Color background = Color(0xFF020617);    // Deep ocean — less OLED smear
+  static const Color surface = Color(0xFF0F172A);        // Card background
+  static const Color surfaceLight = Color(0xFF1E293B);   // Elevated surface
+
+  // Accent — Lighter Indigo for better readability on deep dark
+  static const Color accent = Color(0xFF818CF8);
+  static const Color accentLight = Color(0xFFA5B4FC);
+
+  // Semantic colors
+  static const Color success = Color(0xFF39FF14);        // Electric Lime — confirmations
+  static const Color warning = Color(0xFFFACC15);        // Amber — alerts without alarm
+
+  // Text hierarchy
   static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF9CA3AF);
-  static const Color textMuted = Color(0xFF6B7280);
+  static const Color textSecondary = Color(0xFF94A3B8);  // Slightly cooler slate
+  static const Color textMuted = Color(0xFF64748B);      // Slate-500 — better contrast
 
   static ThemeData get darkTheme => ThemeData(
         brightness: Brightness.dark,

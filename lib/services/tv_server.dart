@@ -10,9 +10,12 @@ class TvServer {
   final List<WebSocket> _tvClients = [];
   final Map<String, UserHrState> _userStates = {};
   int _port = 8080;
+  String sessionName = 'BeatSync Session';
+  int maxParticipants = 15;
 
   bool get isRunning => _server != null;
   int get port => _port;
+  int get participantCount => _userStates.length;
 
   /// Get the device's local WiFi IP address
   static Future<String?> getLocalIp() async {
@@ -136,10 +139,10 @@ class TvServer {
         _broadcastState();
 
         ws.listen(
-          (_) {},
+          (data) => _handleWsMessage(data),
           onDone: () {
             _tvClients.remove(ws);
-            debugPrint('[TvServer] TV client disconnected');
+            debugPrint('[TvServer] Client disconnected');
           },
           onError: (_) => _tvClients.remove(ws),
         );
@@ -152,6 +155,38 @@ class TvServer {
         ..headers.contentType = ContentType.html
         ..write(_buildDashboardHtml())
         ..close();
+    }
+  }
+
+  /// Handle incoming WebSocket messages from participant phones
+  void _handleWsMessage(dynamic data) {
+    try {
+      final msg = jsonDecode(data as String) as Map<String, dynamic>;
+      final type = msg['type'] as String?;
+
+      if (type == 'hr_update') {
+        final userId = msg['userId'] as String? ?? 'unknown';
+
+        // Enforce max participants
+        if (!_userStates.containsKey(userId) &&
+            _userStates.length >= maxParticipants) {
+          debugPrint('[TvServer] Max participants reached, rejecting $userId');
+          return;
+        }
+
+        updateUserHr(
+          userId: userId,
+          name: msg['name'] as String? ?? 'Athlete',
+          bpm: msg['bpm'] as int? ?? 0,
+          zone: msg['zone'] as int? ?? 0,
+          hrMax: msg['hrMax'] as int? ?? 180,
+        );
+      } else if (type == 'remove') {
+        final userId = msg['userId'] as String? ?? '';
+        removeUser(userId);
+      }
+    } catch (e) {
+      debugPrint('[TvServer] Message parse error: $e');
     }
   }
 
