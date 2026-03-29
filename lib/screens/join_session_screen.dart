@@ -77,7 +77,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Join Session'),
+        title: Text('Join Session', style: AppTheme.heading(fontSize: 20, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -90,38 +90,42 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
               // Header
               Center(
                 child: Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppTheme.accent.withValues(alpha: 0.15),
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.accent.withValues(alpha: 0.15),
+                        AppTheme.accent.withValues(alpha: 0.05),
+                      ],
+                    ),
                   ),
                   child: const Icon(Icons.qr_code_scanner, size: 40, color: Colors.white),
                 ),
               ),
               const SizedBox(height: 16),
-              const Center(
-                child: Text('Join a Group Session',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+              Center(
+                child: Text('Join a Group Session', style: AppTheme.heading(fontSize: 22)),
               ),
               const SizedBox(height: 8),
               Center(
-                child: Text('Scan the QR code on the trainer\'s phone',
-                    style: TextStyle(fontSize: 14, color: AppTheme.textSecondary)),
+                child: Text("Scan the QR code on the trainer's phone",
+                    style: AppTheme.body(fontSize: 14)),
               ),
               const SizedBox(height: 24),
 
-              // QR Scanner
+              // QR Scanner button
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton.icon(
                   onPressed: _connecting ? null : () => setState(() => _scanning = !_scanning),
                   icon: Icon(_scanning ? Icons.close : Icons.qr_code_scanner),
-                  label: Text(_scanning ? 'Close Scanner' : 'Scan QR Code'),
+                  label: Text(_scanning ? 'Close Scanner' : 'Scan QR Code',
+                      style: AppTheme.heading(fontSize: 16, fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.accent,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -141,13 +145,13 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
 
               const SizedBox(height: 32),
 
-              // Divider
+              // OR divider
               Row(
                 children: [
                   Expanded(child: Divider(color: AppTheme.surfaceLight)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('OR', style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
+                    child: Text('OR', style: AppTheme.mono(color: AppTheme.textMuted, fontSize: 13)),
                   ),
                   Expanded(child: Divider(color: AppTheme.surfaceLight)),
                 ],
@@ -156,7 +160,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
 
               // Manual entry
               Text('Enter manually',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 14, fontWeight: FontWeight.w500)),
+                  style: AppTheme.body(fontSize: 14, fontWeight: FontWeight.w500)),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -164,15 +168,15 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
                     flex: 3,
                     child: TextField(
                       controller: _ipController,
-                      style: const TextStyle(color: Colors.white),
+                      style: AppTheme.body(color: Colors.white),
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         hintText: '192.168.1.5',
-                        hintStyle: TextStyle(color: AppTheme.textMuted),
+                        hintStyle: AppTheme.body(color: AppTheme.textMuted),
                         filled: true,
                         fillColor: AppTheme.surface,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide.none,
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -180,21 +184,21 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(':', style: TextStyle(color: AppTheme.textMuted, fontSize: 18)),
+                  Text(':', style: AppTheme.body(color: AppTheme.textMuted, fontSize: 18)),
                   const SizedBox(width: 8),
                   Expanded(
                     flex: 1,
                     child: TextField(
                       controller: _portController,
-                      style: const TextStyle(color: Colors.white),
+                      style: AppTheme.body(color: Colors.white),
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         hintText: '8080',
-                        hintStyle: TextStyle(color: AppTheme.textMuted),
+                        hintStyle: AppTheme.body(color: AppTheme.textMuted),
                         filled: true,
                         fillColor: AppTheme.surface,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide.none,
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -211,14 +215,14 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
                 child: OutlinedButton.icon(
                   onPressed: _connecting ? null : _connectManual,
                   icon: _connecting
-                      ? const SizedBox(width: 18, height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.link),
-                  label: Text(_connecting ? 'Connecting...' : 'Connect'),
+                      ? SizedBox(width: 18, height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent))
+                      : Icon(Icons.link, color: AppTheme.accent),
+                  label: Text(_connecting ? 'Connecting...' : 'Connect',
+                      style: AppTheme.body(fontSize: 16, fontWeight: FontWeight.w500, color: AppTheme.accent)),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppTheme.accent),
+                    side: BorderSide(color: AppTheme.accent.withValues(alpha: 0.5)),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 ),
               ),
@@ -226,17 +230,18 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
               if (_error != null) ...[
                 const SizedBox(height: 16),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.redAccent.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.danger.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppTheme.danger.withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
-                      const SizedBox(width: 8),
+                      Icon(Icons.error_outline, color: AppTheme.danger, size: 18),
+                      const SizedBox(width: 10),
                       Expanded(child: Text(_error!,
-                          style: const TextStyle(color: Colors.redAccent, fontSize: 13))),
+                          style: AppTheme.body(color: AppTheme.danger, fontSize: 13))),
                     ],
                   ),
                 ),

@@ -46,7 +46,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('TV Display'),
+        title: Text('TV Display', style: AppTheme.heading(fontSize: 20, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -57,8 +57,8 @@ class _TvHostScreenState extends State<TvHostScreen> {
                 await widget.tvServer.stop();
                 if (mounted) nav.pop();
               },
-              icon: const Icon(Icons.stop, color: Colors.redAccent, size: 18),
-              label: const Text('Stop', style: TextStyle(color: Colors.redAccent)),
+              icon: Icon(Icons.stop, color: AppTheme.danger, size: 18),
+              label: Text('Stop', style: AppTheme.body(color: AppTheme.danger, fontWeight: FontWeight.w600)),
             ),
         ],
       ),
@@ -66,7 +66,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: _starting
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(child: CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2))
               : _error != null
                   ? _buildError()
                   : _buildServerInfo(url!),
@@ -80,16 +80,26 @@ class _TvHostScreenState extends State<TvHostScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.wifi_off, size: 64, color: Colors.redAccent),
-          const SizedBox(height: 16),
-          Text(_error!, style: TextStyle(color: AppTheme.textSecondary, fontSize: 16)),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppTheme.danger.withValues(alpha: 0.1),
+            ),
+            child: Icon(Icons.wifi_off, size: 56, color: AppTheme.danger),
+          ),
+          const SizedBox(height: 20),
+          Text(_error!, style: AppTheme.body(fontSize: 16), textAlign: TextAlign.center),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
               setState(() { _starting = true; _error = null; });
               _startServer();
             },
-            child: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: Text('Retry', style: AppTheme.heading(fontSize: 16, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -101,25 +111,34 @@ class _TvHostScreenState extends State<TvHostScreen> {
       children: [
         const SizedBox(height: 16),
 
-        // TV Icon
+        // TV Icon with glow
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppTheme.accent.withValues(alpha: 0.15),
+            gradient: LinearGradient(
+              colors: [
+                AppTheme.accent.withValues(alpha: 0.15),
+                AppTheme.accent.withValues(alpha: 0.05),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.accent.withValues(alpha: 0.1),
+                blurRadius: 30,
+                spreadRadius: 5,
+              ),
+            ],
           ),
           child: const Icon(Icons.tv, size: 48, color: Colors.white),
         ),
         const SizedBox(height: 24),
 
-        const Text(
-          'TV Dashboard Ready',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-        ),
+        Text('TV Dashboard Ready', style: AppTheme.heading(fontSize: 24)),
         const SizedBox(height: 8),
         Text(
           'Open this URL on your TV browser',
-          style: TextStyle(fontSize: 15, color: AppTheme.textSecondary),
+          style: AppTheme.body(fontSize: 15),
         ),
         const SizedBox(height: 32),
 
@@ -127,20 +146,15 @@ class _TvHostScreenState extends State<TvHostScreen> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppTheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
-          ),
+          decoration: AppTheme.glowCard(color: AppTheme.accent),
           child: Column(
             children: [
-              Text(
+              SelectableText(
                 url,
-                style: TextStyle(
+                style: AppTheme.heading(
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.accentLight,
-                  letterSpacing: 0.5,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -148,42 +162,45 @@ class _TvHostScreenState extends State<TvHostScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.wifi, size: 16, color: AppTheme.textMuted),
+                  Icon(Icons.wifi, size: 14, color: AppTheme.textMuted),
                   const SizedBox(width: 8),
-                  Text(
-                    'Same WiFi network required',
-                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                  ),
+                  Text('Same WiFi network required',
+                      style: AppTheme.mono(fontSize: 12, color: AppTheme.textMuted)),
                 ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 28),
 
         // Instructions
         _buildStep('1', 'Make sure TV and phone are on the same WiFi'),
         _buildStep('2', 'Open the TV browser (Chrome, Samsung Internet, etc.)'),
         _buildStep('3', 'Enter the URL above'),
-        _buildStep('4', 'Start a workout — you\'ll appear on TV automatically'),
+        _buildStep('4', "Start a workout — you'll appear on TV automatically"),
 
         const Spacer(),
 
         // Status
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+            gradient: LinearGradient(
+              colors: [
+                AppTheme.success.withValues(alpha: 0.1),
+                AppTheme.success.withValues(alpha: 0.03),
+              ],
+            ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF22C55E).withValues(alpha: 0.2)),
+            border: Border.all(color: AppTheme.success.withValues(alpha: 0.2)),
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.circle, size: 10, color: Color(0xFF22C55E)),
-              SizedBox(width: 10),
+              Icon(Icons.circle, size: 10, color: AppTheme.success),
+              const SizedBox(width: 10),
               Text('Server running',
-                  style: TextStyle(color: Color(0xFF22C55E), fontWeight: FontWeight.w500)),
+                  style: AppTheme.mono(color: AppTheme.success, fontWeight: FontWeight.w600)),
             ],
           ),
         ),
@@ -193,25 +210,29 @@ class _TvHostScreenState extends State<TvHostScreen> {
 
   Widget _buildStep(String number, String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
           Container(
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: AppTheme.surfaceLight,
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.accent.withValues(alpha: 0.2),
+                  AppTheme.accent.withValues(alpha: 0.08),
+                ],
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
               child: Text(number,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                  style: AppTheme.mono(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.accentLight)),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(text,
-                style: TextStyle(fontSize: 14, color: AppTheme.textSecondary)),
+            child: Text(text, style: AppTheme.body(fontSize: 13)),
           ),
         ],
       ),

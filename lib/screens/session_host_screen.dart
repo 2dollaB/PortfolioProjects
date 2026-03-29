@@ -1,7 +1,11 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../config/theme.dart';
+import '../models/group_session.dart';
+import '../services/storage_service.dart';
 import '../services/tv_server.dart';
+import 'trainer_monitor_screen.dart';
 
 class SessionHostScreen extends StatefulWidget {
   final TvServer tvServer;
@@ -17,7 +21,9 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
   bool _starting = false;
   bool _serverRunning = false;
   String? _error;
+  DateTime? _sessionStartTime;
   final _nameController = TextEditingController(text: 'HIIT Session');
+  String? _sessionPin; // 10.4 — Session PIN
 
   @override
   void initState() {
@@ -46,24 +52,50 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
         : _nameController.text;
 
     final ip = await widget.tvServer.start();
+    final now = DateTime.now();
     setState(() {
       _ip = ip;
       _starting = false;
       _serverRunning = ip != null;
+      if (ip != null) {
+        _sessionStartTime = now;
+        _sessionPin = (1000 + Random().nextInt(9000)).toString(); // 10.4
+      }
       if (ip == null) _error = 'Could not start server. Check WiFi connection.';
     });
   }
 
   Future<void> _stopSession() async {
+    // 5.4 — save group session before stopping
+    final states = widget.tvServer.userStates;
+    if (states.isNotEmpty && _sessionStartTime != null) {
+      final duration = DateTime.now().difference(_sessionStartTime!);
+      final participants = states.values.map((u) => GroupParticipant(
+        userId: u.userId,
+        name: u.name,
+        avgBpm: u.bpm,
+        maxBpm: u.bpm,
+        hrMax: u.hrMax,
+        timeInZoneSeconds: const {},
+      )).toList();
+      final gs = GroupSession(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        sessionName: widget.tvServer.sessionName,
+        startTime: _sessionStartTime!,
+        duration: duration,
+        participants: participants,
+      );
+      await StorageService.saveGroupSession(gs);
+    }
     await widget.tvServer.stop();
-    setState(() => _serverRunning = false);
+    setState(() { _serverRunning = false; _sessionStartTime = null; });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Group Session'),
+        title: Text('Group Session', style: AppTheme.heading(fontSize: 20, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -72,8 +104,8 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
               onPressed: () async {
                 await _stopSession();
               },
-              icon: const Icon(Icons.stop, color: Colors.redAccent, size: 18),
-              label: const Text('End', style: TextStyle(color: Colors.redAccent)),
+              icon: Icon(Icons.stop, color: AppTheme.danger, size: 18),
+              label: Text('End', style: AppTheme.body(color: AppTheme.danger, fontWeight: FontWeight.w600)),
             ),
         ],
       ),
@@ -95,48 +127,48 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
         // Header
         Center(
           child: Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppTheme.accent.withValues(alpha: 0.15),
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.accent.withValues(alpha: 0.15),
+                  AppTheme.accent.withValues(alpha: 0.05),
+                ],
+              ),
             ),
             child: const Icon(Icons.groups, size: 48, color: Colors.white),
           ),
         ),
         const SizedBox(height: 24),
-        const Center(
-          child: Text(
-            'Host a Group Session',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-          ),
-        ),
+        Center(child: Text('Host a Group Session', style: AppTheme.heading(fontSize: 24))),
         const SizedBox(height: 8),
         Center(
           child: Text(
             'Up to ${widget.tvServer.maxParticipants} athletes can join',
-            style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+            style: AppTheme.body(fontSize: 14),
           ),
         ),
         const SizedBox(height: 32),
 
         // Session name
-        Text('Session Name',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14, fontWeight: FontWeight.w500)),
+        Text('Session Name', style: AppTheme.body(
+            color: AppTheme.textSecondary, fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         TextField(
           controller: _nameController,
-          style: const TextStyle(color: Colors.white, fontSize: 18),
+          style: AppTheme.body(color: Colors.white, fontSize: 18),
           decoration: InputDecoration(
             hintText: 'e.g. HIIT Monday 19h',
-            hintStyle: TextStyle(color: AppTheme.textMuted),
+            hintStyle: AppTheme.body(color: AppTheme.textMuted),
             filled: true,
             fillColor: AppTheme.surface,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: AppTheme.accent),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -146,16 +178,18 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
 
         if (_error != null) ...[
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.redAccent.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: AppTheme.danger.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppTheme.danger.withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
-                const SizedBox(width: 8),
-                Expanded(child: Text(_error!, style: const TextStyle(color: Colors.redAccent, fontSize: 13))),
+                Icon(Icons.error_outline, color: AppTheme.danger, size: 20),
+                const SizedBox(width: 10),
+                Expanded(child: Text(_error!,
+                    style: AppTheme.body(color: AppTheme.danger, fontSize: 13))),
               ],
             ),
           ),
@@ -172,11 +206,11 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
                 ? const SizedBox(width: 20, height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.play_arrow),
-            label: Text(_starting ? 'Starting...' : 'Start Session'),
+            label: Text(_starting ? 'Starting...' : 'Start Session',
+                style: AppTheme.heading(fontSize: 18, fontWeight: FontWeight.w600)),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.accent,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -191,45 +225,59 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
 
     return Column(
       children: [
-        // Session info badge
+        // Active badge
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+            gradient: LinearGradient(
+              colors: [
+                AppTheme.success.withValues(alpha: 0.1),
+                AppTheme.success.withValues(alpha: 0.03),
+              ],
+            ),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF22C55E).withValues(alpha: 0.2)),
+            border: Border.all(color: AppTheme.success.withValues(alpha: 0.2)),
           ),
           child: Column(
             children: [
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.circle, size: 10, color: Color(0xFF22C55E)),
-                  SizedBox(width: 8),
-                  Text('Session Active', style: TextStyle(color: Color(0xFF22C55E), fontWeight: FontWeight.w600)),
+                  Icon(Icons.circle, size: 10, color: AppTheme.success),
+                  const SizedBox(width: 8),
+                  Text('Session Active',
+                      style: AppTheme.mono(color: AppTheme.success, fontWeight: FontWeight.w600)),
                 ],
               ),
               const SizedBox(height: 4),
               Text(
                 widget.tvServer.sessionName,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                style: AppTheme.heading(fontSize: 18),
               ),
             ],
           ),
         ),
         const SizedBox(height: 24),
 
-        // QR Code for participants
-        const Text('Scan to Join', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        // QR Code
+        Text('Scan to Join', style: AppTheme.heading(fontSize: 16)),
         const SizedBox(height: 4),
-        Text('Athletes scan this QR code', style: TextStyle(fontSize: 13, color: AppTheme.textMuted)),
+        Text('Athletes scan this QR code',
+            style: AppTheme.body(fontSize: 13, color: AppTheme.textMuted)),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.accent.withValues(alpha: 0.15),
+                blurRadius: 24,
+                spreadRadius: 4,
+              ),
+            ],
           ),
           child: QrImageView(
             data: 'beatsync://$_ip:${widget.tvServer.port}',
@@ -238,38 +286,55 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
             backgroundColor: Colors.white,
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
+
+        // 10.4 — Session PIN
+        if (_sessionPin != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppTheme.accent.withValues(alpha: 0.15), AppTheme.accentDark.withValues(alpha: 0.1)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.lock_outline, size: 16, color: AppTheme.accent),
+                const SizedBox(width: 8),
+                Text('PIN: ', style: AppTheme.body(fontSize: 12, color: AppTheme.textMuted)),
+                Text(_sessionPin!, style: AppTheme.heading(fontSize: 22, color: AppTheme.accent, letterSpacing: 4)),
+              ],
+            ),
+          ),
+        const SizedBox(height: 16),
 
         // Manual URL
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppTheme.surface,
-            borderRadius: BorderRadius.circular(12),
-          ),
+          decoration: AppTheme.boldCard(borderRadius: 12),
           child: Column(
             children: [
-              Text('Or enter manually:', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+              Text('Or enter manually:',
+                  style: AppTheme.body(fontSize: 12, color: AppTheme.textMuted)),
               const SizedBox(height: 4),
               SelectableText(
                 '$_ip:${widget.tvServer.port}',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.accentLight),
+                style: AppTheme.mono(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.accentLight),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
 
         // TV URL
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppTheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.accent.withValues(alpha: 0.2)),
-          ),
+          decoration: AppTheme.glowCard(color: AppTheme.accent, borderRadius: 12),
           child: Column(
             children: [
               Row(
@@ -277,18 +342,41 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
                 children: [
                   Icon(Icons.tv, size: 18, color: AppTheme.accent),
                   const SizedBox(width: 8),
-                  Text('TV Dashboard', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.accent)),
+                  Text('TV Dashboard',
+                      style: AppTheme.mono(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.accent)),
                 ],
               ),
               const SizedBox(height: 4),
               SelectableText(
                 url,
-                style: TextStyle(fontSize: 14, color: AppTheme.accentLight),
+                style: AppTheme.body(fontSize: 14, color: AppTheme.accentLight),
               ),
             ],
           ),
         ),
         const SizedBox(height: 24),
+
+        // Trainer Monitor button (5.1)
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TrainerMonitorScreen(tvServer: widget.tvServer),
+              ),
+            ),
+            icon: Icon(Icons.monitor_heart, color: AppTheme.accent, size: 18),
+            label: Text('Open Trainer Monitor',
+                style: AppTheme.body(color: AppTheme.accent, fontWeight: FontWeight.w600)),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: AppTheme.accent.withValues(alpha: 0.4)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
 
         // Instructions
         _buildStep('1', 'Athletes: open BeatSync → "Join Session"'),
@@ -305,21 +393,25 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
       child: Row(
         children: [
           Container(
-            width: 26,
-            height: 26,
+            width: 28,
+            height: 28,
             decoration: BoxDecoration(
-              color: AppTheme.surfaceLight,
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.accent.withValues(alpha: 0.2),
+                  AppTheme.accent.withValues(alpha: 0.08),
+                ],
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
               child: Text(number,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                  style: AppTheme.mono(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.accentLight)),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(text,
-                style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+            child: Text(text, style: AppTheme.body(fontSize: 13)),
           ),
         ],
       ),

@@ -23,8 +23,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   late Sex _sex;
   late double _weight;
   late double _height;
+  int? _restingHr;
   late FitnessLevel _fitnessLevel;
   late UserRole _role;
+  String _hrMaxFormula = 'auto'; // auto=sex-based, tanaka, fox, custom
+  int? _customHrMax;
 
   @override
   void initState() {
@@ -34,6 +37,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _sex = widget.profile.sex;
     _weight = widget.profile.weightKg;
     _height = widget.profile.heightCm;
+    _restingHr = widget.profile.restingHr;
     _fitnessLevel = widget.profile.fitnessLevel;
     _role = widget.profile.role;
   }
@@ -45,6 +49,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   int _previewHrMax() {
+    if (_hrMaxFormula == 'custom' && _customHrMax != null) return _customHrMax!;
+    if (_hrMaxFormula == 'tanaka') return (208 - 0.7 * _age).round(); // Tanaka universal
+    if (_hrMaxFormula == 'fox') return (220 - _age); // Fox
+    // auto = sex-based (Tanaka for male, Gulati for female)
     return _sex == Sex.female
         ? (206 - (0.88 * _age)).round()
         : (208 - (0.7 * _age)).round();
@@ -52,11 +60,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Future<void> _save() async {
     final updated = UserProfile(
+      id: widget.profile.id,
       name: _nameController.text.isEmpty ? 'Athlete' : _nameController.text,
       age: _age,
       sex: _sex,
       weightKg: _weight,
       heightCm: _height,
+      restingHr: _restingHr,
       fitnessLevel: _fitnessLevel,
       role: _role,
       manualHrMax: widget.profile.manualHrMax,
@@ -70,13 +80,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        title: Text('Edit Profile', style: AppTheme.heading(fontSize: 20, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           TextButton(
             onPressed: _save,
-            child: Text('Save', style: TextStyle(color: AppTheme.accent, fontSize: 16)),
+            child: Text('Save', style: AppTheme.body(color: AppTheme.accent, fontSize: 16, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -85,31 +95,82 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // HRmax preview
+            // HRmax preview card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.accent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.accent.withValues(alpha: 0.2)),
-              ),
+              decoration: AppTheme.glowCard(color: AppTheme.accent),
               child: Row(
                 children: [
-                  Icon(Icons.monitor_heart, color: AppTheme.accent, size: 32),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.monitor_heart, color: AppTheme.accent, size: 28),
+                  ),
                   const SizedBox(width: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Estimated HRmax',
-                          style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+                          style: AppTheme.body(fontSize: 13, color: AppTheme.textSecondary)),
+                      const SizedBox(height: 2),
                       Text('${_previewHrMax()} BPM',
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+                          style: AppTheme.heading(fontSize: 26)),
                     ],
                   ),
                 ],
               ),
             ),
+            // 9.3 — HRmax Formula picker
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Text('Formula',
+                      style: AppTheme.body(fontSize: 12, color: AppTheme.textMuted)),
+                  const Spacer(),
+                  DropdownButton<String>(
+                    value: _hrMaxFormula,
+                    dropdownColor: AppTheme.surface,
+                    style: AppTheme.mono(fontSize: 12, color: AppTheme.accent),
+                    underline: const SizedBox(),
+                    items: const [
+                      DropdownMenuItem(value: 'auto', child: Text('Auto (Sex-Based)')),
+                      DropdownMenuItem(value: 'tanaka', child: Text('Tanaka (208-0.7×age)')),
+                      DropdownMenuItem(value: 'fox', child: Text('Fox (220-age)')),
+                      DropdownMenuItem(value: 'custom', child: Text('Custom')),
+                    ],
+                    onChanged: (v) => setState(() => _hrMaxFormula = v ?? 'auto'),
+                  ),
+                ],
+              ),
+            ),
+            if (_hrMaxFormula == 'custom') ...[
+              const SizedBox(height: 8),
+              TextField(
+                keyboardType: TextInputType.number,
+                onChanged: (v) => setState(() => _customHrMax = int.tryParse(v)),
+                style: AppTheme.body(color: Colors.white, fontSize: 16),
+                decoration: InputDecoration(
+                  hintText: 'Enter max HR (e.g. 185)',
+                  hintStyle: AppTheme.body(color: AppTheme.textMuted, fontSize: 14),
+                  filled: true,
+                  fillColor: AppTheme.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 28),
 
             // Name
@@ -117,7 +178,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
-              style: const TextStyle(color: Colors.white, fontSize: 18),
+              style: AppTheme.body(color: Colors.white, fontSize: 18),
               decoration: _inputDeco('Your name'),
             ),
             const SizedBox(height: 24),
@@ -143,20 +204,27 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 return Expanded(
                   child: GestureDetector(
                     onTap: () => setState(() => _sex = sex),
-                    child: Container(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
-                        color: sel ? AppTheme.accent.withValues(alpha: 0.2) : AppTheme.surface,
+                        gradient: sel ? LinearGradient(
+                          colors: [
+                            AppTheme.accent.withValues(alpha: 0.2),
+                            AppTheme.accent.withValues(alpha: 0.08),
+                          ],
+                        ) : null,
+                        color: sel ? null : AppTheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: sel ? AppTheme.accent : AppTheme.surfaceLight,
-                          width: sel ? 2 : 1,
+                          width: sel ? 1.5 : 1,
                         ),
                       ),
                       child: Text(sex.displayName,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: AppTheme.body(
                             color: sel ? AppTheme.accent : AppTheme.textSecondary,
                             fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
                           )),
@@ -198,15 +266,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               final sel = level == _fitnessLevel;
               return GestureDetector(
                 onTap: () => setState(() => _fitnessLevel = level),
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: sel ? AppTheme.accent.withValues(alpha: 0.15) : AppTheme.surface,
-                    borderRadius: BorderRadius.circular(12),
+                    gradient: sel ? LinearGradient(
+                      colors: [
+                        AppTheme.accent.withValues(alpha: 0.15),
+                        AppTheme.accent.withValues(alpha: 0.05),
+                      ],
+                    ) : null,
+                    color: sel ? null : AppTheme.surface,
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: sel ? AppTheme.accent : AppTheme.surfaceLight,
-                      width: sel ? 2 : 1,
+                      color: sel ? AppTheme.accent.withValues(alpha: 0.5) : AppTheme.surfaceLight,
+                      width: sel ? 1.5 : 1,
                     ),
                   ),
                   child: Row(
@@ -216,16 +291,17 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(level.displayName,
-                                style: TextStyle(
+                                style: AppTheme.body(
                                   fontSize: 16, fontWeight: FontWeight.w600,
                                   color: sel ? Colors.white : AppTheme.textSecondary,
                                 )),
+                            const SizedBox(height: 2),
                             Text(level.description,
-                                style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                                style: AppTheme.body(fontSize: 12, color: AppTheme.textMuted)),
                           ],
                         ),
                       ),
-                      if (sel) Icon(Icons.check_circle, color: AppTheme.accent),
+                      if (sel) Icon(Icons.check_circle, color: AppTheme.accent, size: 22),
                     ],
                   ),
                 ),
@@ -244,20 +320,27 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 return Expanded(
                   child: GestureDetector(
                     onTap: () => setState(() => _role = role),
-                    child: Container(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
-                        color: sel ? color.withValues(alpha: 0.2) : AppTheme.surface,
+                        gradient: sel ? LinearGradient(
+                          colors: [
+                            color.withValues(alpha: 0.2),
+                            color.withValues(alpha: 0.08),
+                          ],
+                        ) : null,
+                        color: sel ? null : AppTheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: sel ? color : AppTheme.surfaceLight,
-                          width: sel ? 2 : 1,
+                          width: sel ? 1.5 : 1,
                         ),
                       ),
                       child: Text(role.displayName,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: AppTheme.body(
                             color: sel ? color : AppTheme.textSecondary,
                             fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
                           )),
@@ -274,26 +357,28 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Widget _label(String text) => Text(text,
-      style: TextStyle(color: AppTheme.textSecondary, fontSize: 15, fontWeight: FontWeight.w500));
+      style: AppTheme.body(color: AppTheme.textSecondary, fontSize: 15, fontWeight: FontWeight.w500));
 
   SliderThemeData get _sliderTheme => SliderThemeData(
         activeTrackColor: AppTheme.accent,
         inactiveTrackColor: AppTheme.surfaceLight,
         thumbColor: AppTheme.accent,
         overlayColor: AppTheme.accent.withValues(alpha: 0.2),
+        trackHeight: 4,
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
       );
 
   InputDecoration _inputDeco(String hint) => InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: AppTheme.textMuted),
+        hintStyle: AppTheme.body(color: AppTheme.textMuted),
         filled: true,
         fillColor: AppTheme.surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: AppTheme.accent),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

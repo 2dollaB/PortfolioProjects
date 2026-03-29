@@ -1,5 +1,6 @@
 /// User profile model — stores personal data for HR calculations
 class UserProfile {
+  final String id; // Unique ID for group sessions
   final String name;
   final int age;
   final Sex sex;
@@ -12,6 +13,7 @@ class UserProfile {
   int _dynamicHrMax; // Adjusted during workouts
 
   UserProfile({
+    String? id,
     this.name = '',
     required this.age,
     required this.sex,
@@ -21,7 +23,8 @@ class UserProfile {
     this.fitnessLevel = FitnessLevel.casual,
     this.role = UserRole.athlete,
     this.manualHrMax,
-  }) : _dynamicHrMax = 0 {
+  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+       _dynamicHrMax = 0 {
     _dynamicHrMax = calculatedHrMax;
   }
 
@@ -81,6 +84,7 @@ class UserProfile {
 
   /// Convert to JSON for local storage
   Map<String, dynamic> toJson() => {
+        'id': id,
         'name': name,
         'age': age,
         'sex': sex.name,
@@ -96,6 +100,7 @@ class UserProfile {
   /// Create from JSON (local storage)
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     final profile = UserProfile(
+      id: json['id'] as String?,
       name: json['name'] as String? ?? '',
       age: json['age'] as int,
       sex: Sex.values.firstWhere((e) => e.name == json['sex']),

@@ -30,14 +30,23 @@ class HrZones {
     5: '90-100%',
   };
 
+  /// Zone percentage ranges as tuples (min, max) for calculations
+  static const Map<int, (double, double)> ranges = {
+    1: (0.50, 0.60),
+    2: (0.60, 0.70),
+    3: (0.70, 0.80),
+    4: (0.80, 0.90),
+    5: (0.90, 1.00),
+  };
+
   /// Zone names
   static const Map<int, String> names = {
     0: 'Rest',
-    1: 'Very Light',
-    2: 'Light',
-    3: 'Moderate',
-    4: 'Hard',
-    5: 'Maximum',
+    1: 'Warmup',
+    2: 'Fat Burn',
+    3: 'Aerobic',
+    4: 'Anaerobic',
+    5: 'VO2 Max',
   };
 
   /// Zone icons
@@ -66,6 +75,15 @@ class HrZones {
   static int percentOfMax(int bpm, int hrMax) {
     if (hrMax <= 0) return 0;
     return (bpm / hrMax * 100).round().clamp(0, 200);
+  }
+
+  /// Get BPM range text for a zone, e.g. "138-155 bpm"
+  static String rangeText(int zone, int hrMax) {
+    if (hrMax <= 0 || zone <= 0) return '';
+    const thresholds = [0, 50, 60, 70, 80, 90, 100];
+    final low = (hrMax * thresholds[zone] / 100).round();
+    final high = zone < 5 ? (hrMax * thresholds[zone + 1] / 100).round() - 1 : hrMax;
+    return '$low–$high bpm';
   }
 
   /// Calculate HRmax using Tanaka formula (most accurate for general population)

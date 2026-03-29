@@ -1,28 +1,35 @@
 import 'dart:math' as math;
 import 'user_profile.dart';
+import 'workout_type.dart';
 
 /// A single recorded HR data point during a workout
 class HrDataPoint {
   final int bpm;
   final int zone;
   final DateTime timestamp;
+  final List<int> rrIntervals; // milliseconds (8.4 HRV)
 
   const HrDataPoint({
     required this.bpm,
     required this.zone,
     required this.timestamp,
+    this.rrIntervals = const [],
   });
 
   Map<String, dynamic> toJson() => {
         'bpm': bpm,
         'zone': zone,
         'timestamp': timestamp.toIso8601String(),
+        if (rrIntervals.isNotEmpty) 'rrIntervals': rrIntervals,
       };
 
   factory HrDataPoint.fromJson(Map<String, dynamic> json) => HrDataPoint(
         bpm: json['bpm'] as int,
         zone: json['zone'] as int,
         timestamp: DateTime.parse(json['timestamp'] as String),
+        rrIntervals: (json['rrIntervals'] as List?)
+            ?.map((e) => e as int)
+            .toList() ?? const [],
       );
 }
 
@@ -33,6 +40,11 @@ class Workout {
   final DateTime endTime;
   final List<HrDataPoint> dataPoints;
   final WorkoutAnalytics analytics;
+  final WorkoutType workoutType;
+  final List<Duration> lapMarkers;
+  final String? notes;
+  final int? rpe;        // 1-10 perceived exertion
+  final String? moodEmoji; // e.g. '😊'
 
   const Workout({
     required this.id,
@@ -40,9 +52,28 @@ class Workout {
     required this.endTime,
     required this.dataPoints,
     required this.analytics,
+    this.workoutType = WorkoutType.free,
+    this.lapMarkers = const [],
+    this.notes,
+    this.rpe,
+    this.moodEmoji,
   });
 
   Duration get duration => endTime.difference(startTime);
+
+  /// Create a copy with optional field overrides (7.3/7.4)
+  Workout copyWith({String? notes, int? rpe, String? moodEmoji}) => Workout(
+    id: id,
+    startTime: startTime,
+    endTime: endTime,
+    dataPoints: dataPoints,
+    analytics: analytics,
+    workoutType: workoutType,
+    lapMarkers: lapMarkers,
+    notes: notes ?? this.notes,
+    rpe: rpe ?? this.rpe,
+    moodEmoji: moodEmoji ?? this.moodEmoji,
+  );
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -50,6 +81,11 @@ class Workout {
         'endTime': endTime.toIso8601String(),
         'dataPoints': dataPoints.map((d) => d.toJson()).toList(),
         'analytics': analytics.toJson(),
+        'workoutType': workoutType.name,
+        'lapMarkers': lapMarkers.map((d) => d.inSeconds).toList(),
+        'notes': notes,
+        'rpe': rpe,
+        'moodEmoji': moodEmoji,
       };
 
   factory Workout.fromJson(Map<String, dynamic> json) => Workout(
@@ -61,6 +97,16 @@ class Workout {
             .toList(),
         analytics:
             WorkoutAnalytics.fromJson(json['analytics'] as Map<String, dynamic>),
+        workoutType: WorkoutType.values.firstWhere(
+          (e) => e.name == json['workoutType'],
+          orElse: () => WorkoutType.free,
+        ),
+        lapMarkers: (json['lapMarkers'] as List? ?? [])
+            .map((s) => Duration(seconds: s as int))
+            .toList(),
+        notes: json['notes'] as String?,
+        rpe: json['rpe'] as int?,
+        moodEmoji: json['moodEmoji'] as String?,
       );
 }
 

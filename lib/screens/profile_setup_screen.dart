@@ -20,6 +20,7 @@ class ProfileSetupScreen extends StatefulWidget {
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _pageController = PageController();
   int _currentPage = 0;
+  static const _totalPages = 3;
 
   // Form values
   String _name = '';
@@ -27,10 +28,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   Sex _sex = Sex.male;
   double _weight = 75.0;
   double _height = 178.0;
+  int? _restingHr; // Optional (null = not set)
   FitnessLevel _fitnessLevel = FitnessLevel.casual;
   UserRole _role = UserRole.athlete;
 
-  // Text controller to avoid rebuild issues
   late TextEditingController _nameController;
 
   @override
@@ -43,6 +44,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       _sex = p.sex;
       _weight = p.weightKg;
       _height = p.heightCm;
+      _restingHr = p.restingHr;
       _fitnessLevel = p.fitnessLevel;
       _role = p.role;
     }
@@ -57,10 +59,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   void _nextPage() {
-    // Dismiss keyboard
     FocusScope.of(context).unfocus();
-
-    if (_currentPage < 3) {
+    if (_currentPage < _totalPages - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOutCubic,
@@ -87,12 +87,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       sex: _sex,
       weightKg: _weight,
       heightCm: _height,
+      restingHr: _restingHr,
       fitnessLevel: _fitnessLevel,
       role: _role,
     );
     await StorageService.saveProfile(profile);
     widget.onComplete();
   }
+
+  int get _progressPercent => ((_currentPage + 1) / _totalPages * 100).round();
 
   @override
   Widget build(BuildContext context) {
@@ -101,42 +104,88 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // Top row: Back + Progress
+            // ── Top Bar: Back + BEATSYNC + step indicator ──
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  // Back button
                   if (_currentPage > 0)
-                    IconButton(
-                      onPressed: _previousPage,
-                      icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+                    GestureDetector(
+                      onTap: _previousPage,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.surface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppTheme.surfaceLight),
+                        ),
+                        child: const Icon(Icons.arrow_back_ios_rounded,
+                            size: 16, color: AppTheme.textSecondary),
+                      ),
                     )
                   else
-                    const SizedBox(width: 48),
+                    const SizedBox(width: 36),
+                  const Spacer(),
+                  Text('BEATSYNC',
+                      style: AppTheme.mono(
+                        fontSize: 15, letterSpacing: 3,
+                        fontWeight: FontWeight.w700, color: AppTheme.textPrimary,
+                      )),
+                  const Spacer(),
+                  const SizedBox(width: 36),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
 
-                  // Progress indicator
-                  Expanded(
-                    child: Row(
-                      children: List.generate(4, (index) {
-                        return Expanded(
-                          child: Container(
-                            height: 4,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(
-                              color: index <= _currentPage
-                                  ? AppTheme.accent
-                                  : AppTheme.surfaceLight,
-                              borderRadius: BorderRadius.circular(2),
+            // ── Step Progress ──
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('STEP ${_currentPage + 1} OF $_totalPages',
+                          style: AppTheme.mono(
+                            fontSize: 11, letterSpacing: 2,
+                            color: AppTheme.textMuted, fontWeight: FontWeight.w600,
+                          )),
+                      Text('$_progressPercent% Complete',
+                          style: AppTheme.mono(
+                            fontSize: 11,
+                            color: AppTheme.accent, fontWeight: FontWeight.w600,
+                          )),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Progress bar
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: SizedBox(
+                      height: 4,
+                      child: Row(
+                        children: List.generate(_totalPages, (index) {
+                          final isActive = index <= _currentPage;
+                          return Expanded(
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: EdgeInsets.only(left: index > 0 ? 4 : 0),
+                              decoration: BoxDecoration(
+                                gradient: isActive ? const LinearGradient(
+                                  colors: [AppTheme.accent, AppTheme.accentLight],
+                                ) : null,
+                                color: isActive ? null : AppTheme.surfaceLight,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
-                          ),
-                        );
-                      }),
+                          );
+                        }),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 48),
                 ],
               ),
             ),
@@ -148,29 +197,52 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 onPageChanged: (page) => setState(() => _currentPage = page),
                 children: [
-                  _buildNameAgePage(),
-                  _buildBodyPage(),
+                  _buildPersonalPage(),
                   _buildFitnessPage(),
                   _buildRolePage(),
                 ],
               ),
             ),
 
-            // Bottom button
+            // ── Bottom: Continue button + Terms ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
               child: SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
                   onPressed: _nextPage,
-                  child: Text(
-                    _currentPage < 3 ? 'Continue' : 'Start Training',
-                    style: const TextStyle(fontSize: 18),
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    backgroundColor: AppTheme.accent,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _currentPage < _totalPages - 1 ? 'Continue' : 'Start Training',
+                        style: AppTheme.heading(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.white),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        _currentPage < _totalPages - 1 ? Icons.arrow_forward : Icons.bolt,
+                        size: 20, color: Colors.white,
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
+            if (_currentPage == 0)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'By continuing, you agree to our Terms of Service',
+                  style: AppTheme.body(fontSize: 11, color: AppTheme.textMuted),
+                ),
+              )
+            else
+              const SizedBox(height: 12),
           ],
         ),
       ),
@@ -178,100 +250,253 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   // ═══════════════════════════════════════════
-  // PAGE 1: Name, Age, Sex
+  // PAGE 1: Personal Profile (Name, Age, Sex, Weight, Height)
   // ═══════════════════════════════════════════
-  Widget _buildNameAgePage() {
+  Widget _buildPersonalPage() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 24),
-          Text(
-            'Welcome to',
-            style: TextStyle(fontSize: 16, color: AppTheme.textSecondary),
-          ),
-          const Text(
-            'BeatSync',
-            style: TextStyle(
-              fontSize: 36,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Let\'s personalize your experience',
-            style: TextStyle(fontSize: 14, color: AppTheme.textMuted),
-          ),
-          const SizedBox(height: 36),
+          const SizedBox(height: 20),
+          Text('Personal Profile',
+              style: AppTheme.body(fontSize: 12, color: AppTheme.textMuted, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 4),
+          Text("Let's build your rhythm",
+              style: AppTheme.heading(fontSize: 26)),
+          const SizedBox(height: 28),
 
-          // Name
-          Text('Your name', style: _labelStyle),
+          // Full Name
+          Text('FULL NAME', style: _labelStyle),
           const SizedBox(height: 8),
           TextField(
             controller: _nameController,
             onChanged: (v) => _name = v,
-            style: const TextStyle(color: Colors.white, fontSize: 18),
+            style: AppTheme.body(color: Colors.white, fontSize: 16),
             decoration: _inputDecoration('Enter your name'),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
 
-          // Age
-          Text('Age: $_age years', style: _labelStyle),
-          const SizedBox(height: 8),
-          SliderTheme(
-            data: _sliderTheme,
-            child: Slider(
-              value: _age.toDouble(),
-              min: 14,
-              max: 80,
-              divisions: 66,
-              label: '$_age',
-              onChanged: (v) => setState(() => _age = v.round()),
-            ),
-          ),
-          const SizedBox(height: 28),
-
-          // Sex
-          Text('Sex', style: _labelStyle),
-          const SizedBox(height: 12),
+          // Age + Gender — side by side
           Row(
-            children: Sex.values.map((sex) {
-              final isSelected = sex == _sex;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _sex = sex),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppTheme.accent.withValues(alpha: 0.2)
-                          : AppTheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppTheme.accent
-                            : AppTheme.surfaceLight,
-                        width: isSelected ? 2 : 1,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('AGE', style: _labelStyle),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppTheme.surfaceLight),
+                      ),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () { if (_age > 14) setState(() => _age--); },
+                            child: Icon(Icons.remove, size: 18, color: AppTheme.textMuted),
+                          ),
+                          Expanded(
+                            child: Text('$_age',
+                                textAlign: TextAlign.center,
+                                style: AppTheme.heading(fontSize: 18)),
+                          ),
+                          GestureDetector(
+                            onTap: () { if (_age < 80) setState(() => _age++); },
+                            child: Icon(Icons.add, size: 18, color: AppTheme.textMuted),
+                          ),
+                        ],
                       ),
                     ),
-                    child: Text(
-                      sex.displayName,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: isSelected ? AppTheme.accent : AppTheme.textSecondary,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w400,
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('GENDER', style: _labelStyle),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppTheme.surfaceLight),
+                      ),
+                      child: DropdownButton<Sex>(
+                        value: _sex,
+                        isExpanded: true,
+                        underline: const SizedBox(),
+                        dropdownColor: AppTheme.surfaceActive,
+                        style: AppTheme.body(color: Colors.white, fontSize: 16),
+                        items: Sex.values.map((s) => DropdownMenuItem(
+                          value: s,
+                          child: Text(s.displayName),
+                        )).toList(),
+                        onChanged: (v) { if (v != null) setState(() => _sex = v); },
                       ),
                     ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Weight + Height — side by side
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('WEIGHT (KG)', style: _labelStyle),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppTheme.surfaceLight),
+                      ),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () { if (_weight > 40) setState(() => _weight -= 0.5); },
+                            child: Icon(Icons.remove, size: 18, color: AppTheme.textMuted),
+                          ),
+                          Expanded(
+                            child: Text(_weight.toStringAsFixed(1),
+                                textAlign: TextAlign.center,
+                                style: AppTheme.heading(fontSize: 18)),
+                          ),
+                          GestureDetector(
+                            onTap: () { if (_weight < 160) setState(() => _weight += 0.5); },
+                            child: Icon(Icons.add, size: 18, color: AppTheme.textMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('HEIGHT (CM)', style: _labelStyle),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppTheme.surfaceLight),
+                      ),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () { if (_height > 140) setState(() => _height--); },
+                            child: Icon(Icons.remove, size: 18, color: AppTheme.textMuted),
+                          ),
+                          Expanded(
+                            child: Text('${_height.round()}',
+                                textAlign: TextAlign.center,
+                                style: AppTheme.heading(fontSize: 18)),
+                          ),
+                          GestureDetector(
+                            onTap: () { if (_height < 220) setState(() => _height++); },
+                            child: Icon(Icons.add, size: 18, color: AppTheme.textMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // ── Resting Heart Rate (optional) ──
+          Row(
+            children: [
+              Text('RESTING HR (OPTIONAL)', style: _labelStyle),
+              const SizedBox(width: 8),
+              const Tooltip(
+                message: 'Measure your HR lying down in the morning',
+                child: Icon(Icons.info_outline, size: 14, color: AppTheme.textMuted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppTheme.surfaceLight),
+            ),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    final current = _restingHr ?? 60;
+                    if (current > 30) setState(() => _restingHr = current - 1);
+                  },
+                  child: Icon(Icons.remove, size: 18, color: AppTheme.textMuted),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        _restingHr != null ? '$_restingHr' : '--',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.heading(
+                          fontSize: 18,
+                          color: _restingHr != null && _restingHr! <= 60
+                              ? AppTheme.success
+                              : Colors.white,
+                        ),
+                      ),
+                      Text('bpm',
+                          style: AppTheme.mono(
+                            fontSize: 10, color: AppTheme.textMuted, letterSpacing: 1,
+                          )),
+                    ],
                   ),
                 ),
-              );
-            }).toList(),
+                GestureDetector(
+                  onTap: () {
+                    final current = _restingHr ?? 59;
+                    if (current < 120) setState(() => _restingHr = current + 1);
+                  },
+                  child: Icon(Icons.add, size: 18, color: AppTheme.textMuted),
+                ),
+              ],
+            ),
           ),
+          if (_restingHr != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                _restingHr! <= 60
+                    ? '✓ Excellent — well-trained heart'
+                    : _restingHr! <= 80
+                        ? 'Normal range (60–80 bpm)'
+                        : 'Higher than average — measure after full rest',
+                style: AppTheme.body(
+                  fontSize: 11,
+                  color: _restingHr! <= 60 ? AppTheme.success : AppTheme.textMuted,
+                ),
+              ),
+            ),
           const SizedBox(height: 24),
         ],
       ),
@@ -279,92 +504,147 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   // ═══════════════════════════════════════════
-  // PAGE 2: Weight, Height
+  // PAGE 2: Role Selection (I AM AN...)
   // ═══════════════════════════════════════════
-  Widget _buildBodyPage() {
+  Widget _buildRolePage() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 24),
-          const Text(
-            'Body Metrics',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
-          ),
+          const SizedBox(height: 20),
+          Text('Almost there!',
+              style: AppTheme.body(fontSize: 12, color: AppTheme.textMuted, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 4),
+          Text('Choose your role',
+              style: AppTheme.heading(fontSize: 26)),
           const SizedBox(height: 8),
           Text(
-            'Used for accurate calorie calculation',
-            style: TextStyle(fontSize: 14, color: AppTheme.textMuted),
+            'This determines your BeatSync experience',
+            style: AppTheme.body(fontSize: 14, color: AppTheme.textMuted),
           ),
-          const SizedBox(height: 36),
+          const SizedBox(height: 12),
+          Text('I AM AN', style: _labelStyle),
+          const SizedBox(height: 12),
 
-          // Weight
-          Text('Weight: ${_weight.toStringAsFixed(1)} kg', style: _labelStyle),
-          const SizedBox(height: 8),
-          SliderTheme(
-            data: _sliderTheme,
-            child: Slider(
-              value: _weight,
-              min: 40,
-              max: 160,
-              divisions: 240,
-              label: '${_weight.toStringAsFixed(1)} kg',
-              onChanged: (v) =>
-                  setState(() => _weight = (v * 2).round() / 2),
+          Row(
+            children: UserRole.values.map((role) {
+              final isSelected = role == _role;
+              final icons = {
+                UserRole.athlete: Icons.favorite,
+                UserRole.trainer: Icons.groups,
+              };
+
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _role = role),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 28),
+                    decoration: BoxDecoration(
+                      gradient: isSelected ? LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppTheme.accent.withValues(alpha: 0.2),
+                          AppTheme.accent.withValues(alpha: 0.05),
+                        ],
+                      ) : null,
+                      color: isSelected ? null : AppTheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected ? AppTheme.accent : AppTheme.surfaceLight,
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppTheme.accent.withValues(alpha: 0.15)
+                                : AppTheme.surfaceLight,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(icons[role],
+                            color: isSelected ? AppTheme.accent : AppTheme.textMuted,
+                            size: 32),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(role.displayName.toUpperCase(),
+                            style: AppTheme.mono(
+                              fontSize: 14, fontWeight: FontWeight.w700,
+                              letterSpacing: 1.5,
+                              color: isSelected ? Colors.white : AppTheme.textSecondary,
+                            )),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 28),
+
+          // Role description
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: AppTheme.boldCard(),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, size: 18, color: AppTheme.textMuted),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _role == UserRole.athlete
+                        ? 'Connect your HR monitor, join group sessions, and track your workouts with real-time analytics.'
+                        : 'Host group sessions, display HR on TV screens, and manage your athletes in real-time.',
+                    style: AppTheme.body(fontSize: 13, color: AppTheme.textSecondary),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 32),
-
-          // Height
-          Text('Height: ${_height.round()} cm', style: _labelStyle),
-          const SizedBox(height: 8),
-          SliderTheme(
-            data: _sliderTheme,
-            child: Slider(
-              value: _height,
-              min: 140,
-              max: 220,
-              divisions: 80,
-              label: '${_height.round()} cm',
-              onChanged: (v) => setState(() => _height = v.roundToDouble()),
-            ),
-          ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
 
           // HRmax Preview
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppTheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.accent.withValues(alpha: 0.2)),
-            ),
+            decoration: AppTheme.glowCard(color: AppTheme.accent),
             child: Row(
               children: [
-                Icon(Icons.monitor_heart, color: AppTheme.accent, size: 32),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.monitor_heart, color: AppTheme.accent, size: 28),
+                ),
                 const SizedBox(width: 16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Estimated HRmax',
-                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                    ),
-                    Text(
-                      '${_calculatePreviewHrMax()} BPM',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
+                    Text('Your Estimated HRmax',
+                        style: AppTheme.body(fontSize: 12, color: AppTheme.textSecondary)),
+                    const SizedBox(height: 2),
+                    Text('${_calculatePreviewHrMax()} BPM',
+                        style: AppTheme.heading(fontSize: 24, color: AppTheme.accent)),
                   ],
                 ),
                 const Spacer(),
-                Text(
-                  _sex == Sex.female ? 'Gulati' : 'Tanaka',
-                  style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceLight,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    _sex == Sex.female ? 'Gulati' : 'Tanaka',
+                    style: AppTheme.mono(color: AppTheme.textMuted, fontSize: 11),
+                  ),
                 ),
               ],
             ),
@@ -382,25 +662,26 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   // ═══════════════════════════════════════════
-  // PAGE 3: Fitness Level
+  // PAGE 3(now 2): Fitness Level - expanded
   // ═══════════════════════════════════════════
   Widget _buildFitnessPage() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 24),
-          const Text(
-            'Fitness Level',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
-          ),
+          const SizedBox(height: 20),
+          Text('Training Profile',
+              style: AppTheme.body(fontSize: 12, color: AppTheme.textMuted, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 4),
+          Text('What\'s your fitness level?',
+              style: AppTheme.heading(fontSize: 26)),
           const SizedBox(height: 8),
           Text(
-            'Helps calibrate your Training Effect',
-            style: TextStyle(fontSize: 14, color: AppTheme.textMuted),
+            'This helps calibrate your Training Effect and calorie calculations',
+            style: AppTheme.body(fontSize: 14, color: AppTheme.textMuted),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
           ...FitnessLevel.values.map((level) {
             final isSelected = level == _fitnessLevel;
@@ -409,21 +690,30 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               FitnessLevel.casual: Icons.directions_run,
               FitnessLevel.advanced: Icons.fitness_center,
             };
+            final descriptions = {
+              FitnessLevel.beginner: 'New to regular exercise. You\'ll see results faster and need more recovery between sessions.',
+              FitnessLevel.casual: 'You exercise 2-3 times per week. A balanced level for most active people.',
+              FitnessLevel.advanced: 'You train 5+ times per week. Higher threshold needed for training effect.',
+            };
 
             return GestureDetector(
               onTap: () => setState(() => _fitnessLevel = level),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: 14),
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppTheme.accent.withValues(alpha: 0.15)
-                      : AppTheme.surface,
+                  gradient: isSelected ? LinearGradient(
+                    colors: [
+                      AppTheme.accent.withValues(alpha: 0.15),
+                      AppTheme.accent.withValues(alpha: 0.05),
+                    ],
+                  ) : null,
+                  color: isSelected ? null : AppTheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isSelected ? AppTheme.accent : AppTheme.surfaceLight,
-                    width: isSelected ? 2 : 1,
+                    color: isSelected ? AppTheme.accent.withValues(alpha: 0.5) : AppTheme.surfaceLight,
+                    width: isSelected ? 1.5 : 1,
                   ),
                 ),
                 child: Row(
@@ -431,9 +721,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppTheme.accent.withValues(alpha: 0.2)
-                            : AppTheme.surfaceLight,
+                        gradient: isSelected ? LinearGradient(
+                          colors: [
+                            AppTheme.accent.withValues(alpha: 0.25),
+                            AppTheme.accent.withValues(alpha: 0.1),
+                          ],
+                        ) : null,
+                        color: isSelected ? null : AppTheme.surfaceLight,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -447,131 +741,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            level.displayName,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? Colors.white
-                                  : AppTheme.textSecondary,
-                            ),
-                          ),
+                          Text(level.displayName,
+                              style: AppTheme.body(
+                                fontSize: 17, fontWeight: FontWeight.w600,
+                                color: isSelected ? Colors.white : AppTheme.textSecondary,
+                              )),
                           const SizedBox(height: 4),
-                          Text(
-                            level.description,
-                            style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                          ),
+                          Text(descriptions[level]!,
+                              style: AppTheme.body(fontSize: 12, color: AppTheme.textMuted)),
                         ],
                       ),
                     ),
                     if (isSelected)
-                      Icon(Icons.check_circle, color: AppTheme.accent),
-                  ],
-                ),
-              ),
-            );
-          }),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════
-  // PAGE 4: Role
-  // ═══════════════════════════════════════════
-  Widget _buildRolePage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 24),
-          const Text(
-            'Your Role',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'How will you use BeatSync?',
-            style: TextStyle(fontSize: 14, color: AppTheme.textMuted),
-          ),
-          const SizedBox(height: 32),
-
-          ...UserRole.values.map((role) {
-            final isSelected = role == _role;
-            final icons = {
-              UserRole.athlete: Icons.favorite,
-              UserRole.trainer: Icons.groups,
-            };
-            final colors = {
-              UserRole.athlete: AppTheme.accent,
-              UserRole.trainer: const Color(0xFF22C55E),
-            };
-            final details = {
-              UserRole.athlete: 'Connect your HR monitor, join group sessions, and track your workouts.',
-              UserRole.trainer: 'Host group sessions, display HR on TV, and manage your athletes.',
-            };
-            final color = colors[role] ?? AppTheme.accent;
-
-            return GestureDetector(
-              onTap: () => setState(() => _role = role),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? color.withValues(alpha: 0.15)
-                      : AppTheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isSelected ? color : AppTheme.surfaceLight,
-                    width: isSelected ? 2 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? color.withValues(alpha: 0.2)
-                            : AppTheme.surfaceLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        icons[role],
-                        color: isSelected ? color : AppTheme.textMuted,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            role.displayName,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? Colors.white
-                                  : AppTheme.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            details[role]!,
-                            style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (isSelected)
-                      Icon(Icons.check_circle, color: color),
+                      Icon(Icons.check_circle, color: AppTheme.accent, size: 22),
                   ],
                 ),
               ),
@@ -586,33 +768,26 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   // ═══════════════════════════════════════════
   // SHARED STYLES
   // ═══════════════════════════════════════════
-  TextStyle get _labelStyle => TextStyle(
-        color: AppTheme.textSecondary,
-        fontSize: 15,
-        fontWeight: FontWeight.w500,
-      );
-
-  SliderThemeData get _sliderTheme => SliderThemeData(
-        activeTrackColor: AppTheme.accent,
-        inactiveTrackColor: AppTheme.surfaceLight,
-        thumbColor: AppTheme.accent,
-        overlayColor: AppTheme.accent.withValues(alpha: 0.2),
-        valueIndicatorColor: AppTheme.accent,
-        valueIndicatorTextStyle: const TextStyle(color: Colors.white),
-      );
+  TextStyle get _labelStyle => AppTheme.mono(
+    color: AppTheme.textMuted, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5,
+  );
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: AppTheme.textMuted),
+        hintStyle: AppTheme.body(color: AppTheme.textMuted),
         filled: true,
         fillColor: AppTheme.surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: AppTheme.surfaceLight),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: AppTheme.surfaceLight),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.accent),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppTheme.accent),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       );

@@ -16,6 +16,10 @@ class BleHrService {
   static final Guid _hrServiceUuid = Guid('180D');
   static final Guid _hrCharacteristicUuid = Guid('2A37');
 
+  // 10.1 — Battery Service
+  static final Guid _batteryServiceUuid = Guid('180F');
+  static final Guid _batteryLevelUuid = Guid('2A19');
+
   // State
   BluetoothDevice? _connectedDevice;
   StreamSubscription? _scanSubscription;
@@ -36,6 +40,19 @@ class BleHrService {
 
   bool get isConnected => _connectedDevice != null;
   String? get connectedDeviceName => _connectedDevice?.platformName;
+
+  // 10.1 — Battery level (-1 = unknown)
+  int _batteryLevel = -1;
+  int get batteryLevel => _batteryLevel;
+  final _batteryController = StreamController<int>.broadcast();
+  Stream<int> get batteryStream => _batteryController.stream;
+
+  // 10.2 — RSSI signal strength
+  int _rssi = 0;
+  int get rssi => _rssi;
+  final _rssiController = StreamController<int>.broadcast();
+  Stream<int> get rssiStream => _rssiController.stream;
+  Timer? _rssiTimer;
 
   /// Start scanning for BLE Heart Rate devices only
   Future<void> startScan({Duration timeout = const Duration(seconds: 15)}) async {
@@ -102,6 +119,24 @@ class BleHrService {
       if (found) {
         debugPrint('[BeatSync] ✅ HR data streaming!');
         _connectionStateController.add(BleConnectionState.connected);
+
+        // 10.1 — Read battery level
+        _readBatteryLevel(device);
+
+        // 10.2 — Start RSSI polling every 10s
+        _rssiTimer?.cancel();
+        _rssiTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+          try {
+            final r = await device.readRssi();
+            _rssi = r;
+            _rssiController.add(r);
+          } catch (_) {}
+        });
+        // Initial read
+        try {
+          _rssi = await device.readRssi();
+          _rssiController.add(_rssi);
+        } catch (_) {}
       } else {
         debugPrint('[BeatSync] ❌ HR Service not found');
         await device.disconnect();
@@ -143,6 +178,30 @@ class BleHrService {
     return false;
   }
 
+  /// 10.1 — Read battery level from BLE Battery Service
+  Future<void> _readBatteryLevel(BluetoothDevice device) async {
+    try {
+      final services = await device.discoverServices();
+      for (final service in services) {
+        if (service.uuid == _batteryServiceUuid) {
+          for (final char in service.characteristics) {
+            if (char.uuid == _batteryLevelUuid) {
+              final value = await char.read();
+              if (value.isNotEmpty) {
+                _batteryLevel = value[0];
+                _batteryController.add(_batteryLevel);
+                debugPrint('[BeatSync] 🔋 Battery: $_batteryLevel%');
+              }
+              return;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[BeatSync] Battery read failed: $e');
+    }
+  }
+
   /// Parse raw BLE Heart Rate Measurement data
   HrData? _parseHrData(List<int> data) {
     if (data.isEmpty) return null;
@@ -180,12 +239,16 @@ class BleHrService {
 
   /// Disconnect from current device
   Future<void> disconnect() async {
+    _rssiTimer?.cancel();
+    _rssiTimer = null;
     await _hrSubscription?.cancel();
     _hrSubscription = null;
     await _connectionSubscription?.cancel();
     _connectionSubscription = null;
     await _connectedDevice?.disconnect();
     _connectedDevice = null;
+    _batteryLevel = -1;
+    _rssi = 0;
     _connectionStateController.add(BleConnectionState.disconnected);
   }
 
@@ -196,6 +259,8 @@ class BleHrService {
     await _hrDataController.close();
     await _connectionStateController.close();
     await _scanResultsController.close();
+    await _batteryController.close();
+    await _rssiController.close();
   }
 }
 
