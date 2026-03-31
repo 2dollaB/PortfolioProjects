@@ -50,6 +50,17 @@ dependencies:
   timezone: ^0.9.4
   flutter_tts: ^4.2.5
 
+  # Sprint 1: State Management
+  flutter_riverpod: ^2.6.1
+
+  # Sprint 2: Firebase + Auth
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.5.2
+  cloud_firestore: ^5.6.6
+  google_sign_in: ^6.2.2
+  sign_in_with_apple: ^6.1.4
+  crypto: ^3.0.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

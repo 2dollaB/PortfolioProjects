@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Users ───────────────────────────────────
+    // Users can only read/write their own profile
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ─── Workouts ────────────────────────────────
+    // Users can only access their own workouts
+    match /workouts/{workoutId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == resource.data.uid;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.uid;
+    }
+
+    // ─── Studios (Phase 2 — prepared) ────────────
+    match /studios/{studioId} {
+      // Anyone authenticated can read studio info (for joining)
+      allow read: if request.auth != null;
+      // Only owner can write
+      allow write: if request.auth != null
+        && request.auth.uid == resource.data.ownerId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.ownerId;
+
+      // Studio members subcollection
+      match /members/{memberId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null
+          && (request.auth.uid == memberId
+              || request.auth.uid == get(/databases/$(database)/documents/studios/$(studioId)).data.ownerId);
+      }
+    }
+
+    // ─── Sessions (Phase 2 — prepared) ───────────
+    match /sessions/{sessionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.auth.uid == resource.data.trainerId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.trainerId;
+
+      // Session participants (HR streaming)
+      match /participants/{participantId} {
+        allow read: if request.auth != null;
+        // Participant can write their own data
+        allow write: if request.auth != null
+          && request.auth.uid == participantId;
+      }
+    }
+
+    // Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

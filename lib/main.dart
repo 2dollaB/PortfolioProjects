@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'config/theme.dart';
-import 'models/user_profile.dart';
+import 'providers/providers.dart';
+import 'repositories/user_repository.dart';
+import 'repositories/workout_repository.dart';
+import 'screens/login_screen.dart';
 import 'screens/main_nav_shell.dart';
 import 'screens/onboarding_tutorial_screen.dart';
 import 'screens/profile_setup_screen.dart';
 import 'services/ble_hr_service.dart';
 import 'services/foreground_service.dart';
+import 'services/migration_service.dart';
 import 'services/notification_service.dart';
-import 'services/storage_service.dart';
 import 'services/unit_preference.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Firebase init
+  await Firebase.initializeApp();
+
+  // BLE + services init
   await initBle();
   initForegroundTask();
   await NotificationService.init();
@@ -29,87 +37,149 @@ void main() async {
     systemNavigationBarIconBrightness: Brightness.light,
   ));
 
-  final profile = await StorageService.loadProfile();
-  final showOnboarding = await OnboardingTutorialScreen.shouldShow();
-
-  // 9.4 — Load saved theme mode
-  final prefs = await SharedPreferences.getInstance();
-  final savedTheme = prefs.getString('theme_mode') ?? 'dark';
-  final themeMode = savedTheme == 'light' ? ThemeMode.light
-      : savedTheme == 'system' ? ThemeMode.system
-      : ThemeMode.dark;
-
-  runApp(BeatSyncApp(
-    initialProfile: profile,
-    showOnboarding: showOnboarding,
-    initialThemeMode: themeMode,
-  ));
+  runApp(const ProviderScope(child: BeatSyncApp()));
 }
 
-class BeatSyncApp extends StatefulWidget {
-  final UserProfile? initialProfile;
-  final bool showOnboarding;
-  final ThemeMode initialThemeMode;
-
-  const BeatSyncApp({
-    super.key,
-    this.initialProfile,
-    this.showOnboarding = false,
-    this.initialThemeMode = ThemeMode.dark,
-  });
-
-  /// Global key for theme switching from settings
-  static final GlobalKey<BeatSyncAppState> appKey = GlobalKey<BeatSyncAppState>();
+class BeatSyncApp extends ConsumerStatefulWidget {
+  const BeatSyncApp({super.key});
 
   @override
-  State<BeatSyncApp> createState() => BeatSyncAppState();
+  ConsumerState<BeatSyncApp> createState() => _BeatSyncAppState();
 }
 
-class BeatSyncAppState extends State<BeatSyncApp> {
-  UserProfile? _profile;
-  late bool _showOnboarding;
-  late ThemeMode _themeMode;
-
+class _BeatSyncAppState extends ConsumerState<BeatSyncApp> {
   @override
   void initState() {
     super.initState();
-    _profile = widget.initialProfile;
-    _showOnboarding = widget.showOnboarding;
-    _themeMode = widget.initialThemeMode;
-  }
-
-  void _onProfileComplete() async {
-    final profile = await StorageService.loadProfile();
-    setState(() => _profile = profile);
-  }
-
-  /// 9.4 — Called from settings to toggle theme
-  void setThemeMode(ThemeMode mode) async {
-    setState(() => _themeMode = mode);
-    final prefs = await SharedPreferences.getInstance();
-    final key = mode == ThemeMode.light ? 'light'
-        : mode == ThemeMode.system ? 'system' : 'dark';
-    await prefs.setString('theme_mode', key);
+    // Load saved theme
+    ref.read(themeModeProvider.notifier).loadSaved();
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp(
-      key: BeatSyncApp.appKey,
       title: 'BeatSync',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: _themeMode,
-      home: _showOnboarding
-          ? OnboardingTutorialScreen(
-              onComplete: () => setState(() => _showOnboarding = false))
-          : _profile == null
-              ? ProfileSetupScreen(onComplete: _onProfileComplete)
-              : MainNavShell(
-                  profile: _profile!,
-                  onProfileUpdated: (p) => setState(() => _profile = p),
-                ),
+      themeMode: themeMode,
+      home: const _AuthGate(),
+    );
+  }
+}
+
+/// Routes based on auth state:
+/// Not logged in → LoginScreen
+/// Logged in, no profile → ProfileSetupScreen
+/// Logged in + profile → MainNavShell
+class _AuthGate extends ConsumerStatefulWidget {
+  const _AuthGate();
+
+  @override
+  ConsumerState<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends ConsumerState<_AuthGate> {
+  bool _migrationDone = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authStateProvider);
+
+    return authState.when(
+      loading: () => const Scaffold(
+        backgroundColor: AppTheme.background,
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => const LoginScreen(),
+      data: (user) {
+        if (user == null) return const LoginScreen();
+
+        // Trigger migration on first authenticated build
+        if (!_migrationDone) {
+          _migrationDone = true;
+          _runMigration(user.uid);
+        }
+
+        return const _ProfileGate();
+      },
+    );
+  }
+
+  Future<void> _runMigration(String uid) async {
+    final userRepo = ref.read(userRepositoryProvider);
+    final workoutRepo = ref.read(workoutRepositoryProvider);
+    final migration = MigrationService(userRepo, workoutRepo);
+    await migration.migrateIfNeeded(uid);
+  }
+}
+
+/// Once authenticated, check if profile exists
+class _ProfileGate extends ConsumerStatefulWidget {
+  const _ProfileGate();
+
+  @override
+  ConsumerState<_ProfileGate> createState() => _ProfileGateState();
+}
+
+class _ProfileGateState extends ConsumerState<_ProfileGate> {
+  bool _showOnboarding = false;
+  bool _checkedOnboarding = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    final should = await OnboardingTutorialScreen.shouldShow();
+    if (mounted) setState(() {
+      _showOnboarding = should;
+      _checkedOnboarding = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profileAsync = ref.watch(profileProvider);
+
+    if (!_checkedOnboarding) {
+      return const Scaffold(
+        backgroundColor: AppTheme.background,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_showOnboarding) {
+      return OnboardingTutorialScreen(
+        onComplete: () => setState(() => _showOnboarding = false),
+      );
+    }
+
+    return profileAsync.when(
+      loading: () => const Scaffold(
+        backgroundColor: AppTheme.background,
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => ProfileSetupScreen(
+        onComplete: () => ref.invalidate(profileProvider),
+      ),
+      data: (profile) {
+        if (profile == null) {
+          return ProfileSetupScreen(
+            onComplete: () => ref.invalidate(profileProvider),
+          );
+        }
+        return MainNavShell(
+          profile: profile,
+          onProfileUpdated: (p) async {
+            await ref.read(profileProvider.notifier).updateProfile(p);
+          },
+        );
+      },
     );
   }
 }

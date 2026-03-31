@@ -1,22 +1,23 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/theme.dart';
-import '../main.dart';
+import '../providers/theme_provider.dart';
 import '../services/audio_cue_service.dart';
 import '../services/health_sync_service.dart';
 import '../services/notification_service.dart';
 import '../services/unit_preference.dart';
 
 /// Settings screen — 6.2 units, 6.3 health sync, 6.4 notifications
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // Units (6.2)
   UnitSystem _unitSystem = UnitPreference.current;
 
@@ -626,8 +627,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: GestureDetector(
         onTap: () {
           HapticFeedback.selectionClick();
-          final state = context.findAncestorStateOfType<BeatSyncAppState>();
-          state?.setThemeMode(mode);
+          ref.read(themeModeProvider.notifier).setThemeMode(mode);
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
