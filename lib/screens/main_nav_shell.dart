@@ -1,17 +1,20 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../config/theme.dart';
+import '../config/app_colors.dart';
 import '../models/user_profile.dart';
 import 'home_screen.dart';
 import 'workout_history_screen.dart';
-import 'trends_screen.dart';
 import 'settings_screen.dart';
+import 'trainer_home_screen.dart';
+import 'member_list_screen.dart';
+import 'studio_analytics_screen.dart';
+import 'tv_host_screen.dart';
 
-/// 7.3 — Main navigation shell with frosted bottom nav bar
+/// Role-aware bottom nav shell.
+/// Athlete tabs: Home · History · Profile
+/// Trainer tabs: Home · Members · Analytics · TV
 class MainNavShell extends StatefulWidget {
   final UserProfile profile;
-  final Function(UserProfile)? onProfileUpdated;
+  final void Function(UserProfile)? onProfileUpdated;
 
   const MainNavShell({
     super.key,
@@ -24,110 +27,84 @@ class MainNavShell extends StatefulWidget {
 }
 
 class _MainNavShellState extends State<MainNavShell> {
-  int _currentIndex = 0;
+  int _index = 0;
 
-  late final List<Widget> _screens;
+  bool get _isTrainer => widget.profile.role == UserRole.trainer;
 
-  @override
-  void initState() {
-    super.initState();
-    _screens = [
-      HomeScreen(
-        profile: widget.profile,
-        onProfileUpdated: widget.onProfileUpdated,
-      ),
-      const WorkoutHistoryScreen(),
-      const TrendsScreen(),
-      const SettingsScreen(),
-    ];
-  }
+  List<Widget> get _screens => _isTrainer
+      ? [
+          TrainerHomeScreen(profile: widget.profile),
+          const MemberListScreen(),
+          const StudioAnalyticsScreen(),
+          const TvHostScreen(),
+        ]
+      : [
+          HomeScreen(
+            profile: widget.profile,
+            onProfileUpdated: widget.onProfileUpdated,
+          ),
+          const WorkoutHistoryScreen(),
+          SettingsScreen(profile: widget.profile),
+        ];
+
+  List<NavigationDestination> get _tabs => _isTrainer
+      ? const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.groups_outlined),
+            selectedIcon: Icon(Icons.groups_rounded),
+            label: 'Members',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart_rounded),
+            label: 'Analytics',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.tv_outlined),
+            selectedIcon: Icon(Icons.tv_rounded),
+            label: 'TV',
+          ),
+        ]
+      : const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.history_outlined),
+            selectedIcon: Icon(Icons.history_rounded),
+            label: 'History',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
+            label: 'Profile',
+          ),
+        ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.darkBgPrimary,
       body: IndexedStack(
-        index: _currentIndex,
+        index: _index,
         children: _screens,
       ),
-      extendBody: true,
-      bottomNavigationBar: _buildFrostedNav(),
-    );
-  }
-
-  Widget _buildFrostedNav() {
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppTheme.surface.withValues(alpha: 0.85),
-            border: Border(
-              top: BorderSide(
-                color: Colors.white.withValues(alpha: 0.06),
-                width: 0.5,
-              ),
-            ),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
-                  _buildNavItem(1, Icons.history_rounded, Icons.history_rounded, 'History'),
-                  _buildNavItem(2, Icons.bar_chart_rounded, Icons.bar_chart_rounded, 'Trends'),
-                  _buildNavItem(3, Icons.settings_rounded, Icons.settings_outlined, 'Settings'),
-                ],
-              ),
-            ),
-          ),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.darkBorder)),
         ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
-    final isSelected = _currentIndex == index;
-    final color = isSelected ? AppTheme.accent : AppTheme.textMuted;
-
-    return GestureDetector(
-      onTap: () {
-        if (_currentIndex != index) {
-          HapticFeedback.selectionClick();
-          setState(() => _currentIndex = index);
-        }
-      },
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 64,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: isSelected ? AppTheme.accent.withValues(alpha: 0.12) : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                isSelected ? activeIcon : inactiveIcon,
-                size: 22,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: AppTheme.body(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: color,
-              ),
-            ),
-          ],
+        child: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: (i) => setState(() => _index = i),
+          destinations: _tabs,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         ),
       ),
     );

@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
+import 'app_colors.dart';
 
-/// Heart Rate Zone configuration and colors
+/// Heart Rate Zone configuration and colors.
+/// Colors live in [AppColors.zoneMap] — this class is the domain logic.
 class HrZones {
-  /// Zone colors — industry standard for fitness displays
-  static const Map<int, Color> colors = {
-    0: Color(0xFF6B7280), // Rest — Grey
-    1: Color(0xFF3B82F6), // Zone 1 — Blue (Very Light)
-    2: Color(0xFF22C55E), // Zone 2 — Green (Light)
-    3: Color(0xFFEAB308), // Zone 3 — Yellow (Moderate)
-    4: Color(0xFFF97316), // Zone 4 — Orange (Hard)
-    5: Color(0xFFEF4444), // Zone 5 — Red (Maximum)
-  };
+  /// Zone colors — sourced from the design system.
+  static const Map<int, Color> colors = AppColors.zoneMap;
 
   /// Zone background colors (slightly transparent for UI backgrounds)
   static Color backgroundColor(int zone) =>

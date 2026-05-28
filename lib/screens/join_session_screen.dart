@@ -1,255 +1,201 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import '../config/app_colors.dart';
+import '../config/app_spacing.dart';
 import '../config/theme.dart';
-import '../services/session_client.dart';
+import '../services/mock_data.dart';
+import '../widgets/beat_button.dart';
+import '../widgets/logo_heartbeat.dart';
+import 'workout_screen.dart';
 
+/// Join a group session by scanning a QR or entering a 6-digit invite code.
+/// Camera preview is mocked for the prototype — the design + flow is the focus.
 class JoinSessionScreen extends StatefulWidget {
-  final SessionClient sessionClient;
-
-  const JoinSessionScreen({super.key, required this.sessionClient});
+  const JoinSessionScreen({super.key});
 
   @override
   State<JoinSessionScreen> createState() => _JoinSessionScreenState();
 }
 
 class _JoinSessionScreenState extends State<JoinSessionScreen> {
-  final _ipController = TextEditingController();
-  final _portController = TextEditingController(text: '8080');
-  bool _scanning = false;
-  bool _connecting = false;
-  String? _error;
+  final _code = TextEditingController();
+  final bool _scanning = true;
 
   @override
   void dispose() {
-    _ipController.dispose();
-    _portController.dispose();
+    _code.dispose();
     super.dispose();
-  }
-
-  Future<void> _connectManual() async {
-    final ip = _ipController.text.trim();
-    final port = int.tryParse(_portController.text.trim()) ?? 8080;
-
-    if (ip.isEmpty) {
-      setState(() => _error = 'Enter the hub IP address');
-      return;
-    }
-
-    await _doConnect(ip, port);
-  }
-
-  Future<void> _doConnect(String ip, int port) async {
-    setState(() { _connecting = true; _error = null; });
-
-    final success = await widget.sessionClient.connect(ip, port);
-
-    if (mounted) {
-      if (success) {
-        Navigator.pop(context, true);
-      } else {
-        setState(() {
-          _connecting = false;
-          _error = 'Could not connect to $ip:$port. Make sure you are on the same WiFi.';
-        });
-      }
-    }
-  }
-
-  void _onQrDetected(BarcodeCapture capture) {
-    if (_connecting) return;
-    final barcode = capture.barcodes.firstOrNull;
-    if (barcode == null || barcode.rawValue == null) return;
-
-    final raw = barcode.rawValue!;
-    // Expected format: beatsync://192.168.x.x:8080
-    if (raw.startsWith('beatsync://')) {
-      final parts = raw.replaceFirst('beatsync://', '').split(':');
-      if (parts.length == 2) {
-        final ip = parts[0];
-        final port = int.tryParse(parts[1]) ?? 8080;
-        setState(() => _scanning = false);
-        _doConnect(ip, port);
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.darkBgPrimary,
       appBar: AppBar(
-        title: Text('Join Session', style: AppTheme.heading(fontSize: 20, fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: const Text('Join session'),
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        AppTheme.accent.withValues(alpha: 0.15),
-                        AppTheme.accent.withValues(alpha: 0.05),
-                      ],
-                    ),
-                  ),
-                  child: const Icon(Icons.qr_code_scanner, size: 40, color: Colors.white),
-                ),
+              Text(
+                'Scan the QR code from your trainer',
+                style: AppTheme.h2(),
               ),
-              const SizedBox(height: 16),
-              Center(
-                child: Text('Join a Group Session', style: AppTheme.heading(fontSize: 22)),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Hold your phone steady — we connect automatically.',
+                style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
               ),
-              const SizedBox(height: 8),
-              Center(
-                child: Text("Scan the QR code on the trainer's phone",
-                    style: AppTheme.body(fontSize: 14)),
-              ),
-              const SizedBox(height: 24),
-
-              // QR Scanner button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: _connecting ? null : () => setState(() => _scanning = !_scanning),
-                  icon: Icon(_scanning ? Icons.close : Icons.qr_code_scanner),
-                  label: Text(_scanning ? 'Close Scanner' : 'Scan QR Code',
-                      style: AppTheme.heading(fontSize: 16, fontWeight: FontWeight.w600)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                ),
-              ),
-
-              if (_scanning) ...[
-                const SizedBox(height: 16),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: SizedBox(
-                    height: 250,
-                    child: MobileScanner(
-                      onDetect: _onQrDetected,
-                    ),
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: 32),
-
-              // OR divider
+              const SizedBox(height: AppSpacing.lg),
+              Expanded(child: _ScannerStage(active: _scanning)),
+              const SizedBox(height: AppSpacing.lg),
               Row(
                 children: [
-                  Expanded(child: Divider(color: AppTheme.surfaceLight)),
+                  Expanded(
+                      child: Divider(
+                          color: AppColors.darkBorder.withValues(alpha: 0.6))),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('OR', style: AppTheme.mono(color: AppTheme.textMuted, fontSize: 13)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                    child: Text('OR ENTER CODE', style: AppTheme.micro()),
                   ),
-                  Expanded(child: Divider(color: AppTheme.surfaceLight)),
+                  Expanded(
+                      child: Divider(
+                          color: AppColors.darkBorder.withValues(alpha: 0.6))),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // Manual entry
-              Text('Enter manually',
-                  style: AppTheme.body(fontSize: 14, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: TextField(
-                      controller: _ipController,
-                      style: AppTheme.body(color: Colors.white),
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: '192.168.1.5',
-                        hintStyle: AppTheme.body(color: AppTheme.textMuted),
-                        filled: true,
-                        fillColor: AppTheme.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(':', style: AppTheme.body(color: AppTheme.textMuted, fontSize: 18)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 1,
-                    child: TextField(
-                      controller: _portController,
-                      style: AppTheme.body(color: Colors.white),
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: '8080',
-                        hintStyle: AppTheme.body(color: AppTheme.textMuted),
-                        filled: true,
-                        fillColor: AppTheme.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: _code,
+                textAlign: TextAlign.center,
+                style: AppTheme.statNumber(fontSize: 28).copyWith(
+                  letterSpacing: 8,
+                ),
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                decoration: const InputDecoration(
+                  counterText: '',
+                  hintText: '••••••',
+                ),
               ),
-              const SizedBox(height: 16),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton.icon(
-                  onPressed: _connecting ? null : _connectManual,
-                  icon: _connecting
-                      ? SizedBox(width: 18, height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent))
-                      : Icon(Icons.link, color: AppTheme.accent),
-                  label: Text(_connecting ? 'Connecting...' : 'Connect',
-                      style: AppTheme.body(fontSize: 16, fontWeight: FontWeight.w500, color: AppTheme.accent)),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppTheme.accent.withValues(alpha: 0.5)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              const SizedBox(height: AppSpacing.md),
+              BeatPrimaryButton(
+                label: 'Join session',
+                icon: Icons.login_rounded,
+                onPressed: () => Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => WorkoutScreen(
+                      profile: MockData.athleteProfile,
+                      inGroupSession: true,
+                    ),
                   ),
                 ),
               ),
-
-              if (_error != null) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppTheme.danger.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppTheme.danger.withValues(alpha: 0.2)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: AppTheme.danger, size: 18),
-                      const SizedBox(width: 10),
-                      Expanded(child: Text(_error!,
-                          style: AppTheme.body(color: AppTheme.danger, fontSize: 13))),
-                    ],
-                  ),
-                ),
-              ],
             ],
           ),
         ),
       ),
     );
   }
+}
+
+class _ScannerStage extends StatelessWidget {
+  final bool active;
+  const _ScannerStage({required this.active});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.darkBgSecondary,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: AppColors.darkBorder),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Placeholder QR target
+          Center(
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(
+                  color: AppColors.brandRed.withValues(alpha: 0.45),
+                  width: 2,
+                ),
+              ),
+              child: CustomPaint(painter: _CornerBracketsPainter()),
+            ),
+          ),
+          // Brand watermark
+          Positioned(
+            top: AppSpacing.md,
+            child: Opacity(
+              opacity: 0.7,
+              child: const LogoHeartbeat(size: 22, showWordmark: false),
+            ),
+          ),
+          if (active)
+            Positioned(
+              bottom: AppSpacing.lg,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppColors.success,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    'Scanning…',
+                    style: AppTheme.caption(color: AppColors.success),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CornerBracketsPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.brandRed
+      ..strokeWidth = 4
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    const len = 24.0;
+    // Top-left
+    canvas.drawLine(const Offset(0, len), const Offset(0, 0), paint);
+    canvas.drawLine(const Offset(0, 0), const Offset(len, 0), paint);
+    // Top-right
+    canvas.drawLine(Offset(size.width - len, 0), Offset(size.width, 0), paint);
+    canvas.drawLine(Offset(size.width, 0), Offset(size.width, len), paint);
+    // Bottom-left
+    canvas.drawLine(Offset(0, size.height - len), Offset(0, size.height), paint);
+    canvas.drawLine(Offset(0, size.height), Offset(len, size.height), paint);
+    // Bottom-right
+    canvas.drawLine(Offset(size.width - len, size.height),
+        Offset(size.width, size.height), paint);
+    canvas.drawLine(Offset(size.width, size.height - len),
+        Offset(size.width, size.height), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

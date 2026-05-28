@@ -1,240 +1,169 @@
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
-import '../services/tv_server.dart';
+import '../config/app_colors.dart';
+import '../services/mock_data.dart';
+import '../widgets/adaptive_grid.dart';
+import '../widgets/floating_pills.dart';
+import '../widgets/participant_card.dart';
+import '../widgets/session_status_banner.dart';
 
+/// TV display — full-bleed adaptive grid with floating pills overlaid.
+/// Designed to be cast onto a TV in the studio.
 class TvHostScreen extends StatefulWidget {
-  final TvServer tvServer;
-
-  const TvHostScreen({super.key, required this.tvServer});
+  const TvHostScreen({super.key});
 
   @override
   State<TvHostScreen> createState() => _TvHostScreenState();
 }
 
 class _TvHostScreenState extends State<TvHostScreen> {
-  String? _ip;
-  bool _starting = true;
-  String? _error;
+  Timer? _tick;
+  final _stopwatch = Stopwatch();
+  final _rng = math.Random();
+  final Map<String, int> _liveBpm = {};
+  SessionPhase _phase = SessionPhase.work;
+  int _phaseRemainingSec = 45;
+  int _round = 3;
+  static const _totalRounds = 8;
 
   @override
   void initState() {
     super.initState();
-    _startServer();
+    for (final p in MockData.liveSession) {
+      _liveBpm[p.id] = p.bpm;
+    }
+    _stopwatch.start();
+    _tick = Timer.periodic(const Duration(milliseconds: 800), (_) => _step());
   }
 
-  Future<void> _startServer() async {
-    if (widget.tvServer.isRunning) {
-      final ip = await TvServer.getLocalIp();
-      setState(() {
-        _ip = ip;
-        _starting = false;
-      });
-      return;
-    }
-
-    final ip = await widget.tvServer.start();
+  void _step() {
+    if (!mounted) return;
     setState(() {
-      _ip = ip;
-      _starting = false;
-      if (ip == null) _error = 'Could not start server. Check WiFi connection.';
+      if (_phaseRemainingSec > 0) {
+        _phaseRemainingSec--;
+      } else {
+        if (_phase == SessionPhase.work) {
+          _phase = SessionPhase.rest;
+          _phaseRemainingSec = 20;
+        } else {
+          _phase = SessionPhase.work;
+          _phaseRemainingSec = 45;
+          _round = math.min(_round + 1, _totalRounds);
+        }
+      }
+      for (final p in MockData.liveSession) {
+        final target = _phase == SessionPhase.work ? p.bpm : p.bpm - 25;
+        final cur = _liveBpm[p.id] ?? p.bpm;
+        final delta = target - cur;
+        _liveBpm[p.id] = (cur + delta * 0.25 + (_rng.nextDouble() - 0.5) * 6)
+            .round()
+            .clamp(70, 195);
+      }
     });
   }
 
   @override
+  void dispose() {
+    _tick?.cancel();
+    _stopwatch.stop();
+    super.dispose();
+  }
+
+  String _formatDuration(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final h = d.inHours;
+    if (h > 0) return '$h:$m:$s';
+    return '$m:$s';
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final url = _ip != null ? 'http://$_ip:${widget.tvServer.port}' : null;
+    final hrMax = MockData.athleteProfile.hrMax;
+    final ranked = [...MockData.liveSession];
+    ranked.sort(
+        (a, b) => (_liveBpm[b.id] ?? 0).compareTo(_liveBpm[a.id] ?? 0));
+
+    final avgHr = _liveBpm.isEmpty
+        ? 0
+        : (_liveBpm.values.reduce((a, b) => a + b) / _liveBpm.length).round();
+    final inZ4Plus =
+        _liveBpm.values.where((b) => b / hrMax >= 0.8).length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('TV Display', style: AppTheme.heading(fontSize: 20, fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          if (widget.tvServer.isRunning)
-            TextButton.icon(
-              onPressed: () async {
-                final nav = Navigator.of(context);
-                await widget.tvServer.stop();
-                if (mounted) nav.pop();
-              },
-              icon: Icon(Icons.stop, color: AppTheme.danger, size: 18),
-              label: Text('Stop', style: AppTheme.body(color: AppTheme.danger, fontWeight: FontWeight.w600)),
-            ),
-        ],
-      ),
+      backgroundColor: AppColors.darkBgPrimary,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: _starting
-              ? Center(child: CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2))
-              : _error != null
-                  ? _buildError()
-                  : _buildServerInfo(url!),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildError() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppTheme.danger.withValues(alpha: 0.1),
-            ),
-            child: Icon(Icons.wifi_off, size: 56, color: AppTheme.danger),
-          ),
-          const SizedBox(height: 20),
-          Text(_error!, style: AppTheme.body(fontSize: 16), textAlign: TextAlign.center),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              setState(() { _starting = true; _error = null; });
-              _startServer();
-            },
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            child: Text('Retry', style: AppTheme.heading(fontSize: 16, fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildServerInfo(String url) {
-    return Column(
-      children: [
-        const SizedBox(height: 16),
-
-        // TV Icon with glow
-        Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.accent.withValues(alpha: 0.15),
-                AppTheme.accent.withValues(alpha: 0.05),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.accent.withValues(alpha: 0.1),
-                blurRadius: 30,
-                spreadRadius: 5,
+        child: Stack(
+          children: [
+            // ── Full-bleed adaptive grid ──
+            Positioned.fill(
+              child: AdaptiveTileGrid(
+                count: ranked.length,
+                padding: const EdgeInsets.fromLTRB(12, 76, 12, 76),
+                gap: 8,
+                tileBuilder: (context, i) {
+                  final p = ranked[i];
+                  return ParticipantCard(
+                    name: p.name,
+                    bpm: _liveBpm[p.id] ?? p.bpm,
+                    avgBpm: p.avgBpm,
+                    hrMax: hrMax,
+                    rank: i + 1,
+                  );
+                },
               ),
-            ],
-          ),
-          child: const Icon(Icons.tv, size: 48, color: Colors.white),
-        ),
-        const SizedBox(height: 24),
+            ),
 
-        Text('TV Dashboard Ready', style: AppTheme.heading(fontSize: 24)),
-        const SizedBox(height: 8),
-        Text(
-          'Open this URL on your TV browser',
-          style: AppTheme.body(fontSize: 15),
-        ),
-        const SizedBox(height: 32),
-
-        // URL Box
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: AppTheme.glowCard(color: AppTheme.accent),
-          child: Column(
-            children: [
-              SelectableText(
-                url,
-                style: AppTheme.heading(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.accentLight,
-                ),
-                textAlign: TextAlign.center,
+            // ── Top-left: session title pill ──
+            Positioned(
+              top: 16,
+              left: 16,
+              child: SessionTitlePill(
+                sessionName: 'Friday HIIT 18:00',
+                subtitle:
+                    '${MockData.studioName} · ${ranked.length} athletes',
               ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            ),
+
+            // ── Top-right: phase + timer + close ──
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Row(
                 children: [
-                  Icon(Icons.wifi, size: 14, color: AppTheme.textMuted),
+                  PhasePill(
+                    phase: _phase,
+                    remaining: Duration(seconds: _phaseRemainingSec),
+                    roundLabel: 'Round $_round/$_totalRounds',
+                  ),
                   const SizedBox(width: 8),
-                  Text('Same WiFi network required',
-                      style: AppTheme.mono(fontSize: 12, color: AppTheme.textMuted)),
+                  GlassPill(
+                    padding: const EdgeInsets.all(8),
+                    onTap: () => Navigator.of(context).pop(),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.darkTextPrimary,
+                      size: 22,
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 28),
-
-        // Instructions
-        _buildStep('1', 'Make sure TV and phone are on the same WiFi'),
-        _buildStep('2', 'Open the TV browser (Chrome, Samsung Internet, etc.)'),
-        _buildStep('3', 'Enter the URL above'),
-        _buildStep('4', "Start a workout — you'll appear on TV automatically"),
-
-        const Spacer(),
-
-        // Status
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.success.withValues(alpha: 0.1),
-                AppTheme.success.withValues(alpha: 0.03),
-              ],
             ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.success.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.circle, size: 10, color: AppTheme.success),
-              const SizedBox(width: 10),
-              Text('Server running',
-                  style: AppTheme.mono(color: AppTheme.success, fontWeight: FontWeight.w600)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildStep(String number, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.accent.withValues(alpha: 0.2),
-                  AppTheme.accent.withValues(alpha: 0.08),
-                ],
+            // ── Bottom-right: group stats pill ──
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: GroupStatsPill(
+                avgBpm: avgHr,
+                inZ4Plus: inZ4Plus,
+                totalAthletes: ranked.length,
+                elapsed: _formatDuration(_stopwatch.elapsed),
               ),
-              borderRadius: BorderRadius.circular(8),
             ),
-            child: Center(
-              child: Text(number,
-                  style: AppTheme.mono(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.accentLight)),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(text, style: AppTheme.body(fontSize: 13)),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
