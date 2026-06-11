@@ -18,6 +18,24 @@ enum _PageType {
   studioSuccess,
 }
 
+/// What the wizard hands back to the production [ProfileSetupScreen.onSave]
+/// hook. Studio fields are only meaningful when [UserProfile.role] is trainer.
+class ProfileSetupResult {
+  final UserProfile profile;
+  final String studioName;
+  final String studioLocation;
+  final int studioCapacity;
+  final String inviteCode;
+
+  const ProfileSetupResult({
+    required this.profile,
+    required this.studioName,
+    required this.studioLocation,
+    required this.studioCapacity,
+    required this.inviteCode,
+  });
+}
+
 /// Post-registration setup wizard.
 ///
 /// **Athletes (3 pages):** Personal -> Fitness -> Strap pairing
@@ -38,12 +56,19 @@ class ProfileSetupScreen extends StatefulWidget {
   /// Initial role suggestion. The wizard's own role-pick page can override it.
   final UserRole role;
 
+  /// Production hook: persist the freshly built profile (and, for trainers,
+  /// the studio fields entered in the wizard). When null, the wizard saves
+  /// locally only (prototype). Throwing surfaces an error to the user and
+  /// keeps them on the wizard.
+  final Future<void> Function(ProfileSetupResult result)? onSave;
+
   const ProfileSetupScreen({
     super.key,
     this.initialName,
     this.existingProfile,
     required this.onComplete,
     this.role = UserRole.athlete,
+    this.onSave,
   });
 
   @override
@@ -53,6 +78,7 @@ class ProfileSetupScreen extends StatefulWidget {
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _pageController = PageController();
   int _page = 0;
+  bool _saving = false;
 
   // â”€â”€ Page 1: Personal â”€â”€
   final _ageCtrl = TextEditingController(text: '30');
@@ -220,7 +246,37 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       role: _role,
     );
 
-    // Save lightly â€” the production flow uses real storage. Prototype is a noop.
+    // Production: persist to Firebase via the injected hook. On failure, keep
+    // the user on the wizard and surface the error.
+    if (widget.onSave != null) {
+      setState(() => _saving = true);
+      try {
+        await widget.onSave!(ProfileSetupResult(
+          profile: profile,
+          studioName: _studioNameCtrl.text.trim(),
+          studioLocation: _studioLocationCtrl.text.trim(),
+          studioCapacity: _studioCapacity,
+          inviteCode: _inviteCode,
+        ));
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not finish setup: $e'),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      if (!mounted) return;
+      setState(() => _saving = false);
+      widget.onComplete(_role);
+      return;
+    }
+
+    // Prototype: light local save (noop on web).
     try {
       await StorageService.saveProfile(profile);
     } catch (_) {/* prototype/web â€” ignore */}
@@ -345,6 +401,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               child: BeatPrimaryButton(
                 label: _continueLabel(),
                 icon: _continueIcon(),
+                loading: _saving,
                 onPressed: _onContinue,
               ),
             ),

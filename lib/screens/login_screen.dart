@@ -23,10 +23,17 @@ class LoginScreen extends StatefulWidget {
   /// Switch to register flow.
   final VoidCallback onCreateAccount;
 
+  /// Production hook. When provided, the screen calls this with the entered
+  /// credentials and shows the returned error (or nothing on success — the
+  /// AuthGate reacts to the auth state change). When null, the mock demo
+  /// login is used and [onSignedIn] drives navigation.
+  final Future<String?> Function(String email, String password)? authenticate;
+
   const LoginScreen({
     super.key,
     required this.onSignedIn,
     required this.onCreateAccount,
+    this.authenticate,
   });
 
   @override
@@ -71,6 +78,21 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     setState(() => _error = null);
     if (!_formKey.currentState!.validate()) return;
+
+    // Production: delegate to Firebase auth. Success → AuthGate navigates.
+    if (widget.authenticate != null) {
+      setState(() => _loading = true);
+      final err = await widget.authenticate!(
+        _email.text.trim().toLowerCase(),
+        _password.text,
+      );
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = err;
+      });
+      return;
+    }
 
     setState(() => _loading = true);
     await Future.delayed(const Duration(milliseconds: 500));
@@ -196,42 +218,45 @@ class _LoginScreenState extends State<LoginScreen> {
                   loading: _loading,
                   onPressed: _submit,
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                const _OrDivider(),
-                const SizedBox(height: AppSpacing.lg),
-                _SocialButton(
-                  icon: Icons.g_mobiledata_rounded,
-                  label: 'Continue with Google',
-                  onTap: _googleSignIn,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: AppColors.darkBgSecondary,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.darkBorder),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'DEMO ACCOUNTS',
-                          style: AppTheme.micro().copyWith(letterSpacing: 1.4),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '$_athleteEmail · $_testPassword',
-                          style: AppTheme.caption(color: AppColors.darkTextPrimary),
-                        ),
-                        Text(
-                          '$_trainerEmail · $_testPassword',
-                          style: AppTheme.caption(color: AppColors.darkTextPrimary),
-                        ),
-                      ],
+                // Google sign-in + demo accounts are prototype-only.
+                if (widget.authenticate == null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  const _OrDivider(),
+                  const SizedBox(height: AppSpacing.lg),
+                  _SocialButton(
+                    icon: Icons.g_mobiledata_rounded,
+                    label: 'Continue with Google',
+                    onTap: _googleSignIn,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: AppColors.darkBgSecondary,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.darkBorder),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'DEMO ACCOUNTS',
+                            style: AppTheme.micro().copyWith(letterSpacing: 1.4),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$_athleteEmail · $_testPassword',
+                            style: AppTheme.caption(color: AppColors.darkTextPrimary),
+                          ),
+                          Text(
+                            '$_trainerEmail · $_testPassword',
+                            style: AppTheme.caption(color: AppColors.darkTextPrimary),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                ],
                 const SizedBox(height: AppSpacing.md),
                 Center(
                   child: Row(

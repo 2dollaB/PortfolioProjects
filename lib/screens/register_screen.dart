@@ -14,10 +14,17 @@ class RegisterScreen extends StatefulWidget {
   final void Function(String name) onRegistered;
   final VoidCallback onBackToLogin;
 
+  /// Production hook. When provided, creates the Firebase account; on success
+  /// the AuthGate takes over (user becomes signed in → onboarding). Shows the
+  /// returned error otherwise. When null, the mock prototype flow is used.
+  final Future<String?> Function(String name, String email, String password)?
+      register;
+
   const RegisterScreen({
     super.key,
     required this.onRegistered,
     required this.onBackToLogin,
+    this.register,
   });
 
   @override
@@ -71,6 +78,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Production: create the Firebase account. Success → AuthGate navigates.
+    if (widget.register != null) {
+      setState(() => _loading = true);
+      final err = await widget.register!(
+        _name.text.trim(),
+        _email.text.trim().toLowerCase(),
+        _password.text,
+      );
+      if (!mounted) return;
+      setState(() => _loading = false);
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(err),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() => _loading = true);
     await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
@@ -172,14 +202,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   loading: _loading,
                   onPressed: _submit,
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                const _OrDivider(),
-                const SizedBox(height: AppSpacing.lg),
-                _SocialButton(
-                  icon: Icons.g_mobiledata_rounded,
-                  label: 'Continue with Google',
-                  onTap: _googleSignup,
-                ),
+                // Google sign-up is prototype-only (MVP = email/password).
+                if (widget.register == null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  const _OrDivider(),
+                  const SizedBox(height: AppSpacing.lg),
+                  _SocialButton(
+                    icon: Icons.g_mobiledata_rounded,
+                    label: 'Continue with Google',
+                    onTap: _googleSignup,
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.md),
                 Center(
                   child: Text(

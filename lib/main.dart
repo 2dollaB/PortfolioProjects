@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,10 @@ import 'screens/profile_setup_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/role_select_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/auth_service.dart';
 import 'services/mock_data.dart';
+import 'services/studio_repository.dart';
+import 'services/user_repository.dart';
 
 Future<void> _initHeavyServices() async {
   if (FeatureFlags.prototypeMode) return;
@@ -209,56 +213,147 @@ class _PrototypeFlowState extends State<_PrototypeFlow> {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// PRODUCTION FLOW (kept for when FeatureFlags.prototypeMode is false)
+// PRODUCTION FLOW — AuthGate (active when FeatureFlags.prototypeMode is false)
+//
+//   authStateChanges:
+//     signed-out                → _AuthFlow (login ⇄ register)
+//     signed-in, no profile doc → _ProfileOnboarding (role → wizard → persist)
+//     signed-in + profile doc   → MainNavShell
+//
+// No screen drives navigation manually: Firebase auth state and the
+// users/{uid} snapshot stream decide what's shown.
 // ──────────────────────────────────────────────────────────────────────
-class _ProductionFlow extends StatefulWidget {
+class _ProductionFlow extends StatelessWidget {
   const _ProductionFlow();
 
   @override
-  State<_ProductionFlow> createState() => _ProductionFlowState();
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: AuthService.authStateChanges(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const _LoadingScaffold();
+        }
+        final user = snap.data;
+        if (user == null) return const _AuthFlow();
+        return _ProfileGate(uid: user.uid);
+      },
+    );
+  }
 }
 
-class _ProductionFlowState extends State<_ProductionFlow> {
-  bool _bootstrapped = false;
-  UserProfile? _profile;
-  bool _showOnboarding = false;
+class _LoadingScaffold extends StatelessWidget {
+  const _LoadingScaffold();
 
   @override
-  void initState() {
-    super.initState();
-    _bootstrap();
-  }
+  Widget build(BuildContext context) => const Scaffold(
+        backgroundColor: AppColors.darkBgPrimary,
+        body: Center(child: CircularProgressIndicator()),
+      );
+}
 
-  Future<void> _bootstrap() async {
-    setState(() {
-      _profile = MockData.athleteProfile;
-      _showOnboarding = false;
-      _bootstrapped = true;
-    });
+/// Login ⇄ register toggle for signed-out users.
+class _AuthFlow extends StatefulWidget {
+  const _AuthFlow();
+
+  @override
+  State<_AuthFlow> createState() => _AuthFlowState();
+}
+
+class _AuthFlowState extends State<_AuthFlow> {
+  bool _showRegister = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_showRegister) {
+      return RegisterScreen(
+        onRegistered: (_) {},
+        onBackToLogin: () => setState(() => _showRegister = false),
+        register: AuthService.register,
+      );
+    }
+    return LoginScreen(
+      onSignedIn: (_) {},
+      onCreateAccount: () => setState(() => _showRegister = true),
+      authenticate: AuthService.signIn,
+    );
+  }
+}
+
+/// Loads the signed-in user's profile doc; routes to onboarding or home.
+class _ProfileGate extends StatelessWidget {
+  final String uid;
+  const _ProfileGate({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<UserProfile?>(
+      stream: UserRepository.watch(uid),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const _LoadingScaffold();
+        }
+        final profile = snap.data;
+        if (profile == null) return _ProfileOnboarding(uid: uid);
+        return MainNavShell(
+          profile: profile,
+          onSignOut: () => AuthService.signOut(),
+        );
+      },
+    );
+  }
+}
+
+/// Role select → profile-setup wizard → write users/{uid} (+ studio for
+/// trainers). On success the profile stream emits and _ProfileGate swaps in
+/// MainNavShell — no manual navigation here.
+class _ProfileOnboarding extends StatefulWidget {
+  final String uid;
+  const _ProfileOnboarding({required this.uid});
+
+  @override
+  State<_ProfileOnboarding> createState() => _ProfileOnboardingState();
+}
+
+class _ProfileOnboardingState extends State<_ProfileOnboarding> {
+  UserRole? _role;
+
+  Future<void> _persist(ProfileSetupResult result) async {
+    final uid = widget.uid;
+    final email = AuthService.currentUser?.email ?? '';
+    if (result.profile.role == UserRole.trainer) {
+      final studioId = await StudioRepository.create(
+        ownerUid: uid,
+        name: result.studioName.isEmpty ? 'My Studio' : result.studioName,
+        location:
+            result.studioLocation.isEmpty ? null : result.studioLocation,
+        maxMembers: result.studioCapacity,
+        inviteCode: result.inviteCode,
+      );
+      await UserRepository.create(
+        uid,
+        result.profile.copyWith(id: uid, email: email, studioId: studioId),
+      );
+    } else {
+      await UserRepository.create(
+        uid,
+        result.profile.copyWith(id: uid, email: email),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_bootstrapped) {
-      return const Scaffold(
-        backgroundColor: AppColors.darkBgPrimary,
-        body: Center(child: CircularProgressIndicator()),
+    if (_role == null) {
+      return RoleSelectScreen(
+        onSelected: (r) => setState(() => _role = r),
       );
     }
-    if (_showOnboarding) {
-      return OnboardingTutorialScreen(
-        onComplete: () => setState(() => _showOnboarding = false),
-      );
-    }
-    if (_profile == null) {
-      return ProfileSetupScreen(
-        onComplete: (_) =>
-            setState(() => _profile = MockData.athleteProfile),
-      );
-    }
-    return MainNavShell(
-      profile: _profile!,
-      onProfileUpdated: (p) => setState(() => _profile = p),
+    return ProfileSetupScreen(
+      role: _role!,
+      initialName: AuthService.currentUser?.displayName,
+      onComplete: (_) {},
+      onSave: _persist,
     );
   }
 }

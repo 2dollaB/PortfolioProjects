@@ -86,6 +86,36 @@ class UserProfile {
     }
   }
 
+  UserProfile copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? studioId,
+    int? age,
+    Sex? sex,
+    double? weightKg,
+    double? heightCm,
+    int? restingHr,
+    FitnessLevel? fitnessLevel,
+    UserRole? role,
+    int? manualHrMax,
+  }) {
+    return UserProfile(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      studioId: studioId ?? this.studioId,
+      age: age ?? this.age,
+      sex: sex ?? this.sex,
+      weightKg: weightKg ?? this.weightKg,
+      heightCm: heightCm ?? this.heightCm,
+      restingHr: restingHr ?? this.restingHr,
+      fitnessLevel: fitnessLevel ?? this.fitnessLevel,
+      role: role ?? this.role,
+      manualHrMax: manualHrMax ?? this.manualHrMax,
+    );
+  }
+
   /// Convert to JSON for local storage
   Map<String, dynamic> toJson() => {
         'id': id,
