@@ -145,9 +145,25 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   Future<void> _persistWorkout() async {
     final uid = AuthService.currentUid;
     if (uid == null) return; // prototype / not signed in
+    final hrMax = widget.profile.hrMax;
     final avg = _bpmHistory.isEmpty
         ? _bpm
         : _bpmHistory.reduce((a, b) => a + b) ~/ _bpmHistory.length;
+    // Zone distribution (% of samples per zone 0-5) + dominant training zone.
+    final counts = List<int>.filled(6, 0);
+    for (final b in _bpmHistory) {
+      counts[HrZones.fromBpm(b, hrMax).clamp(0, 5)]++;
+    }
+    final total = _bpmHistory.isEmpty ? 1 : _bpmHistory.length;
+    final zoneDist = counts.map((c) => (c / total * 100).round()).toList();
+    var dominantZone = 1;
+    var best = -1;
+    for (var z = 1; z <= 5; z++) {
+      if (counts[z] > best) {
+        best = counts[z];
+        dominantZone = z;
+      }
+    }
     final end = DateTime.now();
     try {
       await WorkoutRepository.save(
@@ -159,6 +175,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         maxHr: _maxBpm,
         calories: _kcal.round(),
         trimp: _trimp.round(),
+        zoneDist: zoneDist,
+        dominantZone: dominantZone,
       );
     } catch (_) {
       // Non-blocking; ignore transient write failures.

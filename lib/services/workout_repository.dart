@@ -20,6 +20,8 @@ class WorkoutRepository {
     required int maxHr,
     required int calories,
     required int trimp,
+    required List<int> zoneDist,
+    required int dominantZone,
   }) async {
     final ref = await _workouts.add({
       'userId': userId,
@@ -30,6 +32,8 @@ class WorkoutRepository {
       'maxHr': maxHr,
       'calories': calories,
       'trimp': trimp,
+      'zoneDist': zoneDist,
+      'dominantZone': dominantZone,
       'createdAt': FieldValue.serverTimestamp(),
     });
     return ref.id;
