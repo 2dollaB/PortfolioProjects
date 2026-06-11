@@ -1,7 +1,9 @@
 /// User profile model — stores personal data for HR calculations
 class UserProfile {
-  final String id; // Unique ID for group sessions
+  final String id; // Firebase UID in production; timestamp string in prototype
   final String name;
+  final String email;
+  final String? studioId; // Set once the user creates/joins a studio
   final int age;
   final Sex sex;
   final double weightKg;
@@ -15,6 +17,8 @@ class UserProfile {
   UserProfile({
     String? id,
     this.name = '',
+    this.email = '',
+    this.studioId,
     required this.age,
     required this.sex,
     required this.weightKg,
@@ -86,6 +90,8 @@ class UserProfile {
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
+        'email': email,
+        'studioId': studioId,
         'age': age,
         'sex': sex.name,
         'weightKg': weightKg,
@@ -102,6 +108,8 @@ class UserProfile {
     final profile = UserProfile(
       id: json['id'] as String?,
       name: json['name'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      studioId: json['studioId'] as String?,
       age: json['age'] as int,
       sex: Sex.values.firstWhere((e) => e.name == json['sex']),
       weightKg: (json['weightKg'] as num).toDouble(),

@@ -1,7 +1,9 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'firebase_options.dart';
 import 'config/app_colors.dart';
 import 'config/feature_flags.dart';
 import 'config/theme.dart';
@@ -24,6 +26,9 @@ Future<void> _initHeavyServices() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await _initHeavyServices();
 
   SystemChrome.setPreferredOrientations(const [
