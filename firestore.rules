@@ -61,6 +61,20 @@ service cloud.firestore {
       // TODO(Phase D): CEO suspend/restore via suspendStudio Cloud Function only.
     }
 
+    // ── invite_codes/{code} ──────────────────────────────────
+    // Code → studioId lookup so an athlete can resolve a studio they don't yet
+    // belong to (the studios doc itself stays members-only). Exposes only the
+    // mapping, no member data. Created/removed by the owning trainer.
+    match /invite_codes/{code} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && get(/databases/$(database)/documents/studios/$(request.resource.data.studioId))
+            .data.ownerUid == request.auth.uid;
+      allow delete: if isSignedIn()
+        && get(/databases/$(database)/documents/studios/$(resource.data.studioId))
+            .data.ownerUid == request.auth.uid;
+    }
+
     // ── sessions/{sessionId} ─────────────────────────────────
     match /sessions/{sessionId} {
       allow read: if isStudioMember(resource.data.studioId);
