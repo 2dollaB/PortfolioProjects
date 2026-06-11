@@ -7,7 +7,7 @@ class FeatureFlags {
   /// When true, the app boots into prototype/demo flow with mock data
   /// — splash → role select → login → home. Skip onboarding, skip BLE,
   /// skip real storage. Designed for client presentations.
-  static const bool prototypeMode = true;
+  static const bool prototypeMode = false;
 
   // ── MVP gating (post-launch features hidden until ready) ──
   static const bool trends           = false;  // ACWR, weekly TRIMP, zone trends
