@@ -25,11 +25,15 @@ class MainNavShell extends StatefulWidget {
   /// When invoked, the parent unmounts this shell and routes to login.
   final VoidCallback? onSignOut;
 
+  /// Production-only: enables the athlete "Join a studio" CTA on home.
+  final bool enableStudioJoin;
+
   const MainNavShell({
     super.key,
     required this.profile,
     this.onProfileUpdated,
     this.onSignOut,
+    this.enableStudioJoin = false,
   });
 
   @override
@@ -68,6 +72,7 @@ class _MainNavShellState extends State<MainNavShell> {
               profile: widget.profile,
               onProfileUpdated: widget.onProfileUpdated,
               onSignOut: widget.onSignOut,
+              enableStudioJoin: widget.enableStudioJoin,
             ),
             const WorkoutHistoryScreen(),
             SettingsScreen(

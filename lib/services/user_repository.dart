@@ -40,4 +40,9 @@ class UserRepository {
           SetOptions(merge: true),
         );
   }
+
+  /// Sets just the user's studioId (after joining a studio).
+  static Future<void> setStudioId(String uid, String studioId) async {
+    await _users.doc(uid).set({'studioId': studioId}, SetOptions(merge: true));
+  }
 }

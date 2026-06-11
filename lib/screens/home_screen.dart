@@ -14,6 +14,7 @@ import '../widgets/zone_badge.dart';
 import 'workout_screen.dart';
 import 'workout_history_screen.dart';
 import 'join_session_screen.dart';
+import 'join_studio_screen.dart';
 import 'settings_screen.dart';
 
 /// Athlete home — greeting, hero "Start Workout" card, recent workouts strip,
@@ -24,11 +25,16 @@ class HomeScreen extends StatelessWidget {
   final void Function(UserProfile)? onProfileUpdated;
   final VoidCallback? onSignOut;
 
+  /// Production-only: when true and the athlete isn't in a studio yet, show the
+  /// "Join a studio" CTA. Left false in the prototype/demo so home is unchanged.
+  final bool enableStudioJoin;
+
   const HomeScreen({
     super.key,
     required this.profile,
     this.onProfileUpdated,
     this.onSignOut,
+    this.enableStudioJoin = false,
   });
 
   String _firstName() {
@@ -81,6 +87,15 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
+
+            // JOIN A STUDIO — shown only until the athlete belongs to one
+            if (enableStudioJoin && profile.studioId == null)
+              const SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.sm,
+                ),
+                sliver: SliverToBoxAdapter(child: _JoinStudioCard()),
+              ),
 
             // HERO — Start workout card
             SliverPadding(
@@ -404,6 +419,59 @@ class _Pill extends StatelessWidget {
         const SizedBox(width: 3),
         Text(label, style: AppTheme.caption(color: c)),
       ],
+    );
+  }
+}
+
+/// CTA shown on the athlete home until they belong to a studio.
+class _JoinStudioCard extends StatelessWidget {
+  const _JoinStudioCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const JoinStudioScreen()),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.brandRed.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.brandRed.withValues(alpha: 0.35)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.brandRed.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.group_add_rounded,
+                    color: AppColors.brandRed),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Join a studio',
+                        style: AppTheme.bodyLarge(weight: FontWeight.w700)),
+                    Text("Enter your trainer's 6-digit code",
+                        style: AppTheme.caption()),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded,
+                  color: AppColors.darkTextSecondary),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

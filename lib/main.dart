@@ -298,6 +298,7 @@ class _ProfileGate extends StatelessWidget {
         return MainNavShell(
           profile: profile,
           onSignOut: () => AuthService.signOut(),
+          enableStudioJoin: true,
         );
       },
     );
