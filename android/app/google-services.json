@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "918880027506",
+    "project_id": "beatsync-prod",
+    "storage_bucket": "beatsync-prod.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:918880027506:android:8059140f2cf1b746d493eb",
+        "android_client_info": {
+          "package_name": "com.beatsync.beatsync"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCnOe4yUBANnHFTlCa40LOjt2RTAhlGz5Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

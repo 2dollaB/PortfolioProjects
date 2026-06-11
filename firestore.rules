@@ -32,7 +32,7 @@ service cloud.firestore {
     // Everything else on the studio doc stays owner-only.
     // TODO(Phase D): move joins to the inviteAthleteToStudio Cloud Function and
     // drop this self-join allowance.
-    function isSelfJoin(studioId) {
+    function isSelfJoin() {
       let incoming = request.resource.data;
       let current = resource.data;
       return incoming.diff(current).affectedKeys().hasOnly(['memberUids'])
@@ -56,7 +56,7 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && request.resource.data.ownerUid == request.auth.uid;
       allow update: if isSignedIn()
-        && (resource.data.ownerUid == request.auth.uid || isSelfJoin(studioId));
+        && (resource.data.ownerUid == request.auth.uid || isSelfJoin());
       allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
       // TODO(Phase D): CEO suspend/restore via suspendStudio Cloud Function only.
     }
