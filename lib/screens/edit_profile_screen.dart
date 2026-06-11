@@ -5,6 +5,8 @@ import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
+import '../services/auth_service.dart';
+import '../services/user_repository.dart';
 import '../widgets/beat_button.dart';
 
 /// Edit personal info. Reuses the same numeric fields as the wizard.
@@ -81,7 +83,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return null;
   }
 
-  void _save() {
+  Future<void> _save() async {
     final error = _validate();
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -93,9 +95,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
       return;
     }
+    // Preserve email/studioId/manualHrMax — the edit form doesn't expose them.
     final updated = UserProfile(
       id: widget.profile.id,
       name: _name.text.trim(),
+      email: widget.profile.email,
+      studioId: widget.profile.studioId,
       age: int.parse(_age.text),
       sex: _sex,
       weightKg: double.parse(_weight.text.replaceAll(',', '.')),
@@ -103,7 +108,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       restingHr: int.tryParse(_restingHr.text.trim()),
       fitnessLevel: _fitnessLevel,
       role: widget.profile.role,
+      manualHrMax: widget.profile.manualHrMax,
     );
+    // Persist to Firestore when signed in (production); prototype has no user.
+    final uid = AuthService.currentUid;
+    if (uid != null) {
+      try {
+        await UserRepository.update(uid, updated);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not save: $e'),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+    }
+    if (!mounted) return;
     widget.onSaved?.call(updated);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
