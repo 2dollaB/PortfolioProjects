@@ -54,19 +54,25 @@ class StatChip extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.micro),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(value, style: AppTheme.statNumber(fontSize: 22)),
-              if (unit != null) ...[
-                const SizedBox(width: 3),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Text(unit!, style: AppTheme.caption()),
-                ),
+          // FittedBox + scaleDown so a long unit ("this week") never overflows.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(value, style: AppTheme.statNumber(fontSize: 22)),
+                if (unit != null) ...[
+                  const SizedBox(width: 3),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Text(unit!, style: AppTheme.caption()),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ],
       ),

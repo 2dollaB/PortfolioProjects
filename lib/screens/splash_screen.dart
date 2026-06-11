@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
@@ -9,7 +10,7 @@ import '../widgets/logo_heartbeat.dart';
 /// to whatever [onReady] navigates to.
 class SplashScreen extends StatefulWidget {
   /// Async work to perform during the splash (cache warm-up, auth check, etc.).
-  /// Optional — pass null for a pure timed splash.
+  /// Optional â€” pass null for a pure timed splash.
   final Future<void> Function()? onReady;
 
   /// Called after both [onReady] completes AND [minimumDwell] has elapsed
@@ -65,7 +66,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MobileFrame(
+      child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
       body: FadeTransition(
         opacity: _fade,
@@ -104,6 +106,7 @@ class _SplashScreenState extends State<SplashScreen>
             if (_fading) const SizedBox.shrink(),
           ],
         ),
+      ),
       ),
     );
   }

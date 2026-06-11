@@ -12,14 +12,24 @@ import 'tv_host_screen.dart';
 /// Role-aware bottom nav shell.
 /// Athlete tabs: Home · History · Profile
 /// Trainer tabs: Home · Members · Analytics · TV
+///
+/// **Each tab has its own nested [Navigator]**, so routes pushed from
+/// within a tab (settings, all-sessions, member-detail, session-detail,
+/// edit-profile, etc.) stay inside that tab's stack — the bottom nav
+/// stays visible across pushes. Industry-standard pattern.
 class MainNavShell extends StatefulWidget {
   final UserProfile profile;
   final void Function(UserProfile)? onProfileUpdated;
+
+  /// Sign-out callback bubbled up to the prototype flow.
+  /// When invoked, the parent unmounts this shell and routes to login.
+  final VoidCallback? onSignOut;
 
   const MainNavShell({
     super.key,
     required this.profile,
     this.onProfileUpdated,
+    this.onSignOut,
   });
 
   @override
@@ -28,24 +38,44 @@ class MainNavShell extends StatefulWidget {
 
 class _MainNavShellState extends State<MainNavShell> {
   int _index = 0;
+  late final List<GlobalKey<NavigatorState>> _navKeys;
 
   bool get _isTrainer => widget.profile.role == UserRole.trainer;
 
-  List<Widget> get _screens => _isTrainer
-      ? [
-          TrainerHomeScreen(profile: widget.profile),
-          const MemberListScreen(),
-          const StudioAnalyticsScreen(),
-          const TvHostScreen(),
-        ]
-      : [
-          HomeScreen(
-            profile: widget.profile,
-            onProfileUpdated: widget.onProfileUpdated,
-          ),
-          const WorkoutHistoryScreen(),
-          SettingsScreen(profile: widget.profile),
-        ];
+  @override
+  void initState() {
+    super.initState();
+    final tabCount = _isTrainer ? 4 : 3;
+    _navKeys = List.generate(tabCount, (_) => GlobalKey<NavigatorState>());
+  }
+
+  /// Tab root screens. Re-built each frame so they reflect any prop changes.
+  /// MobileFrame is applied at the individual screen level (so pushed routes
+  /// outside a tab's stack also get desktop centering). TV stays full-bleed.
+  List<Widget> _tabRoots() {
+    return _isTrainer
+        ? [
+            TrainerHomeScreen(
+              profile: widget.profile,
+              onSignOut: widget.onSignOut,
+            ),
+            const MemberListScreen(),
+            const StudioAnalyticsScreen(),
+            const TvHostScreen(),
+          ]
+        : [
+            HomeScreen(
+              profile: widget.profile,
+              onProfileUpdated: widget.onProfileUpdated,
+              onSignOut: widget.onSignOut,
+            ),
+            const WorkoutHistoryScreen(),
+            SettingsScreen(
+              profile: widget.profile,
+              onSignOut: widget.onSignOut,
+            ),
+          ];
+  }
 
   List<NavigationDestination> get _tabs => _isTrainer
       ? const [
@@ -88,23 +118,60 @@ class _MainNavShellState extends State<MainNavShell> {
           ),
         ];
 
+  Future<bool> _onWillPop() async {
+    // If the current tab's nested navigator can pop, pop it instead of
+    // popping the whole shell.
+    final navState = _navKeys[_index].currentState;
+    if (navState?.canPop() ?? false) {
+      navState!.pop();
+      return false;
+    }
+    return true;
+  }
+
+  void _onTabTap(int newIndex) {
+    if (_index == newIndex) {
+      // Tapping the active tab pops to its root — Material standard behavior.
+      _navKeys[_index].currentState?.popUntil((r) => r.isFirst);
+      return;
+    }
+    setState(() => _index = newIndex);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
-      body: IndexedStack(
-        index: _index,
-        children: _screens,
-      ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: AppColors.darkBorder)),
+    final roots = _tabRoots();
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        await _onWillPop();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.darkBgPrimary,
+        body: IndexedStack(
+          index: _index,
+          children: [
+            for (int i = 0; i < roots.length; i++)
+              Navigator(
+                key: _navKeys[i],
+                onGenerateRoute: (settings) => MaterialPageRoute(
+                  settings: settings,
+                  builder: (_) => roots[i],
+                ),
+              ),
+          ],
         ),
-        child: NavigationBar(
-          selectedIndex: _index,
-          onDestinationSelected: (i) => setState(() => _index = i),
-          destinations: _tabs,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: AppColors.darkBorder)),
+          ),
+          child: NavigationBar(
+            selectedIndex: _index,
+            onDestinationSelected: _onTabTap,
+            destinations: _tabs,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          ),
         ),
       ),
     );

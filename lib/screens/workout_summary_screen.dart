@@ -4,7 +4,9 @@ import '../config/app_spacing.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../widgets/beat_button.dart';
+import '../widgets/mobile_frame.dart';
 import '../widgets/stat_chip.dart';
+import '../widgets/workout_type_sheet.dart';
 import '../widgets/zone_badge.dart';
 
 /// Post-workout summary. Hero stats + zone distribution + grid of metrics.
@@ -15,6 +17,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
   final int maxBpm;
   final int calories;
   final int trimp;
+  final WorkoutType? workoutType;
 
   const WorkoutSummaryScreen({
     super.key,
@@ -24,6 +27,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
     required this.maxBpm,
     required this.calories,
     required this.trimp,
+    this.workoutType,
   });
 
   String _formatDuration() {
@@ -50,7 +54,8 @@ class WorkoutSummaryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MobileFrame(
+      child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
       appBar: AppBar(
         title: const Text('Workout summary'),
@@ -74,8 +79,8 @@ class WorkoutSummaryScreen extends StatelessWidget {
                     color: AppColors.brandRed.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  child: const Icon(
-                    Icons.local_fire_department_rounded,
+                  child: Icon(
+                    workoutType?.icon ?? Icons.local_fire_department_rounded,
                     color: AppColors.brandRed,
                   ),
                 ),
@@ -84,7 +89,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Workout',
+                      Text(workoutType?.displayName ?? 'Workout',
                           style: AppTheme.h2().copyWith(fontSize: 18)),
                       Text(
                         '${DateTime.now().toString().substring(0, 16)} · ${_formatDuration()}',
@@ -229,6 +234,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

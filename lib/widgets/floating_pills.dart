@@ -88,21 +88,29 @@ class SessionTitlePill extends StatelessWidget {
           else
             const LogoHeartbeat(size: 22, showWordmark: false),
           const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                sessionName,
-                style: AppTheme.bodyLarge(weight: FontWeight.w700)
-                    .copyWith(fontSize: 15, height: 1.1),
-              ),
-              if (subtitle != null)
+          // Flexible + ellipsis so a long session name / studio subtitle
+          // truncates gracefully on iPhone SE instead of overflowing.
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
-                  subtitle!,
-                  style: AppTheme.caption().copyWith(height: 1.1),
+                  sessionName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.bodyLarge(weight: FontWeight.w700)
+                      .copyWith(fontSize: 15, height: 1.1),
                 ),
-            ],
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.caption().copyWith(height: 1.1),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
@@ -170,7 +178,11 @@ class PhasePill extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      // FittedBox scales content down if the parent allocates less width
+      // than needed — fixes the "overflowed by N pixels" stripes on iPhone SE.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -218,6 +230,108 @@ class PhasePill extends StatelessWidget {
             ),
           ],
         ],
+      ),
+      ),
+    );
+  }
+}
+
+/// Floating stepper for "Athletes [- N +]" used in the prototype to vary
+/// participant count and watch the adaptive grid reflow live.
+class AthleteCountPill extends StatelessWidget {
+  final int value;
+  final int min;
+  final int max;
+  final ValueChanged<int> onChanged;
+
+  const AthleteCountPill({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.min = 1,
+    this.max = 24,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassPill(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _stepBtn(
+            icon: Icons.remove_rounded,
+            enabled: value > min,
+            onTap: () => onChanged(value - 1),
+          ),
+          const SizedBox(width: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'ATHLETES',
+                  style: AppTheme.micro().copyWith(
+                    letterSpacing: 1.4,
+                    fontSize: 9,
+                  ),
+                ),
+                Text(
+                  '$value',
+                  style: AppTheme.statNumber(
+                    fontSize: 20,
+                    color: AppColors.darkTextPrimary,
+                    weight: FontWeight.w800,
+                  ).copyWith(height: 1.0),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          _stepBtn(
+            icon: Icons.add_rounded,
+            enabled: value < max,
+            onTap: () => onChanged(value + 1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _stepBtn({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: enabled
+                ? AppColors.brandRed.withValues(alpha: 0.2)
+                : AppColors.darkBgTertiary,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: enabled
+                  ? AppColors.brandRed.withValues(alpha: 0.4)
+                  : AppColors.darkBorder,
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: enabled
+                ? AppColors.brandRed
+                : AppColors.darkTextTertiary,
+          ),
+        ),
       ),
     );
   }

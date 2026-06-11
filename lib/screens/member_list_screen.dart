@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
 import '../services/mock_data.dart';
 import '../widgets/beat_button.dart';
+import 'member_detail_screen.dart';
 
 class MemberListScreen extends StatefulWidget {
   const MemberListScreen({super.key});
@@ -39,7 +41,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
                 style: AppTheme.h2(), textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Share this code or QR — they enter it in the app.',
+              'Share this code or QR â€” they enter it in the app.',
               style: AppTheme.caption(),
               textAlign: TextAlign.center,
             ),
@@ -80,7 +82,8 @@ class _MemberListScreenState extends State<MemberListScreen> {
       final q = _search.text.toLowerCase();
       return q.isEmpty || m.name.toLowerCase().contains(q);
     }).toList();
-    return Scaffold(
+    return MobileFrame(
+      child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showInviteSheet,
@@ -151,6 +154,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
           ],
         ),
       ),
+      ),
     );
   }
 }
@@ -218,7 +222,11 @@ class _MemberRow extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {},
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => MemberDetailScreen(member: member),
+          ),
+        ),
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),

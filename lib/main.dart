@@ -15,14 +15,11 @@ import 'screens/role_select_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/mock_data.dart';
 
-/// Heavy services (BLE, notifications, foreground task) are skipped under
-/// [FeatureFlags.prototypeMode] — they pull in platform plugins that don't
-/// run on web and would block the client demo.
 Future<void> _initHeavyServices() async {
   if (FeatureFlags.prototypeMode) return;
   if (kIsWeb) return;
-  // Real init lives in services/ — kept out of the demo entrypoint so the
-  // prototype loads in Chrome with zero plugin friction.
+  // Real BLE/notifications/foreground init lives in services/ — kept out of the
+  // demo entrypoint so the prototype loads in any browser with zero friction.
 }
 
 void main() async {
@@ -91,10 +88,19 @@ class BeatSyncAppState extends State<BeatSyncApp> {
   }
 }
 
-// ──────────────────────────────────────────────────────────────
-// PROTOTYPE FLOW — for client demos.
-// Splash → RoleSelect → Login → MainNavShell (with mock profile)
-// ──────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────
+// PROTOTYPE FLOW
+//
+// Splash → Onboarding (2 slides, skippable) → Login
+//   ├─ Login success (matched email) → MainNavShell(role)
+//   └─ Sign up
+//        → Role select
+//        → Profile setup (2 pages)
+//        → if trainer: Studio creation
+//        → MainNavShell(role)
+//
+// Sign-out anywhere routes back to Login (preserving onboarding-seen).
+// ──────────────────────────────────────────────────────────────────────
 class _PrototypeFlow extends StatefulWidget {
   const _PrototypeFlow();
 
@@ -102,53 +108,104 @@ class _PrototypeFlow extends StatefulWidget {
   State<_PrototypeFlow> createState() => _PrototypeFlowState();
 }
 
-enum _PrototypeStep { splash, roleSelect, login, register, home }
+enum _Step {
+  splash,
+  onboarding,
+  login,
+  register,
+  roleSelect,
+  profileSetup,
+  home,
+}
 
 class _PrototypeFlowState extends State<_PrototypeFlow> {
-  _PrototypeStep _step = _PrototypeStep.splash;
+  _Step _step = _Step.splash;
   UserRole _role = UserRole.athlete;
+  bool _onboardingDone = false;
+  String? _registeredName;
 
+  /// Once the wizard finishes, we know the role they picked inside it.
+  /// We don't track wizard state here — the wizard just calls onComplete.
   UserProfile get _profile => _role == UserRole.trainer
       ? MockData.trainerProfile
       : MockData.athleteProfile;
 
+  void _signOut() {
+    setState(() => _step = _Step.login);
+  }
+
   @override
   Widget build(BuildContext context) {
     switch (_step) {
-      case _PrototypeStep.splash:
+      case _Step.splash:
         return SplashScreen(
-          onDone: () =>
-              setState(() => _step = _PrototypeStep.roleSelect),
+          onDone: () => setState(() => _step = _onboardingDone
+              ? _Step.login
+              : _Step.onboarding),
         );
-      case _PrototypeStep.roleSelect:
-        return RoleSelectScreen(
-          onSelected: (role) {
+
+      case _Step.onboarding:
+        return OnboardingTutorialScreen(
+          onComplete: () => setState(() {
+            _onboardingDone = true;
+            _step = _Step.login;
+          }),
+        );
+
+      case _Step.login:
+        return LoginScreen(
+          onSignedIn: (role) {
             setState(() {
               _role = role;
-              _step = _PrototypeStep.login;
+              _step = _Step.home;
             });
           },
+          onCreateAccount: () => setState(() => _step = _Step.register),
         );
-      case _PrototypeStep.login:
-        return LoginScreen(
-          onSignedIn: () => setState(() => _step = _PrototypeStep.home),
-          onCreateAccount: () => setState(() => _step = _PrototypeStep.register),
-        );
-      case _PrototypeStep.register:
+
+      case _Step.register:
         return RegisterScreen(
-          onRegistered: () => setState(() => _step = _PrototypeStep.home),
-          onBackToLogin: () => setState(() => _step = _PrototypeStep.login),
+          onRegistered: (name) => setState(() {
+            _registeredName = name;
+            _step = _Step.roleSelect;
+          }),
+          onBackToLogin: () => setState(() => _step = _Step.login),
         );
-      case _PrototypeStep.home:
-        return MainNavShell(profile: _profile);
+
+      case _Step.roleSelect:
+        // Dedicated step right after register — not counted as part of the
+        // wizard's progress (athlete = 3 / trainer = 5 inside the wizard).
+        return RoleSelectScreen(
+          onSelected: (role) => setState(() {
+            _role = role;
+            _step = _Step.profileSetup;
+          }),
+        );
+
+      case _Step.profileSetup:
+        // Wizard runs 3 pages for athlete (Personal · Fitness · Strap) or
+        // 5 for trainer (+ Studio form + Studio success). It doesn't pick role.
+        return ProfileSetupScreen(
+          initialName: _registeredName,
+          role: _role,
+          onComplete: (role) => setState(() {
+            _role = role;
+            _step = _Step.home;
+          }),
+        );
+
+      case _Step.home:
+        return MainNavShell(
+          profile: _profile,
+          onSignOut: _signOut,
+        );
     }
   }
 }
 
-// ──────────────────────────────────────────────────────────────
-// PRODUCTION FLOW — the legacy onboarding → profile setup → app flow.
-// Used when FeatureFlags.prototypeMode is false (i.e. on-device builds).
-// ──────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────
+// PRODUCTION FLOW (kept for when FeatureFlags.prototypeMode is false)
+// ──────────────────────────────────────────────────────────────────────
 class _ProductionFlow extends StatefulWidget {
   const _ProductionFlow();
 
@@ -168,8 +225,6 @@ class _ProductionFlowState extends State<_ProductionFlow> {
   }
 
   Future<void> _bootstrap() async {
-    // Storage is omitted from the demo build — keep this minimal and skip
-    // real init so the app can still launch in any environment.
     setState(() {
       _profile = MockData.athleteProfile;
       _showOnboarding = false;
@@ -192,7 +247,8 @@ class _ProductionFlowState extends State<_ProductionFlow> {
     }
     if (_profile == null) {
       return ProfileSetupScreen(
-        onComplete: () => setState(() => _profile = MockData.athleteProfile),
+        onComplete: (_) =>
+            setState(() => _profile = MockData.athleteProfile),
       );
     }
     return MainNavShell(

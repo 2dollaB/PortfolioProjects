@@ -1,5 +1,62 @@
 import 'package:flutter/material.dart';
 
+/// Picks the right grid shape based on viewport width:
+///  - **Phone** (< 500): 2-column scrollable GridView. Cards stay readable.
+///  - **Tablet** (500-800): 3-column scrollable GridView. Same scrollable
+///    pattern, just more cards per row.
+///  - **Desktop / TV** (≥ 800): [AdaptiveTileGrid] that fills the rect for
+///    casting onto a TV.
+class ResponsiveParticipantGrid extends StatelessWidget {
+  final int count;
+  final Widget Function(BuildContext, int) tileBuilder;
+  final EdgeInsets padding;
+  final double gap;
+
+  /// Card aspect ratio (width / height). 1.0 = square. Below 1.0 = tall.
+  final double scrollAspectRatio;
+
+  const ResponsiveParticipantGrid({
+    super.key,
+    required this.count,
+    required this.tileBuilder,
+    this.padding = EdgeInsets.zero,
+    this.gap = 8,
+    this.scrollAspectRatio = 0.95,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        if (w < 800) {
+          // Phone OR tablet — scrollable column-based grid. Cards stay
+          // tall enough to read at distance.
+          final cols = w < 500 ? 2 : 3;
+          return GridView.builder(
+            padding: padding,
+            itemCount: count,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: cols,
+              mainAxisSpacing: gap,
+              crossAxisSpacing: gap,
+              childAspectRatio: scrollAspectRatio,
+            ),
+            itemBuilder: tileBuilder,
+          );
+        }
+        // Desktop / TV — fill the rect with the adaptive grid.
+        return AdaptiveTileGrid(
+          count: count,
+          tileBuilder: tileBuilder,
+          padding: padding,
+          gap: gap,
+        );
+      },
+    );
+  }
+}
+
 /// Returns the (cols, rows) grid that best fits [count] participants
 /// on a TV-style landscape display. Empty trailing slots are left blank
 /// so the visual rhythm (e.g. 4+4+1 for 9 athletes) is preserved.

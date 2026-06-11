@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,23 +7,30 @@ import '../config/app_spacing.dart';
 import '../config/hr_zones.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
-import '../services/mock_data.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/bpm_display.dart';
+import '../widgets/mobile_frame.dart';
+import '../widgets/workout_type_sheet.dart';
 import '../widgets/zone_bar.dart';
+import 'tv_host_screen.dart';
 import 'workout_summary_screen.dart';
 
-/// Immersive single-athlete workout view — giant BPM, ring, zone bar, live stats.
+/// Immersive single-athlete workout view â€” giant BPM, ring, zone bar, live stats.
 /// Mock-data driven for the prototype: BPM wobbles around a realistic curve
 /// so the live UI looks alive even without a real BLE strap.
 class WorkoutScreen extends StatefulWidget {
   final UserProfile profile;
   final bool inGroupSession;
 
+  /// Picked from the WorkoutTypeSheet before launch. Saved with the workout
+  /// so history can filter by type.
+  final WorkoutType? workoutType;
+
   const WorkoutScreen({
     super.key,
     required this.profile,
     this.inGroupSession = false,
+    this.workoutType,
   });
 
   @override
@@ -122,6 +129,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             calories: _kcal.round(),
             trimp: _trimp.round(),
             profile: widget.profile,
+            workoutType: widget.workoutType,
           ),
         ),
       );
@@ -133,8 +141,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final hrMax = widget.profile.hrMax;
     final zone = HrZones.fromBpm(_bpm, hrMax);
     final zoneColor = AppColors.zoneColor(zone == 0 ? 1 : zone);
+    // Shrink the BPM ring + spacing on short viewports (iPhone SE-class
+    // phones at ~667px tall) so the bottom controls + leaderboard don't
+    // overflow off-screen.
+    final shortScreen = MediaQuery.of(context).size.height < 720;
+    final bpmSize = shortScreen ? 220.0 : 280.0;
 
-    return Scaffold(
+    return MobileFrame(
+      child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
       body: SafeArea(
         child: Column(
@@ -214,12 +228,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               ),
             ),
 
+            SizedBox(height: shortScreen ? AppSpacing.sm : AppSpacing.lg),
             const Spacer(),
 
-            // BIG BPM
-            BpmDisplay(bpm: _bpm, hrMax: hrMax, size: 280),
+            // BIG BPM — shrinks on short viewports so the bottom controls fit.
+            BpmDisplay(bpm: _bpm, hrMax: hrMax, size: bpmSize),
 
-            const SizedBox(height: AppSpacing.lg),
+            SizedBox(height: shortScreen ? AppSpacing.sm : AppSpacing.lg),
 
             // Zone bar
             Padding(
@@ -227,7 +242,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               child: ZoneBar(activeZone: zone == 0 ? 1 : zone),
             ),
 
-            const SizedBox(height: AppSpacing.xl),
+            SizedBox(height: shortScreen ? AppSpacing.md : AppSpacing.xl),
 
             // Stats row
             Padding(
@@ -270,11 +285,22 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               ),
             ),
 
+            SizedBox(height: shortScreen ? AppSpacing.sm : 0),
             const Spacer(),
 
-            // Leaderboard strip — only in group sessions
+            // "View whole studio" button — only in group sessions.
+            // Uses same horizontal padding as the controls below so widths match.
             if (widget.inGroupSession) ...[
-              _LeaderboardStrip(myBpm: _bpm, myRank: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: _ViewStudioButton(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const TvHostScreen(),
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: AppSpacing.sm),
             ],
 
@@ -314,6 +340,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -361,169 +388,78 @@ class _LiveStat extends StatelessWidget {
   }
 }
 
-/// Compact leaderboard shown at the bottom of an athlete's group session.
-/// Top-3 names with their BPM + the athlete's own position highlighted.
-class _LeaderboardStrip extends StatelessWidget {
-  final int myBpm;
-  final int myRank;
-  const _LeaderboardStrip({required this.myBpm, required this.myRank});
+/// "View whole studio" CTA shown to athletes in a group session.
+/// Opens the TV-style grid so they can see everyone training together.
+class _ViewStudioButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ViewStudioButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final top3 = MockData.liveSession.take(3).toList();
-    final totalAthletes = MockData.liveSession.length;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'LEADERBOARD',
-                style: AppTheme.micro().copyWith(letterSpacing: 1.4),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.darkBgSecondary,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: AppColors.brandRed.withValues(alpha: 0.35),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.brandRed.withValues(alpha: 0.12),
+                blurRadius: 16,
+                spreadRadius: -4,
               ),
-              const Spacer(),
+            ],
+          ),
+          child: Row(
+            children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 3,
-                ),
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: AppColors.brandRed.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: AppColors.brandRed.withValues(alpha: 0.4),
-                  ),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: const Icon(
+                  Icons.grid_view_rounded,
+                  color: AppColors.brandRed,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'YOU',
-                      style: AppTheme.micro(color: AppColors.brandRed)
-                          .copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.2,
-                          ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '#$myRank',
-                      style: AppTheme.statNumber(
-                        fontSize: 14,
-                        color: AppColors.brandRed,
-                        weight: FontWeight.w800,
-                      ).copyWith(height: 1.0),
+                      'View whole studio',
+                      style: AppTheme.bodyLarge(weight: FontWeight.w600)
+                          .copyWith(fontSize: 15),
                     ),
                     Text(
-                      '/$totalAthletes',
-                      style: AppTheme.caption(color: AppColors.brandRed),
+                      'See everyone training together',
+                      style: AppTheme.caption(),
                     ),
                   ],
                 ),
               ),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                color: AppColors.brandRed,
+                size: 20,
+              ),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              for (int i = 0; i < top3.length; i++) ...[
-                Expanded(
-                  child: _LeaderboardSlot(
-                    rank: i + 1,
-                    name: top3[i].name,
-                    bpm: top3[i].bpm,
-                  ),
-                ),
-                if (i < top3.length - 1) const SizedBox(width: 8),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LeaderboardSlot extends StatelessWidget {
-  final int rank;
-  final String name;
-  final int bpm;
-  const _LeaderboardSlot({
-    required this.rank,
-    required this.name,
-    required this.bpm,
-  });
-
-  Color get _rankColor {
-    switch (rank) {
-      case 1:
-        return AppColors.warning; // gold-ish
-      case 2:
-        return AppColors.darkTextPrimary;
-      case 3:
-        return AppColors.zone4;
-      default:
-        return AppColors.darkTextSecondary;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.darkBgTertiary,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: _rankColor.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 22,
-            height: 22,
-            decoration: BoxDecoration(
-              color: _rankColor.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '$rank',
-              style: AppTheme.statNumber(
-                fontSize: 12,
-                color: _rankColor,
-                weight: FontWeight.w800,
-              ).copyWith(height: 1.0),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  name.split(' ').first,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.caption(color: AppColors.darkTextPrimary)
-                      .copyWith(fontWeight: FontWeight.w600, fontSize: 12),
-                ),
-                Text(
-                  '$bpm bpm',
-                  style: AppTheme.micro(color: _rankColor)
-                      .copyWith(fontWeight: FontWeight.w700, fontSize: 10),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

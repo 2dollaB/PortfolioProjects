@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
@@ -8,7 +9,7 @@ import '../widgets/logo_heartbeat.dart';
 import 'workout_screen.dart';
 
 /// Join a group session by scanning a QR or entering a 6-digit invite code.
-/// Camera preview is mocked for the prototype — the design + flow is the focus.
+/// Camera preview is mocked for the prototype â€” the design + flow is the focus.
 class JoinSessionScreen extends StatefulWidget {
   const JoinSessionScreen({super.key});
 
@@ -28,7 +29,8 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MobileFrame(
+      child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
       appBar: AppBar(
         title: const Text('Join session'),
@@ -49,7 +51,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Hold your phone steady — we connect automatically.',
+                'Hold your phone steady â€” we connect automatically.',
                 style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -81,7 +83,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
                 maxLength: 6,
                 decoration: const InputDecoration(
                   counterText: '',
-                  hintText: '••••••',
+                  hintText: 'â€¢â€¢â€¢â€¢â€¢â€¢',
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -100,6 +102,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -159,7 +162,7 @@ class _ScannerStage extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   Text(
-                    'Scanning…',
+                    'Scanningâ€¦',
                     style: AppTheme.caption(color: AppColors.success),
                   ),
                 ],

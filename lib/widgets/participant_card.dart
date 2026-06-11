@@ -20,7 +20,6 @@ class ParticipantCard extends StatelessWidget {
   final int bpm;
   final int avgBpm;
   final int hrMax;
-  final int? rank;
   final VoidCallback? onTap;
 
   const ParticipantCard({
@@ -30,7 +29,6 @@ class ParticipantCard extends StatelessWidget {
     required this.avgBpm,
     required this.hrMax,
     this.avatarUrl,
-    this.rank,
     this.onTap,
   });
 
@@ -137,14 +135,6 @@ class ParticipantCard extends StatelessWidget {
                                     style: AppTheme.micro(color: color)
                                         .copyWith(fontWeight: FontWeight.w700),
                                   ),
-                                  if (rank != null) ...[
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '#$rank',
-                                      style: AppTheme.micro(color: color)
-                                          .copyWith(fontWeight: FontWeight.w700),
-                                    ),
-                                  ],
                                 ],
                               ),
                             ],

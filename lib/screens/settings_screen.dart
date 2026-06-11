@@ -1,20 +1,27 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../services/mock_data.dart';
 import '../widgets/beat_button.dart';
+import 'edit_profile_screen.dart';
 
-/// Athlete profile + settings — stats overview, then grouped settings sections.
+/// Athlete profile + settings â€” stats overview, then grouped settings sections.
 class SettingsScreen extends StatelessWidget {
   final UserProfile? profile;
-  const SettingsScreen({super.key, this.profile});
+  final VoidCallback? onSignOut;
+  const SettingsScreen({super.key, this.profile, this.onSignOut});
 
   @override
   Widget build(BuildContext context) {
     final p = profile ?? MockData.athleteProfile;
-    return Scaffold(
+    // When pushed as a route (e.g. from the trainer home avatar), Navigator
+    // can pop — show a back arrow. When mounted as a nav-shell tab, hide it.
+    final canPop = Navigator.canPop(context);
+    return MobileFrame(
+      child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
       body: SafeArea(
         bottom: false,
@@ -23,6 +30,34 @@ class SettingsScreen extends StatelessWidget {
             AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl,
           ),
           children: [
+            if (canPop)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      borderRadius: BorderRadius.circular(999),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.darkBgSecondary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.darkBorder),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: AppColors.darkTextPrimary,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             // Header card
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -97,10 +132,25 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: AppSpacing.lg),
 
-            _Section(title: 'Account', items: const [
-              _SettingItem(icon: Icons.person_outline_rounded, label: 'Personal info'),
-              _SettingItem(icon: Icons.favorite_outline_rounded, label: 'Health data'),
-              _SettingItem(icon: Icons.bluetooth_rounded, label: 'Connected devices', trailing: 'Polar H10'),
+            _Section(title: 'Account', items: [
+              _SettingItem(
+                icon: Icons.person_outline_rounded,
+                label: 'Personal info',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => EditProfileScreen(profile: p),
+                  ),
+                ),
+              ),
+              const _SettingItem(
+                icon: Icons.favorite_outline_rounded,
+                label: 'Health data',
+              ),
+              const _SettingItem(
+                icon: Icons.bluetooth_rounded,
+                label: 'Connected devices',
+                trailing: 'Polar H10',
+              ),
             ]),
 
             _Section(title: 'App', items: const [
@@ -125,7 +175,12 @@ class SettingsScreen extends StatelessWidget {
             BeatSecondaryButton(
               label: 'Sign out',
               icon: Icons.logout_rounded,
-              onPressed: () {},
+              onPressed: () {
+                // Pop any pushed routes (athlete/trainer settings is pushed
+                // from home avatar tap), then bubble up to the prototype flow.
+                Navigator.of(context).popUntil((r) => r.isFirst);
+                onSignOut?.call();
+              },
             ),
             const SizedBox(height: AppSpacing.lg),
             Center(
@@ -136,6 +191,7 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -226,10 +282,12 @@ class _SettingItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final String? trailing;
+  final VoidCallback? onTap;
   const _SettingItem({
     required this.icon,
     required this.label,
     this.trailing,
+    this.onTap,
   });
 
   @override
@@ -237,7 +295,7 @@ class _SettingItem extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {},
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md, vertical: AppSpacing.sm,

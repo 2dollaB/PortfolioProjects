@@ -1,11 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
+import '../services/session_store.dart';
 import '../widgets/beat_button.dart';
+import '../widgets/workout_type_sheet.dart';
 import 'trainer_monitor_screen.dart';
 
-/// "Start session" — name + type + optional interval timer setup.
+/// "Start session" â€” name + type + optional interval timer setup.
 class SessionHostScreen extends StatefulWidget {
   const SessionHostScreen({super.key});
 
@@ -15,7 +18,7 @@ class SessionHostScreen extends StatefulWidget {
 
 class _SessionHostScreenState extends State<SessionHostScreen> {
   final _name = TextEditingController(text: 'Friday HIIT 18:00');
-  String _type = 'HIIT';
+  WorkoutType _type = WorkoutType.hiit;
   bool _intervals = true;
   int _workSec = 45;
   int _restSec = 15;
@@ -29,7 +32,8 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MobileFrame(
+      child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
       appBar: AppBar(
         title: const Text('Start session'),
@@ -58,9 +62,9 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
                     spacing: AppSpacing.xs,
                     runSpacing: AppSpacing.xs,
                     children: [
-                      for (final t in const ['HIIT', 'Strength', 'Cardio', 'CrossFit', 'Custom'])
+                      for (final t in WorkoutType.values)
                         _TypeChip(
-                          label: t,
+                          label: t.displayName,
                           selected: _type == t,
                           onTap: () => setState(() => _type = t),
                         ),
@@ -175,15 +179,29 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
               child: BeatPrimaryButton(
                 label: 'Launch session',
                 icon: Icons.play_arrow_rounded,
-                onPressed: () => Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => const TrainerMonitorScreen(),
-                  ),
-                ),
+                onPressed: () {
+                  // Persist the session in the in-memory store so trainer home
+                  // + recent sessions update when we come back.
+                  SessionStore.instance.startLive(
+                    name: _name.text.trim().isEmpty
+                        ? 'Untitled session'
+                        : _name.text.trim(),
+                    type: _type,
+                    workSec: _intervals ? _workSec : 0,
+                    restSec: _intervals ? _restSec : 0,
+                    rounds: _intervals ? _rounds : 1,
+                  );
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => const TrainerMonitorScreen(),
+                    ),
+                  );
+                },
               ),
             ),
           ],
         ),
+      ),
       ),
     );
   }

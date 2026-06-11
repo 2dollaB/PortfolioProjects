@@ -7,7 +7,9 @@ import '../models/user_profile.dart';
 import '../services/mock_data.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/home_header.dart';
+import '../widgets/mobile_frame.dart';
 import '../widgets/stat_chip.dart';
+import '../widgets/workout_type_sheet.dart';
 import '../widgets/zone_badge.dart';
 import 'workout_screen.dart';
 import 'workout_history_screen.dart';
@@ -20,11 +22,13 @@ class HomeScreen extends StatelessWidget {
   final UserProfile profile;
   // ignore: unused_element_parameter
   final void Function(UserProfile)? onProfileUpdated;
+  final VoidCallback? onSignOut;
 
   const HomeScreen({
     super.key,
     required this.profile,
     this.onProfileUpdated,
+    this.onSignOut,
   });
 
   String _firstName() {
@@ -50,7 +54,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MobileFrame(
+      child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
       body: SafeArea(
         bottom: false,
@@ -67,7 +72,10 @@ class HomeScreen extends StatelessWidget {
                   initials: _initials(profile.name),
                   onAvatarTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => SettingsScreen(profile: profile),
+                      builder: (_) => SettingsScreen(
+                        profile: profile,
+                        onSignOut: onSignOut,
+                      ),
                     ),
                   ),
                 ),
@@ -129,6 +137,7 @@ class HomeScreen extends StatelessWidget {
             const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
           ],
         ),
+      ),
       ),
     );
   }
@@ -238,11 +247,18 @@ class _HeroCard extends StatelessWidget {
           BeatPrimaryButton(
             label: 'Start workout',
             icon: Icons.play_arrow_rounded,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => WorkoutScreen(profile: profile),
-              ),
-            ),
+            onPressed: () async {
+              final type = await WorkoutTypeSheet.show(context);
+              if (type == null || !context.mounted) return;
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => WorkoutScreen(
+                    profile: profile,
+                    workoutType: type,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),

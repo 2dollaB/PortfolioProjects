@@ -3,6 +3,7 @@ import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
 import '../services/mock_data.dart';
+import '../widgets/mobile_frame.dart';
 import '../widgets/zone_badge.dart';
 
 class WorkoutHistoryScreen extends StatefulWidget {
@@ -13,57 +14,120 @@ class WorkoutHistoryScreen extends StatefulWidget {
 }
 
 class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
-  String _filter = 'All';
-  final _filters = const ['All', 'This week', 'This month', 'HIIT', 'Strength'];
+  String _timeFilter = 'All';
+  String? _typeFilter; // null means "any type"
+
+  static const _timeFilters = ['All', 'This week', 'This month'];
+  static const _typeFilters = ['HIIT', 'Strength', 'Endurance', 'Cardio', 'CrossFit'];
+
+  /// Quick heuristic: map the mock "date" string to a day-ago count.
+  /// Real implementation would compare DateTime objects from the workout.
+  int _daysAgo(String date) {
+    final l = date.toLowerCase();
+    if (l == 'today') return 0;
+    if (l == 'yesterday') return 1;
+    // "Mon 19", "Sat 17" etc — assume within current month, treat as recent.
+    return 10;
+  }
+
+  List<MockWorkout> _applyFilters() {
+    return MockData.recentWorkouts.where((w) {
+      // Time filter
+      switch (_timeFilter) {
+        case 'This week':
+          if (_daysAgo(w.date) > 7) return false;
+          break;
+        case 'This month':
+          if (_daysAgo(w.date) > 31) return false;
+          break;
+      }
+      // Type filter
+      if (_typeFilter != null && w.type != _typeFilter) return false;
+      return true;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
-      appBar: AppBar(
-        title: const Text('History'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.of(context).pop(),
+    final filtered = _applyFilters();
+    return MobileFrame(
+      child: Scaffold(
+        backgroundColor: AppColors.darkBgPrimary,
+        appBar: AppBar(
+          title: const Text('History'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 44,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-                itemCount: _filters.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(width: AppSpacing.xs),
-                itemBuilder: (context, i) {
-                  final f = _filters[i];
-                  final selected = f == _filter;
-                  return _FilterChip(
-                    label: f,
-                    selected: selected,
-                    onTap: () => setState(() => _filter = f),
-                  );
-                },
-              ),
-            ),
-            const Divider(color: AppColors.darkBorder, height: 1),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 44,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                  children: [
+                    for (final f in _timeFilters) ...[
+                      _FilterChip(
+                        label: f,
+                        selected: _timeFilter == f,
+                        onTap: () => setState(() => _timeFilter = f),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                    ],
+                    Container(
+                      width: 1,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 10,
+                      ),
+                      color: AppColors.darkBorder,
+                    ),
+                    for (final t in _typeFilters) ...[
+                      _FilterChip(
+                        label: t,
+                        selected: _typeFilter == t,
+                        onTap: () => setState(() =>
+                            _typeFilter = _typeFilter == t ? null : t),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                    ],
+                  ],
                 ),
-                itemCount: MockData.recentWorkouts.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppSpacing.xs),
-                itemBuilder: (context, i) =>
-                    _HistoryRow(workout: MockData.recentWorkouts[i]),
               ),
-            ),
-          ],
+              const Divider(color: AppColors.darkBorder, height: 1),
+              Expanded(
+                child: filtered.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.xl),
+                          child: Text(
+                            'No workouts match your filters.',
+                            style: AppTheme.caption(),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.xl,
+                          AppSpacing.md,
+                          AppSpacing.xl,
+                          AppSpacing.xl,
+                        ),
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppSpacing.xs),
+                        itemBuilder: (context, i) =>
+                            _HistoryRow(workout: filtered[i]),
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -78,18 +78,42 @@ class MockData {
     ),
   ];
 
+  /// Up to 24 athletes — used by trainer monitor + TV view.
+  /// Names sorted alphabetically by first name so the default alphabetical
+  /// sort renders in a sensible order.
   static const List<MockParticipant> liveSession = [
-    MockParticipant(id: 'p1', name: 'Marko Š.', bpm: 168, avgBpm: 152, rank: 1),
-    MockParticipant(id: 'p2', name: 'Petra L.', bpm: 162, avgBpm: 148, rank: 2),
-    MockParticipant(id: 'p3', name: 'Ivan B.',  bpm: 155, avgBpm: 144, rank: 3),
-    MockParticipant(id: 'p4', name: 'Ana M.',   bpm: 148, avgBpm: 140, rank: 4),
-    MockParticipant(id: 'p5', name: 'Luka K.',  bpm: 142, avgBpm: 135, rank: 5),
-    MockParticipant(id: 'p6', name: 'Maja P.',  bpm: 138, avgBpm: 132, rank: 6),
-    MockParticipant(id: 'p7', name: 'Tin S.',   bpm: 132, avgBpm: 128, rank: 7),
-    MockParticipant(id: 'p8', name: 'Sara V.',  bpm: 128, avgBpm: 122, rank: 8),
-    MockParticipant(id: 'p9', name: 'Filip M.', bpm: 124, avgBpm: 118, rank: 9),
-    MockParticipant(id: 'p10', name: 'Iva D.',  bpm: 118, avgBpm: 112, rank: 10),
+    MockParticipant(id: 'p1',  name: 'Ana Marić',     bpm: 148, avgBpm: 140),
+    MockParticipant(id: 'p2',  name: 'Bruno Horvat',  bpm: 136, avgBpm: 130),
+    MockParticipant(id: 'p3',  name: 'Daria Šuljić',  bpm: 152, avgBpm: 146),
+    MockParticipant(id: 'p4',  name: 'Dino Vuković',  bpm: 144, avgBpm: 138),
+    MockParticipant(id: 'p5',  name: 'Filip Mihić',   bpm: 124, avgBpm: 118),
+    MockParticipant(id: 'p6',  name: 'Goran Tadić',   bpm: 165, avgBpm: 156),
+    MockParticipant(id: 'p7',  name: 'Iva Delić',     bpm: 118, avgBpm: 112),
+    MockParticipant(id: 'p8',  name: 'Ivan Brkić',    bpm: 155, avgBpm: 144),
+    MockParticipant(id: 'p9',  name: 'Jana Lovrić',   bpm: 140, avgBpm: 134),
+    MockParticipant(id: 'p10', name: 'Karla Babić',   bpm: 158, avgBpm: 150),
+    MockParticipant(id: 'p11', name: 'Lana Petrov',   bpm: 130, avgBpm: 124),
+    MockParticipant(id: 'p12', name: 'Luka Kovač',    bpm: 142, avgBpm: 135),
+    MockParticipant(id: 'p13', name: 'Maja Perić',    bpm: 138, avgBpm: 132),
+    MockParticipant(id: 'p14', name: 'Marko Šarić',   bpm: 168, avgBpm: 152),
+    MockParticipant(id: 'p15', name: 'Mia Crnić',     bpm: 122, avgBpm: 116),
+    MockParticipant(id: 'p16', name: 'Niko Zorić',    bpm: 146, avgBpm: 139),
+    MockParticipant(id: 'p17', name: 'Petra Lešić',   bpm: 162, avgBpm: 148),
+    MockParticipant(id: 'p18', name: 'Rea Šimić',     bpm: 134, avgBpm: 128),
+    MockParticipant(id: 'p19', name: 'Sara Vujić',    bpm: 128, avgBpm: 122),
+    MockParticipant(id: 'p20', name: 'Stipe Galić',   bpm: 172, avgBpm: 158),
+    MockParticipant(id: 'p21', name: 'Tin Skoko',     bpm: 132, avgBpm: 128),
+    MockParticipant(id: 'p22', name: 'Toni Andrić',   bpm: 154, avgBpm: 145),
+    MockParticipant(id: 'p23', name: 'Vera Ćosić',    bpm: 126, avgBpm: 120),
+    MockParticipant(id: 'p24', name: 'Zoran Žilić',   bpm: 160, avgBpm: 150),
   ];
+
+  /// Returns the first [count] participants from [liveSession],
+  /// clamped to [1, liveSession.length].
+  static List<MockParticipant> liveOf(int count) {
+    final clamped = count.clamp(1, liveSession.length);
+    return liveSession.take(clamped).toList();
+  }
 
   static const List<MockMember> studioMembers = [
     MockMember(name: 'Marko Šarić',  email: 'marko@studio.com', sessions: 24, lastSeen: 'Active now'),
@@ -140,13 +164,11 @@ class MockParticipant {
   final String name;
   final int bpm;
   final int avgBpm;
-  final int rank;
   const MockParticipant({
     required this.id,
     required this.name,
     required this.bpm,
     required this.avgBpm,
-    required this.rank,
   });
 }
 

@@ -1,4 +1,5 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
+import '../widgets/mobile_frame.dart';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
@@ -10,7 +11,8 @@ class StudioAnalyticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MobileFrame(
+      child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
       body: SafeArea(
         bottom: false,
@@ -61,15 +63,16 @@ class StudioAnalyticsScreen extends StatelessWidget {
               title: 'Top athletes',
               subtitle: 'Most active this month',
               child: const _TopList(items: [
-                ('Marko Šarić', 24),
-                ('Petra Lešić', 21),
-                ('Ivan Brkić', 18),
-                ('Ana Marić', 14),
-                ('Luka Kovač', 12),
+                ('Marko Å ariÄ‡', 24),
+                ('Petra LeÅ¡iÄ‡', 21),
+                ('Ivan BrkiÄ‡', 18),
+                ('Ana MariÄ‡', 14),
+                ('Luka KovaÄ', 12),
               ]),
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -138,7 +141,7 @@ class _BarChart extends StatelessWidget {
                           .copyWith(fontSize: 10),
                     ),
                     const SizedBox(height: 2),
-                    // The bar — Expanded gives it bounded height so
+                    // The bar â€” Expanded gives it bounded height so
                     // FractionallySizedBox heightFactor actually means something.
                     Expanded(
                       child: Align(

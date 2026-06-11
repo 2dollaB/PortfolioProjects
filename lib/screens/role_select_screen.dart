@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
@@ -21,7 +22,8 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MobileFrame(
+      child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
       body: SafeArea(
         child: Padding(
@@ -68,6 +70,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

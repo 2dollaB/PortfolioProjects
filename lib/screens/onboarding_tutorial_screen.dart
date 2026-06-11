@@ -1,9 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../widgets/mobile_frame.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/app_colors.dart';
+import '../config/app_spacing.dart';
 import '../config/theme.dart';
+import '../widgets/beat_button.dart';
+import '../widgets/logo_heartbeat.dart';
 
-/// 9.1 — Onboarding Tutorial Carousel
-/// Shown once on first launch to introduce key features
+/// Two-slide tutorial shown on first launch. Has a Skip in the top-right
+/// for users who already know the app.
 class OnboardingTutorialScreen extends StatefulWidget {
   final VoidCallback onComplete;
   const OnboardingTutorialScreen({super.key, required this.onComplete});
@@ -11,53 +16,43 @@ class OnboardingTutorialScreen extends StatefulWidget {
   static const _seenKey = 'onboarding_seen';
 
   static Future<bool> shouldShow() async {
-    final prefs = await SharedPreferences.getInstance();
-    return !(prefs.getBool(_seenKey) ?? false);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return !(prefs.getBool(_seenKey) ?? false);
+    } catch (_) {
+      // Prototype/web â€” no persistence. Always show.
+      return true;
+    }
   }
 
   static Future<void> markSeen() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_seenKey, true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_seenKey, true);
+    } catch (_) {/* prototype â€” ignore */}
   }
 
   @override
-  State<OnboardingTutorialScreen> createState() => _OnboardingTutorialScreenState();
+  State<OnboardingTutorialScreen> createState() =>
+      _OnboardingTutorialScreenState();
 }
 
 class _OnboardingTutorialScreenState extends State<OnboardingTutorialScreen> {
   final _controller = PageController();
-  int _currentPage = 0;
+  int _page = 0;
 
   static const _slides = [
     _Slide(
+      icon: Icons.bluetooth_searching_rounded,
+      title: 'Connect your strap',
+      body:
+          'BeatSync pairs with any Bluetooth heart-rate strap â€” Polar, Wahoo, Garmin, generic. Your BPM is live the moment you walk into the gym.',
+    ),
+    _Slide(
       icon: Icons.favorite_rounded,
-      color: Color(0xFFEF4444),
-      title: 'Real-Time Heart Rate',
-      body: 'Connect any Bluetooth heart rate monitor and see your BPM, zone, and live chart during workouts.',
-    ),
-    _Slide(
-      icon: Icons.bar_chart_rounded,
-      color: Color(0xFF8B5CF6),
-      title: '5 Training Zones',
-      body: 'From recovery to maximum effort — each zone is color-coded so you always know your intensity.',
-    ),
-    _Slide(
-      icon: Icons.timeline_rounded,
-      color: Color(0xFF06B6D4),
-      title: 'TRIMP & Training Effect',
-      body: 'Advanced analytics measure your workout load and physiological impact — like a personal sports scientist.',
-    ),
-    _Slide(
-      icon: Icons.groups_rounded,
-      color: Color(0xFF22C55E),
-      title: 'Group Sessions',
-      body: 'Trainers can host live sessions with a TV dashboard. Athletes join and their HR data streams in real-time.',
-    ),
-    _Slide(
-      icon: Icons.trending_up_rounded,
-      color: Color(0xFFF97316),
-      title: 'Trends & Recovery',
-      body: 'Track your training load over weeks, monitor HRV, and optimize your recovery for peak performance.',
+      title: 'Not a competition',
+      body:
+          'BeatSync is a heart-rate monitoring tool for trainers. Train together, see the studio in real time â€” no podium, no ranking pressure.',
     ),
   ];
 
@@ -72,108 +67,86 @@ class _OnboardingTutorialScreenState extends State<OnboardingTutorialScreen> {
     widget.onComplete();
   }
 
+  void _next() {
+    if (_page == _slides.length - 1) {
+      _finish();
+    } else {
+      _controller.nextPage(
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeInOutCubic,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.background,
+    return MobileFrame(
+      child: Scaffold(
+      backgroundColor: AppColors.darkBgPrimary,
       body: SafeArea(
         child: Column(
           children: [
-            // Skip button
-            Align(
-              alignment: Alignment.topRight,
-              child: TextButton(
-                onPressed: _finish,
-                child: Text('Skip',
-                    style: AppTheme.body(color: AppTheme.textMuted, fontSize: 14)),
+            // Top bar: logo + skip
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, AppSpacing.md, AppSpacing.md, 0,
+              ),
+              child: Row(
+                children: [
+                  const LogoHeartbeat(size: 24, showWordmark: true),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: _finish,
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.darkTextSecondary,
+                    ),
+                    child: const Text('Skip'),
+                  ),
+                ],
               ),
             ),
-            // Pages
             Expanded(
               child: PageView.builder(
                 controller: _controller,
                 itemCount: _slides.length,
-                onPageChanged: (i) => setState(() => _currentPage = i),
-                itemBuilder: (context, i) {
-                  final slide = _slides[i];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 120, height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                slide.color.withValues(alpha: 0.2),
-                                slide.color.withValues(alpha: 0.05),
-                              ],
-                            ),
-                          ),
-                          child: Icon(slide.icon, size: 56, color: slide.color),
-                        ),
-                        const SizedBox(height: 32),
-                        Text(slide.title,
-                            style: AppTheme.heading(fontSize: 24),
-                            textAlign: TextAlign.center),
-                        const SizedBox(height: 12),
-                        Text(slide.body,
-                            style: AppTheme.body(fontSize: 15, color: AppTheme.textSecondary),
-                            textAlign: TextAlign.center),
-                      ],
-                    ),
-                  );
-                },
+                onPageChanged: (i) => setState(() => _page = i),
+                itemBuilder: (context, i) => _SlideView(slide: _slides[i]),
               ),
             ),
-            // Dots + button
+            // Dots + next/get-started
             Padding(
-              padding: const EdgeInsets.all(24),
-              child: Row(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.lg,
+              ),
+              child: Column(
                 children: [
-                  // Page dots
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(_slides.length, (i) {
+                      final active = i == _page;
                       return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.only(right: 6),
-                        width: _currentPage == i ? 24 : 8,
+                        duration: const Duration(milliseconds: 280),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: active ? 24 : 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: _currentPage == i
-                              ? _slides[_currentPage].color
-                              : AppTheme.surface,
+                          color: active
+                              ? AppColors.brandRed
+                              : AppColors.darkBgTertiary,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       );
                     }),
                   ),
-                  const Spacer(),
-                  // Next / Get Started button
-                  GestureDetector(
-                    onTap: _currentPage == _slides.length - 1
-                        ? _finish
-                        : () => _controller.nextPage(
-                            duration: const Duration(milliseconds: 400),
-                            curve: Curves.easeInOut),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppTheme.accent, AppTheme.accentDark],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Text(
-                        _currentPage == _slides.length - 1 ? 'Get Started' : 'Next',
-                        style: AppTheme.body(
-                          fontSize: 14, color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                  const SizedBox(height: AppSpacing.md),
+                  BeatPrimaryButton(
+                    label: _page == _slides.length - 1
+                        ? 'Get started'
+                        : 'Next',
+                    icon: _page == _slides.length - 1
+                        ? Icons.check_rounded
+                        : Icons.arrow_forward_rounded,
+                    onPressed: _next,
                   ),
                 ],
               ),
@@ -181,14 +154,77 @@ class _OnboardingTutorialScreenState extends State<OnboardingTutorialScreen> {
           ],
         ),
       ),
+      ),
     );
   }
 }
 
 class _Slide {
   final IconData icon;
-  final Color color;
   final String title;
   final String body;
-  const _Slide({required this.icon, required this.color, required this.title, required this.body});
+  const _Slide({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+}
+
+class _SlideView extends StatelessWidget {
+  final _Slide slide;
+  const _SlideView({required this.slide});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Icon plate
+          Container(
+            width: 160,
+            height: 160,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  AppColors.brandRed.withValues(alpha: 0.25),
+                  AppColors.brandRed.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+            child: Center(
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.darkBgSecondary,
+                  border: Border.all(
+                    color: AppColors.brandRed.withValues(alpha: 0.4),
+                    width: 1.5,
+                  ),
+                ),
+                child: Icon(slide.icon, color: AppColors.brandRed, size: 44),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            slide.title,
+            style: AppTheme.h1().copyWith(fontSize: 30),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            slide.body,
+            style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary)
+                .copyWith(height: 1.55),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
 }
