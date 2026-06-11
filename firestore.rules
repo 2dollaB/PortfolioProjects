@@ -1,0 +1,100 @@
+rules_version = '2';
+
+// BeatSync Firestore security rules — v1 (app-only).
+//
+// Scope: locks down the read/write paths used by the Flutter app in Stage 2
+// (auth + studios + cloud sessions + workouts). CEO access and Cloud-Function-
+// mediated writes (invites, suspend, impersonate, audit_log) are added in
+// Stage 6 / Phase D via custom claims — see TODOs below.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── helpers ──────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function studioData(studioId) {
+      return get(/databases/$(database)/documents/studios/$(studioId)).data;
+    }
+
+    function isStudioMember(studioId) {
+      return isSignedIn()
+        && request.auth.uid in studioData(studioId).memberUids;
+    }
+
+    // An athlete may add ONLY themselves to a studio's memberUids (join flow).
+    // Everything else on the studio doc stays owner-only.
+    // TODO(Phase D): move joins to the inviteAthleteToStudio Cloud Function and
+    // drop this self-join allowance.
+    function isSelfJoin(studioId) {
+      let incoming = request.resource.data;
+      let current = resource.data;
+      return incoming.diff(current).affectedKeys().hasOnly(['memberUids'])
+        && incoming.memberUids.hasAll(current.memberUids)
+        && incoming.memberUids.size() == current.memberUids.size() + 1
+        && (request.auth.uid in incoming.memberUids)
+        && !(request.auth.uid in current.memberUids);
+    }
+
+    // ── users/{uid} ──────────────────────────────────────────
+    // A user reads/writes only their own profile doc.
+    match /users/{uid} {
+      allow read, write: if isUser(uid);
+      // TODO(Phase D): allow CEO (role claim) read-all; trainer read of own members.
+    }
+
+    // ── studios/{studioId} ───────────────────────────────────
+    match /studios/{studioId} {
+      allow read: if isStudioMember(studioId)
+        || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isSignedIn()
+        && (resource.data.ownerUid == request.auth.uid || isSelfJoin(studioId));
+      allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+      // TODO(Phase D): CEO suspend/restore via suspendStudio Cloud Function only.
+    }
+
+    // ── sessions/{sessionId} ─────────────────────────────────
+    match /sessions/{sessionId} {
+      allow read: if isStudioMember(resource.data.studioId);
+      allow create: if isSignedIn()
+        && request.resource.data.trainerUid == request.auth.uid
+        && isStudioMember(request.resource.data.studioId);
+      allow update, delete: if isSignedIn()
+        && resource.data.trainerUid == request.auth.uid;
+
+      // Live HR feed — one subdoc per athlete, written ~1/sec during a session.
+      match /hr/{uid} {
+        allow read: if isSignedIn()
+          && isStudioMember(get(/databases/$(database)/documents/sessions/$(sessionId)).data.studioId);
+        allow write: if isUser(uid);
+      }
+    }
+
+    // ── workouts/{workoutId} ─────────────────────────────────
+    // Owned by a single user; only that user reads/writes.
+    match /workouts/{workoutId} {
+      allow read, delete: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      // TODO(Phase D): allow CEO/trainer read of members' workouts via claims.
+    }
+
+    // ── audit_log/{entryId} ──────────────────────────────────
+    // Cloud Functions only (Admin SDK bypasses these rules). No client access.
+    match /audit_log/{entryId} {
+      allow read, write: if false;
+    }
+  }
+}
