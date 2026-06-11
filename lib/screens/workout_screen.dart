@@ -7,6 +7,8 @@ import '../config/app_spacing.dart';
 import '../config/hr_zones.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
+import '../services/auth_service.dart';
+import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/bpm_display.dart';
 import '../widgets/mobile_frame.dart';
@@ -118,6 +120,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       ),
     );
     if (confirm == true && mounted) {
+      unawaited(_persistWorkout());
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => WorkoutSummaryScreen(
@@ -133,6 +136,32 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           ),
         ),
       );
+    }
+  }
+
+  /// Persist this session's summary to Firestore when signed in (production).
+  /// Fire-and-forget: navigation isn't blocked and Firestore's offline queue
+  /// handles transient failures.
+  Future<void> _persistWorkout() async {
+    final uid = AuthService.currentUid;
+    if (uid == null) return; // prototype / not signed in
+    final avg = _bpmHistory.isEmpty
+        ? _bpm
+        : _bpmHistory.reduce((a, b) => a + b) ~/ _bpmHistory.length;
+    final end = DateTime.now();
+    try {
+      await WorkoutRepository.save(
+        userId: uid,
+        type: widget.workoutType?.name ?? 'free',
+        startTime: end.subtract(_stopwatch.elapsed),
+        endTime: end,
+        avgHr: avg,
+        maxHr: _maxBpm,
+        calories: _kcal.round(),
+        trimp: _trimp.round(),
+      );
+    } catch (_) {
+      // Non-blocking; ignore transient write failures.
     }
   }
 
