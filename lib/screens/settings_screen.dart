@@ -7,11 +7,13 @@ import '../models/studio.dart';
 import '../models/user_profile.dart';
 import '../models/workout_summary.dart';
 import '../services/auth_service.dart';
+import '../services/ble_hr_service.dart';
 import '../services/mock_data.dart';
 import '../services/studio_repository.dart';
 import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/home_header.dart';
+import 'device_pairing_screen.dart';
 import 'edit_profile_screen.dart';
 
 /// Athlete profile + settings â€” stats overview, then grouped settings sections.
@@ -193,10 +195,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: Icons.favorite_outline_rounded,
                 label: 'Health data',
               ),
-              const _SettingItem(
+              _SettingItem(
                 icon: Icons.bluetooth_rounded,
                 label: 'Connected devices',
-                trailing: 'Polar H10',
+                trailing: _production
+                    ? (BleHrService.instance.connectedDeviceName ?? 'None')
+                    : 'Polar H10',
+                onTap: _production
+                    ? () => Navigator.of(context)
+                        .push(MaterialPageRoute(
+                          builder: (_) => const DevicePairingScreen(),
+                        ))
+                        // Refresh the trailing label after pairing.
+                        .then((_) => mounted ? setState(() {}) : null)
+                    : null,
               ),
             ]),
 

@@ -17,6 +17,8 @@ import 'screens/register_screen.dart';
 import 'screens/role_select_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/auth_service.dart';
+import 'services/ble_hr_service.dart';
+import 'services/foreground_service.dart';
 import 'services/mock_data.dart';
 import 'services/studio_repository.dart';
 import 'services/user_repository.dart';
@@ -24,8 +26,10 @@ import 'services/user_repository.dart';
 Future<void> _initHeavyServices() async {
   if (FeatureFlags.prototypeMode) return;
   if (kIsWeb) return;
-  // Real BLE/notifications/foreground init lives in services/ — kept out of the
-  // demo entrypoint so the prototype loads in any browser with zero friction.
+  // Kept out of the demo entrypoint so the prototype loads in any browser
+  // with zero friction.
+  await initBle();
+  initForegroundTask();
 }
 
 void main() async {

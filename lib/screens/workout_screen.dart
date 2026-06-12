@@ -1,14 +1,19 @@
 ﻿import 'dart:async';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/feature_flags.dart';
 import '../config/hr_zones.dart';
 import '../config/theme.dart';
 import '../models/cloud_session.dart';
+import '../models/hr_data.dart';
 import '../models/user_profile.dart';
 import '../services/auth_service.dart';
+import '../services/ble_hr_service.dart';
+import '../services/foreground_service.dart';
 import '../services/session_repository.dart';
 import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
@@ -57,9 +62,24 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   double _kcal = 0;
   double _trimp = 0;
 
+  // Real strap: locked in at workout start. When connected, _step consumes
+  // the latest BLE sample instead of the simulated curve.
+  late final bool _useBle;
+  HrData? _lastBle;
+  bool _bleLive = false;
+  StreamSubscription<HrData>? _bleSub;
+
   @override
   void initState() {
     super.initState();
+    _useBle = !kIsWeb && BleHrService.instance.isConnected;
+    if (_useBle) {
+      _bleSub = BleHrService.instance.hrDataStream.listen((d) => _lastBle = d);
+    }
+    // Keeps HR tracking alive when the phone screen locks mid-workout.
+    if (!kIsWeb && !FeatureFlags.prototypeMode) {
+      unawaited(startForegroundService());
+    }
     _stopwatch.start();
     _tick = Timer.periodic(const Duration(milliseconds: 800), (_) => _step());
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -68,13 +88,24 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   void _step() {
     if (_paused || !mounted) return;
     setState(() {
-      // Target curve: ramps up during the first minute, oscillates 130-170 after.
-      final elapsedSec = _stopwatch.elapsed.inSeconds.toDouble();
-      final base = elapsedSec < 60
-          ? 78 + (elapsedSec / 60.0) * 70
-          : 145 + math.sin(elapsedSec / 18) * 22;
-      final noise = (_rng.nextDouble() - 0.5) * 6;
-      final next = (base + noise).round().clamp(60, 200);
+      final int next;
+      if (_useBle) {
+        // Real sensor: hold the last reading through brief dropouts rather
+        // than blending in fake data.
+        final sample = _lastBle;
+        _bleLive = sample != null &&
+            DateTime.now().difference(sample.timestamp) <
+                const Duration(seconds: 8);
+        next = sample?.bpm ?? _bpm;
+      } else {
+        // Target curve: ramps up during the first minute, oscillates 130-170 after.
+        final elapsedSec = _stopwatch.elapsed.inSeconds.toDouble();
+        final base = elapsedSec < 60
+            ? 78 + (elapsedSec / 60.0) * 70
+            : 145 + math.sin(elapsedSec / 18) * 22;
+        final noise = (_rng.nextDouble() - 0.5) * 6;
+        next = (base + noise).round().clamp(60, 200);
+      }
       _bpm = next;
       _maxBpm = math.max(_maxBpm, _bpm);
       _bpmHistory.add(_bpm);
@@ -121,6 +152,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   @override
   void dispose() {
     _tick?.cancel();
+    _bleSub?.cancel();
+    if (!kIsWeb && !FeatureFlags.prototypeMode) {
+      unawaited(stopForegroundService());
+    }
     _stopwatch.stop();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
@@ -225,6 +260,56 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     }
   }
 
+  /// Top-right sensor chip: real device name + battery when a strap is
+  /// connected, an honest "Simulated" in production without one, and the
+  /// polished mock chip for the prototype demo.
+  Widget _sensorChip() {
+    final IconData icon;
+    final Color color;
+    final String label;
+    if (_useBle) {
+      final ble = BleHrService.instance;
+      final name = ble.connectedDeviceName ?? 'Sensor';
+      final batt = ble.batteryLevel;
+      label = batt >= 0 ? '$name · $batt%' : name;
+      color = _bleLive ? AppColors.success : AppColors.darkTextTertiary;
+      icon = _bleLive
+          ? Icons.bluetooth_connected_rounded
+          : Icons.bluetooth_disabled_rounded;
+    } else if (AuthService.currentUid != null) {
+      label = 'Simulated';
+      color = AppColors.darkTextSecondary;
+      icon = Icons.bluetooth_disabled_rounded;
+    } else {
+      label = 'H10 · ${(85 + _rng.nextInt(15))}%';
+      color = AppColors.success;
+      icon = Icons.bluetooth_connected_rounded;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.micro,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.darkBgSecondary,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.darkBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: AppTheme.caption(color: color)
+                .copyWith(fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final hrMax = widget.profile.hrMax;
@@ -289,30 +374,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     ),
                   ],
                   const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: AppSpacing.micro,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.darkBgSecondary,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      border: Border.all(color: AppColors.darkBorder),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.bluetooth_connected_rounded,
-                            size: 14, color: AppColors.success),
-                        const SizedBox(width: 4),
-                        Text(
-                          'H10 · ${(85 + _rng.nextInt(15))}%',
-                          style: AppTheme.caption(color: AppColors.success)
-                              .copyWith(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _sensorChip(),
                 ],
               ),
             ),

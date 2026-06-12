@@ -12,6 +12,10 @@ Future<void> initBle() async {
 /// Handles scanning, connecting, and reading heart rate data
 /// from any BLE device that implements the standard HR Service (0x180D)
 class BleHrService {
+  /// App-wide shared instance — pairing, settings and workout screens all
+  /// talk to the same connection. Never call [dispose] on it.
+  static final BleHrService instance = BleHrService();
+
   // Standard BLE Heart Rate Service & Characteristic UUIDs
   static final Guid _hrServiceUuid = Guid('180D');
   static final Guid _hrCharacteristicUuid = Guid('2A37');
