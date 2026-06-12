@@ -1,8 +1,8 @@
 # BeatSync — Handoff (Stage 2 wiring COMPLETE)
 
-Last updated: 2026-06-12 (late evening — after 2m, BLE wiring). Read this first when resuming in a fresh session.
+Last updated: 2026-06-12 (late evening — after 2n, cloud session detail; also the GitGuardian secret scrub). Read this first when resuming in a fresh session.
 
-**Where we are in one line:** every mobile screen runs on real Firebase (auth, studios, workouts, trainer analytics/notes, full live-session loop incl. TV board) and BLE heart-rate is now code-complete (pairing screen + real HR into the workout screen); what's left is the hardware test pass, cloud session detail, the admin panel, and ship chores.
+**Where we are in one line:** every mobile screen runs on real Firebase (auth, studios, workouts, trainer analytics/notes, full live-session loop incl. TV board), BLE heart-rate is code-complete (pairing screen + real HR into the workout screen) and ended cloud sessions now open a results screen; what's left is the hardware test pass, the admin panel, and ship chores.
 
 ## What BeatSync is
 Flutter app for real-time heart-rate monitoring during group fitness sessions in small studios. Cheaper alternative to MyZone/OrangeTheory. Solo dev project. Full plan: `IMPLEMENTATION_PLAN.md` (mobile app → Next.js admin panel → backend → deploy).
@@ -12,7 +12,7 @@ Flutter app for real-time heart-rate monitoring during group fitness sessions in
 - **Remote:** `github.com/2dollaB/PortfolioProjects` (user `TMinarik00` has push access).
 - **⚠️ Push via the PowerShell tool, NOT bash** — the WSL/bash git credential helper fails here ("could not read Username"). PowerShell git uses the Windows credential manager and works.
 - **main** is the integration branch; work happens on `feature/*` branches, fast-forward merged to main, then pushed. Each increment = its own commit + merge.
-- Current `main` HEAD: `48955a3` + this handoff update. Everything is merged and pushed; no open feature branches.
+- Current `main` HEAD: `525305e` + this handoff update. Everything is merged and pushed; no open feature branches.
 
 ## Firebase backend (provisioned & deployed)
 - **Project:** `beatsync-prod` (project number `918880027506`).
@@ -59,13 +59,14 @@ Anything sensitive lives in `HANDOFF.local.md` (gitignored): coach password, stu
 | 2j | **Trainer side of live sessions wired**: host screen creates real sessions, monitor streams the hr board (names, per-athlete hrMax, real QR code, cloud end), trainer home hero + recent list watch the cloud. Demo simulation intact. |
 | 2k | **Athlete side wired — live-session loop closed**: join screen watches the studio's live session (one-tap join, no code needed), workout screen publishes hr ~1/sec (paused-aware, removeHr on leave), workouts saved with `sessionId`. **Needs the two-browser end-to-end test (coach hosts, athlete joins).** |
 | 2l | **TV host screen** streams the cloud session (idle splash → live board, real studio name + invite QR); `BoardAthlete` + `UidNameCache` extracted, monitor refactored onto them |
+| 2n | **Cloud session detail**: ended sessions on trainer home are tappable → `CloudSessionDetailScreen` loads `workouts where sessionId == X` (decision: read results from workouts via the existing linkage — richer than board snapshots, keeps early leavers, zero extra writes), resolves names, adapts into `SessionRecord` and reuses the demo `SessionDetailScreen`. New rule `isHostOfWorkoutSession()` deployed + live-verified (coach query OK incl. the app's exact query; stranger denied on query and direct get). `WorkoutSummary.userId` + `WorkoutRepository.fetchBySession`. No composite index needed. |
 | 2m | **BLE wiring code-complete**: `BleHrService.instance` singleton + `initBle()`/`initForegroundTask()` at startup (mobile prod only); new `DevicePairingScreen` (runtime BLUETOOTH_SCAN/CONNECT permissions, radar-pulse scan list, connect, live-BPM/battery/signal card); workout screen consumes `hrDataStream` when a strap is connected at start (last reading held through dropouts — never blends fake data), simulated curve stays the no-strap/web fallback; sensor chip = real device + battery when connected, "Simulated" for signed-in users without a strap, mock H10 chip in the demo; settings "Connected devices" row is live in production. Gated on analyze + `flutter build web`. **Untested on hardware.** |
 
 **Verification approach:** every increment gated on `flutter analyze` + **live REST tests** against beatsync-prod (sign-up via Identity Toolkit, write/read Firestore through the security rules, incl. negative tests). Flutter **web UI can't be auto-verified** (canvas rendering) — UI is analyze-verified; the user confirms visuals on device/Chrome.
 
 ## ⬜ Not done yet
 - **BLE hardware test** — the whole BLE path (2m) is analyze/build-verified only. Needs the user's phone + a strap or a watch in HR-broadcast mode (Garmin/Polar/Coros/Samsung…; Apple Watch can't broadcast): pair via Settings → Connected devices, start a workout, confirm real BPM replaces the curve and the chip shows the device + battery. iOS `Info.plist` has no `NSBluetoothAlwaysUsageDescription` yet (Android-first; add before any iOS run).
-- **Cloud session detail** — ended cloud sessions aren't tappable (per-athlete post-session summary needs an hr-history or results doc; decide the model first). Trainer-home "Active today"/"Sessions / wk" chips and member-list activity filters could now be computed from cloud sessions too.
+- **Cloud-session-derived chips** — trainer-home "Active today"/"Sessions / wk" chips and member-list activity filters still show '–'; they could now be computed from cloud sessions/workouts. Also: ending a cloud session from the monitor just pops — it could push `CloudSessionDetailScreen` for workflow parity with the demo (results will be empty until athletes save; the screen handles that with its refresh state).
 - **Device test pass** — end-to-end on a real phone (+strap): BLE, Android build, foreground service, background throttling.
 - **Next.js admin panel** (trainer + CEO) — Stages 3–5, **0% started**; own repo, shares beatsync-prod. Needs repo-location/stack decisions from the user first.
 - **Cloud Functions + custom claims + tightened rules** — Stage 6 (needs Blaze plan). Replaces the self-assert rules and their extra `get()` read costs.
@@ -90,5 +91,5 @@ The Firebase CLI refresh token lives at `C:\Users\tinmi\.config\configstore\fire
 ## Suggested next steps (in order)
 1. **Two-/three-window end-to-end test** (user, not yet done): coach@beatsync.app hosts on :5599 → jan@gmail.com joins in an incognito window → monitor + TV boards move ~1/sec; leaving removes the tile; ending the session flips the athlete's writes to silent failures and the TV back to idle. Note: the :5599 dev server still serves the pre-2m build; after a rebuild/restart the athlete's workout chip reads "Simulated" (grey) instead of the old fake "H10 · 9x%" — that's the new honest production chip, not a bug.
 2. **BLE hardware test** (user's phone + strap/watch): `flutter run` on Android, pair via Settings → Connected devices, verify live BPM in a workout. First Android build of the project — expect possible Gradle/SDK chores.
-3. Cloud session detail screen (decide the post-session results model first: write per-athlete results into the session doc at end vs. query workouts by `sessionId` — the linkage already exists).
+3. Cloud-session-derived trainer-home chips ("Active today", "Sessions / wk") + optional monitor-end → detail-screen handoff (small, self-contained polish).
 4. Start the **Next.js admin panel** (ask the user where the repo lives + confirm stack before scaffolding).
