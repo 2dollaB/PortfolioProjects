@@ -1,6 +1,8 @@
-# BeatSync — Handoff (Stage 2 in progress)
+# BeatSync — Handoff (Stage 2 wiring COMPLETE)
 
 Last updated: 2026-06-12 (evening — after 2d-v through 2l). Read this first when resuming in a fresh session.
+
+**Where we are in one line:** every mobile screen now runs on real Firebase (auth, studios, workouts, trainer analytics/notes, full live-session loop incl. TV board); what's left is BLE hardware wiring, device testing, the admin panel, and ship chores.
 
 ## What BeatSync is
 Flutter app for real-time heart-rate monitoring during group fitness sessions in small studios. Cheaper alternative to MyZone/OrangeTheory. Solo dev project. Full plan: `IMPLEMENTATION_PLAN.md` (mobile app → Next.js admin panel → backend → deploy).
@@ -10,14 +12,14 @@ Flutter app for real-time heart-rate monitoring during group fitness sessions in
 - **Remote:** `github.com/2dollaB/PortfolioProjects` (user `TMinarik00` has push access).
 - **⚠️ Push via the PowerShell tool, NOT bash** — the WSL/bash git credential helper fails here ("could not read Username"). PowerShell git uses the Windows credential manager and works.
 - **main** is the integration branch; work happens on `feature/*` branches, fast-forward merged to main, then pushed. Each increment = its own commit + merge.
-- Current `main` HEAD: `68b1c82` (Stage 2l) + this handoff update.
+- Current `main` HEAD: `7c6aba2` + this handoff update. Everything is merged and pushed; no open feature branches.
 
 ## Firebase backend (provisioned & deployed)
 - **Project:** `beatsync-prod` (project number `918880027506`).
 - **Firestore:** `(default)` DB in `eur3`. Rules in `firestore.rules`, indexes in `firestore.indexes.json` — **deployed**. Deploy with `firebase deploy --only firestore --project beatsync-prod`.
 - **Auth:** Email/Password enabled.
 - **Web API key:** `AIzaSyDg9ZvT3haD97oEA5QtqDOeFFecGx4-5WE` (for REST verification scripts).
-- **Collections:** `users/{uid}`, `studios/{id}`, `invite_codes/{code}`, `workouts/{id}`, `trainer_notes/{trainerUid}/members/{memberUid}` (see `CLAUDE.md` for the schema). Rules tested live incl. negative/cross-user cases.
+- **Collections:** `users/{uid}`, `studios/{id}`, `invite_codes/{code}`, `workouts/{id}` (with optional `sessionId`), `sessions/{id}` + `sessions/{id}/hr/{uid}` (live board, ~1 write/sec/athlete), `trainer_notes/{trainerUid}/members/{memberUid}`. Rules tested live incl. negative/cross-user cases (owner-only docs; scoped self-assert trainer reads of member profiles + workouts; owner-only session hosting; hr writes need membership + live status — Phase D moves these to custom claims).
 
 ## Current mode
 - `lib/config/feature_flags.dart` → **`prototypeMode = false`** (production / real Firebase is the default boot path). Flip to `true` to get the polished mock demo (kept intact for client presentations).
@@ -57,22 +59,22 @@ flutter run -d chrome --web-port 5599   # web works; Firebase works; BLE/HR is s
 
 **Verification approach:** every increment gated on `flutter analyze` + **live REST tests** against beatsync-prod (sign-up via Identity Toolkit, write/read Firestore through the security rules, incl. negative tests). Flutter **web UI can't be auto-verified** (canvas rendering) — UI is analyze-verified; the user confirms visuals on device/Chrome.
 
-## ⬜ Not done yet (still mock or unbuilt)
-- **Trainer screens, remaining** — `tv_host`, `trainer_monitor` need live sessions. Member-list activity filters ("Active today"/"Inactive") and trainer-home "Active today"/"Sessions / wk" chips need live sessions too. Trainer notes on member detail are local-only (needs a `trainer_notes` collection).
-- **Cloud session detail** — ended cloud sessions aren't tappable (per-athlete post-session summary needs an hr-history or results doc; decide the model first).
-- **Cloud live sessions** (host/join/HR leaderboard) — not built; **BLE-hardware-dependent, must be tested on a phone+strap**.
-- **Production cutover testing** — end-to-end on a real device.
-- **Next.js admin panel** (trainer + CEO) — Stages 3–5, **0% started**.
-- **Cloud Functions + custom claims + tightened rules** — Stage 6 (needs Blaze plan).
-- **Deploy** — hosting, store submission, privacy/ToS — Stage 7.
+## ⬜ Not done yet
+- **BLE / real heart rate** — `lib/services/ble_hr_service.dart` is a **complete, orphaned** implementation (0x180D scan/connect, Garmin MTU workaround, RR intervals, battery, RSSI; nothing imports it). Needed: a pairing UI (scan list + connect; settings "Connected devices · Polar H10" row is a placeholder), swap the workout screen's simulated `_step` ticker for `hrDataStream` when connected (simulation stays as web/no-strap fallback), Android permissions + `foreground_service.dart` (also unwired). Works with straps AND watches in HR-broadcast mode (Garmin/Polar/Coros/Samsung…); Apple Watch can't broadcast.
+- **Cloud session detail** — ended cloud sessions aren't tappable (per-athlete post-session summary needs an hr-history or results doc; decide the model first). Trainer-home "Active today"/"Sessions / wk" chips and member-list activity filters could now be computed from cloud sessions too.
+- **Device test pass** — end-to-end on a real phone (+strap): BLE, Android build, foreground service, background throttling.
+- **Next.js admin panel** (trainer + CEO) — Stages 3–5, **0% started**; own repo, shares beatsync-prod. Needs repo-location/stack decisions from the user first.
+- **Cloud Functions + custom claims + tightened rules** — Stage 6 (needs Blaze plan). Replaces the self-assert rules and their extra `get()` read costs.
+- **Deploy** — hosting (TV link), Crashlytics/Analytics, store submission, privacy/ToS — Stage 7.
 
-**Overall: ~40% of the full plan.** The hardest/riskiest part (secure auth + cloud data model) is done and proven.
+**Overall: ~55-60% of the full plan; the mobile app is ~95% wired** (everything except BLE hardware in). The riskiest software part (auth + cloud data model + live sessions, all rules-verified) is done and proven.
 
 ## Key code patterns (follow these)
-- **Prototype-preserving wiring:** new Firebase behavior is *additive* via optional callbacks; the demo path is unchanged. The production signal is **`AuthService.currentUid != null`** (no signed-in user = prototype).
-- **Repos are static classes:** `AuthService`, `UserRepository`, `StudioRepository`, `WorkoutRepository`. Read model: `WorkoutSummary` (`fromDoc` + display getters).
-- **Reactive UI:** the AuthGate streams `UserRepository.watch(uid)`; screens get live profile updates (e.g., joining a studio auto-hides the CTA). Use `watchRecent`/`snapshots()` for lists.
+- **Prototype-preserving wiring:** every screen keeps the polished mock path; production is selected by **`AuthService.currentUid != null`** (plus a non-null `studioId`/`profile`/`session` param where screens need one — mock profiles have `studioId == null`, so demo falls out naturally).
+- **Repos are static classes:** `AuthService`, `UserRepository`, `StudioRepository`, `WorkoutRepository`, `SessionRepository`, `TrainerNotesRepository`. Read models in `models/`: `WorkoutSummary`, `Studio`, `CloudSession`/`SessionHrEntry`/`BoardAthlete` (`fromDoc` + display getters). `UidNameCache` resolves uids → names on live boards.
+- **Reactive UI:** the AuthGate streams `UserRepository.watch(uid)`; screens use `watch*`/`snapshots()` streams created per the existing pattern (in build/initState, memoized where rebuilds are frequent — see member list's `_membersFor` and TV's `_hrFor`).
 - Theming via `AppTheme.*` / `AppColors.*` / `HrZones` — never hardcode styles/zone colors (see `CLAUDE.md`).
+- **Commit style:** `Stage 2 (2x): <what>` + a body explaining rules changes and how they were live-verified; handoff updated and pushed after each merge.
 
 ## Verification helper (REST, owner-token)
 The Firebase CLI refresh token lives at `C:\Users\tinmi\.config\configstore\firebase-tools.json`. Exchange it for an access token (client_id `563584335869-...apps.googleusercontent.com`, secret `j9iVZfS8kkCEFUPaAeJV0sAi`, grant_type refresh_token) to hit Google REST APIs (Firestore admin, Identity Toolkit) bypassing rules — used for seeding/cleanup. For *rules* tests, sign up a throwaway user and use their idToken (respects rules). Clean up test users/docs after (force-delete enabled accounts via `accounts:batchDelete` with `force:true`).
@@ -81,8 +83,8 @@ The Firebase CLI refresh token lives at `C:\Users\tinmi\.config\configstore\fire
 - `flutter` 3.44, `dart` 3.12, `firebase-tools` 15.20, `flutterfire` 1.4 (at `C:\Users\tinmi\AppData\Local\Pub\Cache\bin`). PowerShell execution policy: `RemoteSigned` (CurrentUser).
 - **Skills active:** superpowers (14 skills in `~/.claude/skills/` — installed manually since `/plugin` is unavailable in this environment; loads on session start) + Karpathy guidelines (`~/.claude/CLAUDE.md`). Follow brainstorm → design → implement → verify.
 
-## Suggested next steps
-1. **Two-browser end-to-end test** (user): coach hosts on :5599, athlete (jan) joins in a second window — monitor + TV boards should move ~1/sec.
-2. **BLE wiring**: pairing UI + swap workout screen's simulated ticker for `BleHrService.hrDataStream` (service is complete but orphaned). Then the device test pass — strap, Android build, foreground service.
-3. Cloud session detail screen (decide the post-session results model first).
-4. Start the **Next.js admin panel** (biggest remaining chunk; own repo, shares beatsync-prod).
+## Suggested next steps (in order)
+1. **Two-/three-window end-to-end test** (user, not yet done): coach@beatsync.app hosts on :5599 → jan@gmail.com joins in an incognito window → monitor + TV boards move ~1/sec; leaving removes the tile; ending the session flips the athlete's writes to silent failures and the TV back to idle.
+2. **BLE wiring** (next coding increment): pairing screen using `BleHrService.scanResults`/`connectionState`, feed `hrDataStream` into `WorkoutScreen._step` in place of the simulated curve when connected, wire the settings "Connected devices" row, Android `BLUETOOTH_SCAN/CONNECT` permissions + foreground service. Analyze-verifiable here; functional test needs the user's phone + strap.
+3. Cloud session detail screen (decide the post-session results model first: write per-athlete results into the session doc at end vs. query workouts by `sessionId` — the linkage already exists).
+4. Start the **Next.js admin panel** (ask the user where the repo lives + confirm stack before scaffolding).
