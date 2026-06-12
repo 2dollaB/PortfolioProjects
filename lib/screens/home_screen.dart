@@ -53,14 +53,6 @@ class HomeScreen extends StatelessWidget {
     return 'Good evening';
   }
 
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
-    return (parts.first.characters.first + parts.last.characters.first)
-        .toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
     final uid = AuthService.currentUid;
@@ -88,7 +80,7 @@ class HomeScreen extends StatelessWidget {
                 child: HomeHeader(
                   greeting: _greeting(),
                   name: _firstName(),
-                  initials: _initials(profile.name),
+                  initials: HomeHeader.initialsOf(profile.name),
                   onAvatarTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => SettingsScreen(

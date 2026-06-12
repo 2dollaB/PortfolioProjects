@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/studio.dart';
 
 /// Writes/reads the `studios/{studioId}` collection plus the `invite_codes`
 /// lookup that lets athletes resolve a studio they don't yet belong to.
@@ -38,6 +39,14 @@ class StudioRepository {
       'createdAt': FieldValue.serverTimestamp(),
     });
     return ref.id;
+  }
+
+  /// Streams a studio doc (live member count / invite code on trainer screens).
+  static Stream<Studio?> watch(String studioId) {
+    return _studios.doc(studioId).snapshots().map((doc) {
+      final data = doc.data();
+      return data == null ? null : Studio.fromDoc(doc.id, data);
+    });
   }
 
   /// Resolves a 6-digit invite code to a studio id, or null if unknown.

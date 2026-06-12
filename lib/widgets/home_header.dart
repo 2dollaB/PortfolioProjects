@@ -32,6 +32,15 @@ class HomeHeader extends StatelessWidget {
     this.subtitle,
   });
 
+  /// Avatar initials from a full name ("Jan Minarik" → "JM").
+  static String initialsOf(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(

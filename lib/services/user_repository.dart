@@ -16,6 +16,19 @@ class UserRepository {
     return UserProfile.fromJson({...data, 'id': uid});
   }
 
+  /// Loads several profiles at once (trainer member list). Docs that are
+  /// missing or unreadable are skipped rather than failing the whole batch.
+  static Future<List<UserProfile>> loadMany(List<String> uids) async {
+    final results = await Future.wait(uids.map((uid) async {
+      try {
+        return await load(uid);
+      } catch (_) {
+        return null;
+      }
+    }));
+    return results.whereType<UserProfile>().toList();
+  }
+
   static Stream<UserProfile?> watch(String uid) {
     return _users.doc(uid).snapshots().map((doc) {
       final data = doc.data();

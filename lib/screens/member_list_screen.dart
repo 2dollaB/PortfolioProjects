@@ -1,14 +1,25 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
+import '../models/studio.dart';
+import '../models/user_profile.dart';
+import '../services/auth_service.dart';
 import '../services/mock_data.dart';
+import '../services/studio_repository.dart';
+import '../services/user_repository.dart';
 import '../widgets/beat_button.dart';
+import '../widgets/home_header.dart';
+import '../widgets/invite_sheet.dart';
 import 'member_detail_screen.dart';
 
 class MemberListScreen extends StatefulWidget {
-  const MemberListScreen({super.key});
+  /// Production: the signed-in trainer's studio to list members from.
+  /// Null (prototype/demo) keeps the mock member list.
+  final String? studioId;
+  const MemberListScreen({super.key, this.studioId});
 
   @override
   State<MemberListScreen> createState() => _MemberListScreenState();
@@ -18,13 +29,41 @@ class _MemberListScreenState extends State<MemberListScreen> {
   final _search = TextEditingController();
   String _filter = 'All';
 
+  Stream<Studio?>? _studioStream;
+
+  // Memoized so search-field setStates don't refetch; refreshed on uid change.
+  Future<List<UserProfile>>? _membersFuture;
+  List<String>? _memberUids;
+
+  @override
+  void initState() {
+    super.initState();
+    final sid = widget.studioId;
+    if (AuthService.currentUid != null && sid != null) {
+      _studioStream = StudioRepository.watch(sid);
+    }
+  }
+
   @override
   void dispose() {
     _search.dispose();
     super.dispose();
   }
 
-  void _showInviteSheet() {
+  Future<List<UserProfile>> _membersFor(List<String> uids) {
+    if (_membersFuture == null || !listEquals(_memberUids, uids)) {
+      _memberUids = List.of(uids);
+      _membersFuture = UserRepository.loadMany(uids);
+    }
+    return _membersFuture!;
+  }
+
+  bool _matchesSearch(String name) {
+    final q = _search.text.toLowerCase();
+    return q.isEmpty || name.toLowerCase().contains(q);
+  }
+
+  void _showDemoInviteSheet() {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.darkBgSecondary,
@@ -41,7 +80,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
                 style: AppTheme.h2(), textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Share this code or QR â€” they enter it in the app.',
+              'Share this code or QR — they enter it in the app.',
               style: AppTheme.caption(),
               textAlign: TextAlign.center,
             ),
@@ -78,82 +117,191 @@ class _MemberListScreenState extends State<MemberListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final members = MockData.studioMembers.where((m) {
-      final q = _search.text.toLowerCase();
-      return q.isEmpty || m.name.toLowerCase().contains(q);
-    }).toList();
-    return MobileFrame(
-      child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showInviteSheet,
-        backgroundColor: AppColors.brandRed,
-        icon: const Icon(Icons.person_add_alt_rounded, color: Colors.white),
-        label: const Text('Invite', style: TextStyle(color: Colors.white)),
-      ),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xs,
-              ),
-              child: Row(
-                children: [
-                  Text('Members', style: AppTheme.h1().copyWith(fontSize: 26)),
-                  const Spacer(),
-                  Text('${MockData.studioMembers.length}',
-                      style: AppTheme.statNumber(fontSize: 26)),
-                ],
-              ),
+    final stream = _studioStream;
+    if (stream == null) return _buildDemo(context);
+    return StreamBuilder<Studio?>(
+      stream: stream,
+      builder: (context, snap) {
+        final studio = snap.data;
+        if (snap.hasError) {
+          return _scaffold(
+            context,
+            count: '–',
+            onInvite: null,
+            body: Center(
+              child: Text('Could not load your studio.',
+                  style: AppTheme.caption()),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl, AppSpacing.xs, AppSpacing.xl, AppSpacing.md,
-              ),
-              child: TextField(
-                controller: _search,
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  hintText: 'Search by name',
-                  prefixIcon: Icon(Icons.search_rounded),
+          );
+        }
+        if (studio == null) {
+          return _scaffold(
+            context,
+            count: '–',
+            onInvite: null,
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        return FutureBuilder<List<UserProfile>>(
+          future: _membersFor(studio.athleteUids),
+          builder: (context, msnap) {
+            final members = msnap.data;
+            Widget body;
+            if (msnap.hasError) {
+              body = Center(
+                child: Text('Could not load members.',
+                    style: AppTheme.caption()),
+              );
+            } else if (members == null) {
+              body = const Center(child: CircularProgressIndicator());
+            } else if (members.isEmpty) {
+              body = Padding(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: Center(
+                  child: Text(
+                    'No members yet.\nShare your invite code — athletes join with it.',
+                    style: AppTheme.caption(),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
-            ),
-            SizedBox(
-              height: 40,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-                children: [
-                  for (final f in const ['All', 'Active today', 'Inactive'])
-                    Padding(
-                      padding: const EdgeInsets.only(right: AppSpacing.xs),
-                      child: _FilterChip(
-                        label: f,
-                        selected: f == _filter,
-                        onTap: () => setState(() => _filter = f),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Expanded(
-              child: ListView.separated(
+              );
+            } else {
+              final filtered =
+                  members.where((m) => _matchesSearch(m.name)).toList();
+              body = ListView.separated(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.xl, 0, AppSpacing.xl, 100,
                 ),
-                itemCount: members.length,
+                itemCount: filtered.length,
                 separatorBuilder: (_, _) =>
                     const SizedBox(height: AppSpacing.xs),
-                itemBuilder: (context, i) => _MemberRow(member: members[i]),
+                // Per-member stats + detail need member workout reads — Phase D.
+                itemBuilder: (context, i) => _MemberRow(
+                  name: filtered[i].name,
+                  subtitle: filtered[i].email,
+                ),
+              );
+            }
+            return _scaffold(
+              context,
+              count: members == null ? '–' : '${members.length}',
+              onInvite: () =>
+                  InviteSheet.show(context, code: studio.inviteCode),
+              body: body,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildDemo(BuildContext context) {
+    final members =
+        MockData.studioMembers.where((m) => _matchesSearch(m.name)).toList();
+    return _scaffold(
+      context,
+      count: '${MockData.studioMembers.length}',
+      onInvite: _showDemoInviteSheet,
+      showActivityFilters: true,
+      body: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl, 0, AppSpacing.xl, 100,
+        ),
+        itemCount: members.length,
+        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
+        itemBuilder: (context, i) {
+          final m = members[i];
+          return _MemberRow(
+            name: m.name,
+            subtitle: '${m.sessions} sessions · ${m.lastSeen}',
+            active: m.lastSeen.contains('Active'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => MemberDetailScreen(member: m),
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
+    );
+  }
+
+  /// Shared chrome: title + count, search box, [body] below. The demo adds
+  /// its activity filter chips; production hides them (no lastSeen data yet).
+  Widget _scaffold(
+    BuildContext context, {
+    required String count,
+    required VoidCallback? onInvite,
+    bool showActivityFilters = false,
+    required Widget body,
+  }) {
+    return MobileFrame(
+      child: Scaffold(
+        backgroundColor: AppColors.darkBgPrimary,
+        floatingActionButton: onInvite == null
+            ? null
+            : FloatingActionButton.extended(
+                onPressed: onInvite,
+                backgroundColor: AppColors.brandRed,
+                icon: const Icon(Icons.person_add_alt_rounded,
+                    color: Colors.white),
+                label:
+                    const Text('Invite', style: TextStyle(color: Colors.white)),
+              ),
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xs,
+                ),
+                child: Row(
+                  children: [
+                    Text('Members', style: AppTheme.h1().copyWith(fontSize: 26)),
+                    const Spacer(),
+                    Text(count, style: AppTheme.statNumber(fontSize: 26)),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl, AppSpacing.xs, AppSpacing.xl, AppSpacing.md,
+                ),
+                child: TextField(
+                  controller: _search,
+                  onChanged: (_) => setState(() {}),
+                  decoration: const InputDecoration(
+                    hintText: 'Search by name',
+                    prefixIcon: Icon(Icons.search_rounded),
+                  ),
+                ),
+              ),
+              if (showActivityFilters)
+                SizedBox(
+                  height: 40,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                    children: [
+                      for (final f in const ['All', 'Active today', 'Inactive'])
+                        Padding(
+                          padding: const EdgeInsets.only(right: AppSpacing.xs),
+                          child: _FilterChip(
+                            label: f,
+                            selected: f == _filter,
+                            onTap: () => setState(() => _filter = f),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.md),
+              Expanded(child: body),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -205,28 +353,26 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _MemberRow extends StatelessWidget {
-  final MockMember member;
-  const _MemberRow({required this.member});
+  final String name;
+  final String subtitle;
+  final bool active;
 
-  String get _initials {
-    final parts = member.name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
-    return (parts.first.characters.first + parts.last.characters.first)
-        .toUpperCase();
-  }
+  /// Null disables navigation (production member detail arrives in Phase D).
+  final VoidCallback? onTap;
+
+  const _MemberRow({
+    required this.name,
+    required this.subtitle,
+    this.active = false,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final active = member.lastSeen.contains('Active');
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => MemberDetailScreen(member: member),
-          ),
-        ),
+        onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -251,7 +397,7 @@ class _MemberRow extends StatelessWidget {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      _initials,
+                      HomeHeader.initialsOf(name),
                       style: AppTheme.bodyLarge(color: AppColors.brandRed)
                           .copyWith(fontWeight: FontWeight.w700, fontSize: 14),
                     ),
@@ -280,11 +426,11 @@ class _MemberRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(member.name,
+                    Text(name,
                         style: AppTheme.bodyLarge(weight: FontWeight.w600)
                             .copyWith(fontSize: 15)),
                     Text(
-                      '${member.sessions} sessions · ${member.lastSeen}',
+                      subtitle,
                       style: AppTheme.caption(
                         color: active
                             ? AppColors.success
@@ -294,8 +440,9 @@ class _MemberRow extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded,
-                  size: 12, color: AppColors.darkTextTertiary),
+              if (onTap != null)
+                const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 12, color: AppColors.darkTextTertiary),
             ],
           ),
         ),

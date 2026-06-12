@@ -42,11 +42,23 @@ service cloud.firestore {
         && !(request.auth.uid in current.memberUids);
     }
 
+    // The requester owns the studio this user's profile says they belong to.
+    // Members set their own studioId at join time, so this only exposes a
+    // profile to the trainer the user actually joined.
+    function isOwnerOfUsersStudio() {
+      return isSignedIn()
+        && 'studioId' in resource.data
+        && resource.data.studioId is string
+        && studioData(resource.data.studioId).ownerUid == request.auth.uid;
+    }
+
     // ── users/{uid} ──────────────────────────────────────────
-    // A user reads/writes only their own profile doc.
+    // A user reads/writes their own profile doc; the owner of the studio they
+    // joined may read it (trainer member list).
     match /users/{uid} {
-      allow read, write: if isUser(uid);
-      // TODO(Phase D): allow CEO (role claim) read-all; trainer read of own members.
+      allow read: if isUser(uid) || isOwnerOfUsersStudio();
+      allow write: if isUser(uid);
+      // TODO(Phase D): allow CEO (role claim) read-all via claims.
     }
 
     // ── studios/{studioId} ───────────────────────────────────

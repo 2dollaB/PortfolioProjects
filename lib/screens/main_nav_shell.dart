@@ -63,7 +63,8 @@ class _MainNavShellState extends State<MainNavShell> {
               profile: widget.profile,
               onSignOut: widget.onSignOut,
             ),
-            const MemberListScreen(),
+            // Mock trainer profiles have no studioId, so the demo path holds.
+            MemberListScreen(studioId: widget.profile.studioId),
             const StudioAnalyticsScreen(),
             const TvHostScreen(),
           ]

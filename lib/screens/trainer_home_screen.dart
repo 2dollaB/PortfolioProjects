@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
+import '../models/studio.dart';
 import '../models/user_profile.dart';
+import '../services/auth_service.dart';
 import '../services/mock_data.dart';
 import '../services/session_store.dart';
+import '../services/studio_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/home_header.dart';
 import '../widgets/mobile_frame.dart';
@@ -40,6 +43,21 @@ class TrainerHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final studioId = AuthService.currentUid == null ? null : profile.studioId;
+    if (studioId == null) return _buildHome(context, production: false);
+    return StreamBuilder<Studio?>(
+      stream: StudioRepository.watch(studioId),
+      builder: (context, snap) =>
+          _buildHome(context, production: true, studio: snap.data),
+    );
+  }
+
+  /// [studio] is null in demo mode or while the production stream is loading.
+  Widget _buildHome(
+    BuildContext context, {
+    required bool production,
+    Studio? studio,
+  }) {
     return MobileFrame(
       child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
@@ -53,8 +71,8 @@ class TrainerHomeScreen extends StatelessWidget {
             HomeHeader(
               greeting: _greeting(),
               name: _firstName(),
-              subtitle: MockData.studioName,
-              initials: 'CE',
+              subtitle: production ? studio?.name : MockData.studioName,
+              initials: HomeHeader.initialsOf(profile.name),
               onAvatarTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => SettingsScreen(
@@ -80,7 +98,20 @@ class TrainerHomeScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             Text('Studio at a glance', style: AppTheme.h2()),
             const SizedBox(height: AppSpacing.sm),
-            const _StudioStats(),
+            // Active today / sessions-per-week need cloud sessions (not built
+            // yet) — production shows '–' until then.
+            production
+                ? _StudioStats(
+                    activeToday: '–',
+                    members:
+                        studio == null ? '–' : '${studio.athleteUids.length}',
+                    sessionsPerWeek: '–',
+                  )
+                : const _StudioStats(
+                    activeToday: '8',
+                    members: '34',
+                    sessionsPerWeek: '12',
+                  ),
 
             const SizedBox(height: AppSpacing.xl),
             Row(
@@ -108,17 +139,24 @@ class TrainerHomeScreen extends StatelessWidget {
 }
 
 class _StudioStats extends StatelessWidget {
-  const _StudioStats();
+  final String activeToday;
+  final String members;
+  final String sessionsPerWeek;
+  const _StudioStats({
+    required this.activeToday,
+    required this.members,
+    required this.sessionsPerWeek,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: const [
-        Expanded(child: StatChip(label: 'Active today', value: '8')),
-        SizedBox(width: AppSpacing.xs),
-        Expanded(child: StatChip(label: 'Members', value: '34')),
-        SizedBox(width: AppSpacing.xs),
-        Expanded(child: StatChip(label: 'Sessions / wk', value: '12')),
+      children: [
+        Expanded(child: StatChip(label: 'Active today', value: activeToday)),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(child: StatChip(label: 'Members', value: members)),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(child: StatChip(label: 'Sessions / wk', value: sessionsPerWeek)),
       ],
     );
   }
