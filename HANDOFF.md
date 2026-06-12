@@ -1,6 +1,6 @@
 # BeatSync — Handoff (Stage 2 in progress)
 
-Last updated: 2026-06-12 (evening — after 2d-v through 2k). Read this first when resuming in a fresh session.
+Last updated: 2026-06-12 (evening — after 2d-v through 2l). Read this first when resuming in a fresh session.
 
 ## What BeatSync is
 Flutter app for real-time heart-rate monitoring during group fitness sessions in small studios. Cheaper alternative to MyZone/OrangeTheory. Solo dev project. Full plan: `IMPLEMENTATION_PLAN.md` (mobile app → Next.js admin panel → backend → deploy).
@@ -10,7 +10,7 @@ Flutter app for real-time heart-rate monitoring during group fitness sessions in
 - **Remote:** `github.com/2dollaB/PortfolioProjects` (user `TMinarik00` has push access).
 - **⚠️ Push via the PowerShell tool, NOT bash** — the WSL/bash git credential helper fails here ("could not read Username"). PowerShell git uses the Windows credential manager and works.
 - **main** is the integration branch; work happens on `feature/*` branches, fast-forward merged to main, then pushed. Each increment = its own commit + merge.
-- Current `main` HEAD: `4416738` (Stage 2k) + this handoff update.
+- Current `main` HEAD: `68b1c82` (Stage 2l) + this handoff update.
 
 ## Firebase backend (provisioned & deployed)
 - **Project:** `beatsync-prod` (project number `918880027506`).
@@ -53,12 +53,13 @@ flutter run -d chrome --web-port 5599   # web works; Firebase works; BLE/HR is s
 | 2i | **Cloud sessions data layer**: `CloudSession`/`SessionHrEntry` + `SessionRepository` (start/end/watchLive/watchRecent/writeHr/watchHr); session rules tightened (owner-only create, hr writes need membership + live status), 13 live assertions pass |
 | 2j | **Trainer side of live sessions wired**: host screen creates real sessions, monitor streams the hr board (names, per-athlete hrMax, real QR code, cloud end), trainer home hero + recent list watch the cloud. Demo simulation intact. |
 | 2k | **Athlete side wired — live-session loop closed**: join screen watches the studio's live session (one-tap join, no code needed), workout screen publishes hr ~1/sec (paused-aware, removeHr on leave), workouts saved with `sessionId`. **Needs the two-browser end-to-end test (coach hosts, athlete joins).** |
+| 2l | **TV host screen** streams the cloud session (idle splash → live board, real studio name + invite QR); `BoardAthlete` + `UidNameCache` extracted, monitor refactored onto them |
 
 **Verification approach:** every increment gated on `flutter analyze` + **live REST tests** against beatsync-prod (sign-up via Identity Toolkit, write/read Firestore through the security rules, incl. negative tests). Flutter **web UI can't be auto-verified** (canvas rendering) — UI is analyze-verified; the user confirms visuals on device/Chrome.
 
 ## ⬜ Not done yet (still mock or unbuilt)
 - **Trainer screens, remaining** — `tv_host`, `trainer_monitor` need live sessions. Member-list activity filters ("Active today"/"Inactive") and trainer-home "Active today"/"Sessions / wk" chips need live sessions too. Trainer notes on member detail are local-only (needs a `trainer_notes` collection).
-- `tv_host_screen` → still mock (wire to `watchLive` + `watchHr`); athlete "View whole studio" button opens it.
+- **Cloud session detail** — ended cloud sessions aren't tappable (per-athlete post-session summary needs an hr-history or results doc; decide the model first).
 - **Cloud live sessions** (host/join/HR leaderboard) — not built; **BLE-hardware-dependent, must be tested on a phone+strap**.
 - **Production cutover testing** — end-to-end on a real device.
 - **Next.js admin panel** (trainer + CEO) — Stages 3–5, **0% started**.
@@ -81,7 +82,7 @@ The Firebase CLI refresh token lives at `C:\Users\tinmi\.config\configstore\fire
 - **Skills active:** superpowers (14 skills in `~/.claude/skills/` — installed manually since `/plugin` is unavailable in this environment; loads on session start) + Karpathy guidelines (`~/.claude/CLAUDE.md`). Follow brainstorm → design → implement → verify.
 
 ## Suggested next steps
-1. **Two-browser end-to-end test** (user): coach hosts on :5599, athlete (jan) joins in a second window — monitor board should move ~1/sec.
-2. `tv_host_screen` → cloud (`watchLive` + `watchHr`); cloud session detail screen (post-session per-athlete summary).
-3. **BLE wiring**: pairing UI + swap workout screen's simulated ticker for `BleHrService.hrDataStream` (service is complete but orphaned). Then the device test pass — strap, Android build, foreground service.
+1. **Two-browser end-to-end test** (user): coach hosts on :5599, athlete (jan) joins in a second window — monitor + TV boards should move ~1/sec.
+2. **BLE wiring**: pairing UI + swap workout screen's simulated ticker for `BleHrService.hrDataStream` (service is complete but orphaned). Then the device test pass — strap, Android build, foreground service.
+3. Cloud session detail screen (decide the post-session results model first).
 4. Start the **Next.js admin panel** (biggest remaining chunk; own repo, shares beatsync-prod).
