@@ -87,12 +87,22 @@ service cloud.firestore {
             .data.ownerUid == request.auth.uid;
     }
 
+    // An athlete may feed the live HR board only for themselves, only while
+    // the session is live, and only if they belong to the session's studio.
+    function canWriteHr(sessionId, uid) {
+      let session = get(/databases/$(database)/documents/sessions/$(sessionId)).data;
+      return isUser(uid)
+        && session.status == 'live'
+        && request.auth.uid in studioData(session.studioId).memberUids;
+    }
+
     // ── sessions/{sessionId} ─────────────────────────────────
+    // Only the studio owner hosts sessions; members read them.
     match /sessions/{sessionId} {
       allow read: if isStudioMember(resource.data.studioId);
       allow create: if isSignedIn()
         && request.resource.data.trainerUid == request.auth.uid
-        && isStudioMember(request.resource.data.studioId);
+        && studioData(request.resource.data.studioId).ownerUid == request.auth.uid;
       allow update, delete: if isSignedIn()
         && resource.data.trainerUid == request.auth.uid;
 
@@ -100,7 +110,7 @@ service cloud.firestore {
       match /hr/{uid} {
         allow read: if isSignedIn()
           && isStudioMember(get(/databases/$(database)/documents/sessions/$(sessionId)).data.studioId);
-        allow write: if isUser(uid);
+        allow write: if canWriteHr(sessionId, uid);
       }
     }
 
