@@ -1,6 +1,6 @@
 # BeatSync — Handoff (Stage 2 in progress)
 
-Last updated: 2026-06-12 (afternoon — after 2d-v through 2h). Read this first when resuming in a fresh session.
+Last updated: 2026-06-12 (evening — after 2d-v through 2i). Read this first when resuming in a fresh session.
 
 ## What BeatSync is
 Flutter app for real-time heart-rate monitoring during group fitness sessions in small studios. Cheaper alternative to MyZone/OrangeTheory. Solo dev project. Full plan: `IMPLEMENTATION_PLAN.md` (mobile app → Next.js admin panel → backend → deploy).
@@ -10,7 +10,7 @@ Flutter app for real-time heart-rate monitoring during group fitness sessions in
 - **Remote:** `github.com/2dollaB/PortfolioProjects` (user `TMinarik00` has push access).
 - **⚠️ Push via the PowerShell tool, NOT bash** — the WSL/bash git credential helper fails here ("could not read Username"). PowerShell git uses the Windows credential manager and works.
 - **main** is the integration branch; work happens on `feature/*` branches, fast-forward merged to main, then pushed. Each increment = its own commit + merge.
-- Current `main` HEAD: `beb7028` (Stage 2h) + this handoff update.
+- Current `main` HEAD: `12b5581` (Stage 2i) + this handoff update.
 
 ## Firebase backend (provisioned & deployed)
 - **Project:** `beatsync-prod` (project number `918880027506`).
@@ -50,6 +50,7 @@ flutter run -d chrome --web-port 5599   # web works; Firebase works; BLE/HR is s
 | 2f | **Member detail** real data (stats/heatmap/TRIMP trend from member workouts) + **rules**: trainer may read member workouts (live-verified incl. the app's query) |
 | 2g | **Studio analytics** computed from members' workouts (`WorkoutRepository.fetchRecent`, 8-week aggregations) |
 | 2h | **Settings screen** real data (studio name, role badge, workout stats) + **trainer notes persisted** (`trainer_notes` collection + rules, live-verified) |
+| 2i | **Cloud sessions data layer**: `CloudSession`/`SessionHrEntry` + `SessionRepository` (start/end/watchLive/watchRecent/writeHr/watchHr); session rules tightened (owner-only create, hr writes need membership + live status), 13 live assertions pass. **No UI yet.** |
 
 **Verification approach:** every increment gated on `flutter analyze` + **live REST tests** against beatsync-prod (sign-up via Identity Toolkit, write/read Firestore through the security rules, incl. negative tests). Flutter **web UI can't be auto-verified** (canvas rendering) — UI is analyze-verified; the user confirms visuals on device/Chrome.
 
@@ -78,6 +79,6 @@ The Firebase CLI refresh token lives at `C:\Users\tinmi\.config\configstore\fire
 - **Skills active:** superpowers (14 skills in `~/.claude/skills/` — installed manually since `/plugin` is unavailable in this environment; loads on session start) + Karpathy guidelines (`~/.claude/CLAUDE.md`). Follow brainstorm → design → implement → verify.
 
 ## Suggested next steps
-All remaining work needs a decision or hardware — nothing wireable is left:
-1. Decide on **cloud live sessions** (sessions/{id} + hr subcollection, trainer monitor, TV host, join flow) — HR needs BLE device testing, but the session model + join + monitor UI could be built and tested with simulated HR on web first.
-2. Start the **Next.js admin panel** (biggest remaining chunk; own repo, shares beatsync-prod).
+1. **Wire live-session UI to SessionRepository** (data layer done in 2i): session_host_screen → `start()`, trainer_monitor/tv_host → `watchLive` + `watchHr`, join_session_screen + workout_screen → `writeHr` (simulated HR works on web; BLE needs a device). Mind the existing local `SessionStore`/`TvServer` offline path — keep it as the fallback.
+2. **Device test pass** — BLE strap, Android build, foreground service.
+3. Start the **Next.js admin panel** (biggest remaining chunk; own repo, shares beatsync-prod).
