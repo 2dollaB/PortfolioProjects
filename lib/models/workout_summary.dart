@@ -4,6 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// and home cards render. (The write side lives in WorkoutRepository.save.)
 class WorkoutSummary {
   final String id;
+
+  /// Owner uid — only populated by cross-athlete reads (session detail),
+  /// where attribution matters; per-user queries leave it null.
+  final String? userId;
   final String type; // raw enum name, e.g. 'hiit'
   final DateTime startTime;
   final DateTime endTime;
@@ -16,6 +20,7 @@ class WorkoutSummary {
 
   const WorkoutSummary({
     required this.id,
+    this.userId,
     required this.type,
     required this.startTime,
     required this.endTime,
@@ -60,6 +65,7 @@ class WorkoutSummary {
         : DateTime.tryParse(v?.toString() ?? '') ?? DateTime.now();
     return WorkoutSummary(
       id: id,
+      userId: d['userId'] as String?,
       type: d['type'] as String? ?? 'free',
       startTime: ts(d['startTime']),
       endTime: ts(d['endTime']),

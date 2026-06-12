@@ -16,6 +16,7 @@ import '../widgets/mobile_frame.dart';
 import '../widgets/stat_chip.dart';
 import '../widgets/workout_type_sheet.dart';
 import 'all_sessions_screen.dart';
+import 'cloud_session_detail_screen.dart';
 import 'session_detail_screen.dart';
 import 'session_host_screen.dart';
 import 'settings_screen.dart';
@@ -285,15 +286,14 @@ class _CloudSessionRow extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        // Only a live session is openable — cloud session detail is a later
-        // increment.
-        onTap: live
-            ? () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => TrainerMonitorScreen(session: session),
-                  ),
-                )
-            : null,
+        // Live sessions open the monitor; ended ones the results screen.
+        onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => live
+                    ? TrainerMonitorScreen(session: session)
+                    : CloudSessionDetailScreen(session: session),
+              ),
+            ),
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),

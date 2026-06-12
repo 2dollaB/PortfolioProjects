@@ -56,6 +56,16 @@ class WorkoutRepository {
         .toList();
   }
 
+  /// All athletes' workouts recorded in one cloud group session (rules allow
+  /// this cross-user query for the session's host). Plain equality filter —
+  /// no composite index needed; callers sort the handful of results.
+  static Future<List<WorkoutSummary>> fetchBySession(String sessionId) async {
+    final snap = await _workouts.where('sessionId', isEqualTo: sessionId).get();
+    return snap.docs
+        .map((d) => WorkoutSummary.fromDoc(d.id, d.data()))
+        .toList();
+  }
+
   /// Streams a user's workouts, most recent first (uses the userId+startTime
   /// composite index).
   static Stream<List<WorkoutSummary>> watchRecent(String uid, {int limit = 50}) {

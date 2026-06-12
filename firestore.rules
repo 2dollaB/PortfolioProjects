@@ -124,13 +124,27 @@ service cloud.firestore {
         && studioData(owner.studioId).ownerUid == request.auth.uid;
     }
 
+    // The requester hosted the cloud session this workout is linked to.
+    // Lets the session-detail screen run `workouts where sessionId == X`
+    // across all athletes — provable for list queries because the equality
+    // filter pins sessionId, making the get() path constant.
+    function isHostOfWorkoutSession() {
+      return isSignedIn()
+        && 'sessionId' in resource.data
+        && resource.data.sessionId is string
+        && get(/databases/$(database)/documents/sessions/$(resource.data.sessionId))
+            .data.trainerUid == request.auth.uid;
+    }
+
     // ── workouts/{workoutId} ─────────────────────────────────
     // Owned by a single user; that user reads/writes. The trainer of the
-    // studio the owner joined may also read (member detail / analytics).
+    // studio the owner joined may also read (member detail / analytics), as
+    // may the host of the session a workout was recorded in (session detail).
     match /workouts/{workoutId} {
       allow read: if isSignedIn()
         && (resource.data.userId == request.auth.uid
-            || isTrainerOfWorkoutOwner());
+            || isTrainerOfWorkoutOwner()
+            || isHostOfWorkoutSession());
       allow delete: if isSignedIn()
         && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn()
