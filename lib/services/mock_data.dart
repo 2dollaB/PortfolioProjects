@@ -1,4 +1,5 @@
 import '../models/user_profile.dart';
+import '../models/workout_summary.dart';
 
 /// Static mock data used by the prototype/demo flow.
 /// All values are realistic but fabricated — no real users, no BLE, no Firestore.
@@ -34,6 +35,7 @@ class MockData {
   static const List<MockWorkout> recentWorkouts = [
     MockWorkout(
       date: 'Today',
+      daysAgo: 0,
       type: 'HIIT',
       durationMin: 42,
       avgBpm: 156,
@@ -45,6 +47,7 @@ class MockData {
     ),
     MockWorkout(
       date: 'Yesterday',
+      daysAgo: 1,
       type: 'Strength',
       durationMin: 55,
       avgBpm: 132,
@@ -56,6 +59,7 @@ class MockData {
     ),
     MockWorkout(
       date: 'Mon 19',
+      daysAgo: 3,
       type: 'Endurance',
       durationMin: 72,
       avgBpm: 142,
@@ -67,6 +71,7 @@ class MockData {
     ),
     MockWorkout(
       date: 'Sat 17',
+      daysAgo: 5,
       type: 'CrossFit',
       durationMin: 38,
       avgBpm: 161,
@@ -77,6 +82,29 @@ class MockData {
       zoneDist: [0, 3, 12, 35, 38, 12],
     ),
   ];
+
+  /// Adapts [recentWorkouts] into the production read model so demo screens
+  /// share the WorkoutSummary-based widgets (home, history).
+  static List<WorkoutSummary> recentSummaries() {
+    final now = DateTime.now();
+    return recentWorkouts.map((m) {
+      final start = now.subtract(
+        Duration(days: m.daysAgo, minutes: m.durationMin),
+      );
+      return WorkoutSummary(
+        id: '${m.date}-${m.type}',
+        type: m.type.toLowerCase(),
+        startTime: start,
+        endTime: start.add(Duration(minutes: m.durationMin)),
+        avgHr: m.avgBpm,
+        maxHr: m.maxBpm,
+        calories: m.calories,
+        trimp: m.trimp,
+        dominantZone: m.dominantZone,
+        zoneDist: m.zoneDist,
+      );
+    }).toList();
+  }
 
   /// Up to 24 athletes — used by trainer monitor + TV view.
   /// Names sorted alphabetically by first name so the default alphabetical
@@ -127,6 +155,10 @@ class MockData {
 
 class MockWorkout {
   final String date;
+
+  /// How far back the workout happened — keeps [MockData.recentSummaries]
+  /// honest about real DateTimes without parsing the display [date].
+  final int daysAgo;
   final String type;
   final int durationMin;
   final int avgBpm;
@@ -140,6 +172,7 @@ class MockWorkout {
 
   const MockWorkout({
     required this.date,
+    required this.daysAgo,
     required this.type,
     required this.durationMin,
     required this.avgBpm,

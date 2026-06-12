@@ -23,16 +23,6 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
   static const _timeFilters = ['All', 'This week', 'This month'];
   static const _typeFilters = ['HIIT', 'Cardio', 'Strength', 'Cycling', 'Yoga'];
 
-  /// Quick heuristic: map the mock "date" string to a day-ago count.
-  /// Real implementation would compare DateTime objects from the workout.
-  int _daysAgo(String date) {
-    final l = date.toLowerCase();
-    if (l == 'today') return 0;
-    if (l == 'yesterday') return 1;
-    // "Mon 19", "Sat 17" etc — assume within current month, treat as recent.
-    return 10;
-  }
-
   List<WorkoutSummary> _applyFilters(List<WorkoutSummary> all) {
     final now = DateTime.now();
     return all.where((w) {
@@ -46,28 +36,6 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
       }
       if (_typeFilter != null && w.typeLabel != _typeFilter) return false;
       return true;
-    }).toList();
-  }
-
-  /// Demo fallback (prototypeMode): adapt the mock cards into the view model.
-  List<WorkoutSummary> _mockSummaries() {
-    final now = DateTime.now();
-    return MockData.recentWorkouts.map((m) {
-      final start = now.subtract(
-        Duration(days: _daysAgo(m.date), minutes: m.durationMin),
-      );
-      return WorkoutSummary(
-        id: '${m.date}-${m.type}',
-        type: m.type.toLowerCase(),
-        startTime: start,
-        endTime: start.add(Duration(minutes: m.durationMin)),
-        avgHr: m.avgBpm,
-        maxHr: m.maxBpm,
-        calories: m.calories,
-        trimp: m.trimp,
-        dominantZone: m.dominantZone,
-        zoneDist: m.zoneDist,
-      );
     }).toList();
   }
 
@@ -155,7 +123,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
               const Divider(color: AppColors.darkBorder, height: 1),
               Expanded(
                 child: uid == null
-                    ? _buildList(_mockSummaries())
+                    ? _buildList(MockData.recentSummaries())
                     : StreamBuilder<List<WorkoutSummary>>(
                         stream: WorkoutRepository.watchRecent(uid),
                         builder: (context, snap) {

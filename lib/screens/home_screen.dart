@@ -4,7 +4,10 @@ import '../config/app_spacing.dart';
 import '../config/hr_zones.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
+import '../models/workout_summary.dart';
+import '../services/auth_service.dart';
 import '../services/mock_data.dart';
+import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/home_header.dart';
 import '../widgets/mobile_frame.dart';
@@ -60,6 +63,16 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final uid = AuthService.currentUid;
+    if (uid == null) return _buildHome(context, MockData.recentSummaries());
+    return StreamBuilder<List<WorkoutSummary>>(
+      stream: WorkoutRepository.watchRecent(uid),
+      builder: (context, snap) => _buildHome(context, snap.data),
+    );
+  }
+
+  /// [workouts] is null while the production stream is still loading.
+  Widget _buildHome(BuildContext context, List<WorkoutSummary>? workouts) {
     return MobileFrame(
       child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
@@ -100,7 +113,14 @@ class HomeScreen extends StatelessWidget {
             // HERO — Start workout card
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-              sliver: SliverToBoxAdapter(child: _HeroCard(profile: profile)),
+              sliver: SliverToBoxAdapter(
+                child: _HeroCard(
+                  profile: profile,
+                  last: (workouts == null || workouts.isEmpty)
+                      ? null
+                      : workouts.first,
+                ),
+              ),
             ),
 
             // JOIN GROUP SESSION — directly under Start so it's the second-most-prominent CTA
@@ -118,9 +138,11 @@ class HomeScreen extends StatelessWidget {
               ),
               sliver: SliverToBoxAdapter(child: _SectionHeader('This week')),
             ),
-            const SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-              sliver: SliverToBoxAdapter(child: _WeeklyStats()),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              sliver: SliverToBoxAdapter(
+                child: _WeeklyStats(workouts: workouts),
+              ),
             ),
 
             // RECENT WORKOUTS
@@ -145,7 +167,7 @@ class HomeScreen extends StatelessWidget {
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
               sliver: SliverToBoxAdapter(
-                child: _RecentList(workouts: MockData.recentWorkouts.take(3).toList()),
+                child: _RecentList(workouts: workouts?.take(3).toList()),
               ),
             ),
 
@@ -169,7 +191,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(title, style: AppTheme.h2()),
         const Spacer(),
-        if (trailing != null) trailing!,
+        ?trailing,
       ],
     );
   }
@@ -177,11 +199,12 @@ class _SectionHeader extends StatelessWidget {
 
 class _HeroCard extends StatelessWidget {
   final UserProfile profile;
-  const _HeroCard({required this.profile});
+  final WorkoutSummary? last;
+  const _HeroCard({required this.profile, required this.last});
 
   @override
   Widget build(BuildContext context) {
-    final last = MockData.recentWorkouts.first;
+    final last = this.last;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -236,28 +259,33 @@ class _HeroCard extends StatelessWidget {
             "We'll connect your HR strap and pick up where you left off.",
             style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
           ),
-          const SizedBox(height: AppSpacing.md),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            decoration: BoxDecoration(
-              color: AppColors.darkBgPrimary.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: AppColors.darkBorder),
+          if (last != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.darkBgPrimary.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.darkBorder),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.history_rounded,
+                      size: 16, color: AppColors.darkTextSecondary),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text('Last session · ', style: AppTheme.caption()),
+                  Text(last.dateLabel,
+                      style:
+                          AppTheme.caption(color: AppColors.darkTextPrimary)),
+                  const Spacer(),
+                  Text('${last.avgHr} ',
+                      style: AppTheme.statNumber(fontSize: 14)),
+                  Text('avg · ${last.durationLabel}',
+                      style: AppTheme.caption()),
+                ],
+              ),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.history_rounded,
-                    size: 16, color: AppColors.darkTextSecondary),
-                const SizedBox(width: AppSpacing.xs),
-                Text('Last session · ', style: AppTheme.caption()),
-                Text(last.date,
-                    style: AppTheme.caption(color: AppColors.darkTextPrimary)),
-                const Spacer(),
-                Text('${last.avgBpm} ', style: AppTheme.statNumber(fontSize: 14)),
-                Text('avg · ${last.durationLabel}', style: AppTheme.caption()),
-              ],
-            ),
-          ),
+          ],
           const SizedBox(height: AppSpacing.md),
           BeatPrimaryButton(
             label: 'Start workout',
@@ -282,31 +310,73 @@ class _HeroCard extends StatelessWidget {
 }
 
 class _WeeklyStats extends StatelessWidget {
-  const _WeeklyStats();
+  /// Null while the production stream is still loading.
+  final List<WorkoutSummary>? workouts;
+  const _WeeklyStats({required this.workouts});
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    final all = workouts;
+    var sessions = '–', time = '–', trimp = '–';
+    if (all != null) {
+      final now = DateTime.now();
+      // Same rolling-7-day window as the history screen's "This week" filter.
+      final week =
+          all.where((w) => now.difference(w.startTime).inDays <= 7).toList();
+      final minutes = week.fold(0, (sum, w) => sum + w.durationMin);
+      final h = minutes ~/ 60;
+      final m = minutes % 60;
+      sessions = '${week.length}';
+      time = h > 0 ? '${h}h ${m}m' : '${m}m';
+      trimp = '${week.fold(0, (sum, w) => sum + w.trimp)}';
+    }
+    return Row(
       children: [
-        Expanded(child: StatChip(label: 'Sessions', value: '4', unit: 'this week')),
-        SizedBox(width: AppSpacing.xs),
-        Expanded(child: StatChip(label: 'Time', value: '3h 27m')),
-        SizedBox(width: AppSpacing.xs),
-        Expanded(child: StatChip(label: 'TRIMP', value: '368')),
+        Expanded(
+            child: StatChip(label: 'Sessions', value: sessions, unit: 'this week')),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(child: StatChip(label: 'Time', value: time)),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(child: StatChip(label: 'TRIMP', value: trimp)),
       ],
     );
   }
 }
 
 class _RecentList extends StatelessWidget {
-  final List<MockWorkout> workouts;
+  /// Null while the production stream is still loading.
+  final List<WorkoutSummary>? workouts;
   const _RecentList({required this.workouts});
 
   @override
   Widget build(BuildContext context) {
+    final all = workouts;
+    if (all == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (all.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.darkBgSecondary,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.darkBorder),
+        ),
+        child: Center(
+          child: Text(
+            'No workouts yet.\nFinish a session and it shows up here.',
+            style: AppTheme.caption(),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
     return Column(
       children: [
-        for (final w in workouts) ...[
+        for (final w in all) ...[
           _WorkoutRow(workout: w),
           const SizedBox(height: AppSpacing.xs),
         ],
@@ -316,7 +386,7 @@ class _RecentList extends StatelessWidget {
 }
 
 class _WorkoutRow extends StatelessWidget {
-  final MockWorkout workout;
+  final WorkoutSummary workout;
   const _WorkoutRow({required this.workout});
 
   @override
@@ -353,11 +423,12 @@ class _WorkoutRow extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(workout.type,
+                        Text(workout.typeLabel,
                             style: AppTheme.bodyLarge(weight: FontWeight.w600)
                                 .copyWith(fontSize: 15)),
                         const SizedBox(width: AppSpacing.xs),
-                        Text('· ${workout.date}', style: AppTheme.caption()),
+                        Text('· ${workout.dateLabel}',
+                            style: AppTheme.caption()),
                       ],
                     ),
                     const SizedBox(height: 2),
@@ -370,7 +441,7 @@ class _WorkoutRow extends StatelessWidget {
                         const SizedBox(width: AppSpacing.xs),
                         _Pill(
                           icon: Icons.favorite_rounded,
-                          label: '${workout.avgBpm} bpm',
+                          label: '${workout.avgHr} bpm',
                           color: zoneColor,
                         ),
                       ],
@@ -392,8 +463,13 @@ class _WorkoutRow extends StatelessWidget {
         return Icons.bolt_rounded;
       case 'strength':
         return Icons.fitness_center_rounded;
+      case 'cardio':
       case 'endurance':
         return Icons.directions_run_rounded;
+      case 'cycling':
+        return Icons.directions_bike_rounded;
+      case 'yoga':
+        return Icons.self_improvement_rounded;
       case 'crossfit':
         return Icons.local_fire_department_rounded;
       default:
