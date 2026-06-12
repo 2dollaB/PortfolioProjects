@@ -3,14 +3,20 @@ import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
+import '../models/cloud_session.dart';
+import '../services/auth_service.dart';
+import '../services/session_repository.dart';
 import '../services/session_store.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/workout_type_sheet.dart';
 import 'trainer_monitor_screen.dart';
 
-/// "Start session" â€” name + type + optional interval timer setup.
+/// "Start session" — name + type + optional interval timer setup.
 class SessionHostScreen extends StatefulWidget {
-  const SessionHostScreen({super.key});
+  /// Production: the trainer's studio to host the cloud session in.
+  /// Null (prototype/demo) keeps the local in-memory session.
+  final String? studioId;
+  const SessionHostScreen({super.key, this.studioId});
 
   @override
   State<SessionHostScreen> createState() => _SessionHostScreenState();
@@ -23,11 +29,69 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
   int _workSec = 45;
   int _restSec = 15;
   int _rounds = 8;
+  bool _launching = false;
 
   @override
   void dispose() {
     _name.dispose();
     super.dispose();
+  }
+
+  Future<void> _launch() async {
+    final name =
+        _name.text.trim().isEmpty ? 'Untitled session' : _name.text.trim();
+    final studioId = widget.studioId;
+    final uid = AuthService.currentUid;
+
+    if (studioId == null || uid == null) {
+      // Demo: persist in the in-memory store so trainer home + recent
+      // sessions update when we come back.
+      SessionStore.instance.startLive(
+        name: name,
+        type: _type,
+        workSec: _intervals ? _workSec : 0,
+        restSec: _intervals ? _restSec : 0,
+        rounds: _intervals ? _rounds : 1,
+      );
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const TrainerMonitorScreen()),
+      );
+      return;
+    }
+
+    setState(() => _launching = true);
+    final String sessionId;
+    try {
+      sessionId = await SessionRepository.start(
+        studioId: studioId,
+        trainerUid: uid,
+        name: name,
+        type: _type.name,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _launching = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not start the session. Try again.')),
+      );
+      return;
+    }
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => TrainerMonitorScreen(
+          session: CloudSession(
+            id: sessionId,
+            studioId: studioId,
+            trainerUid: uid,
+            name: name,
+            type: _type.name,
+            status: 'live',
+            startedAt: DateTime.now(),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -179,24 +243,8 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
               child: BeatPrimaryButton(
                 label: 'Launch session',
                 icon: Icons.play_arrow_rounded,
-                onPressed: () {
-                  // Persist the session in the in-memory store so trainer home
-                  // + recent sessions update when we come back.
-                  SessionStore.instance.startLive(
-                    name: _name.text.trim().isEmpty
-                        ? 'Untitled session'
-                        : _name.text.trim(),
-                    type: _type,
-                    workSec: _intervals ? _workSec : 0,
-                    restSec: _intervals ? _restSec : 0,
-                    rounds: _intervals ? _rounds : 1,
-                  );
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => const TrainerMonitorScreen(),
-                    ),
-                  );
-                },
+                loading: _launching,
+                onPressed: _launch,
               ),
             ),
           ],

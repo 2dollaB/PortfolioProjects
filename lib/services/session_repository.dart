@@ -67,11 +67,13 @@ class SessionRepository {
     required String sessionId,
     required String uid,
     required int bpm,
+    required int avgBpm,
     required int zone,
     required int hrMax,
   }) {
     return _sessions.doc(sessionId).collection('hr').doc(uid).set({
       'bpm': bpm,
+      'avgBpm': avgBpm,
       'zone': zone,
       'hrMax': hrMax,
       'lastUpdate': FieldValue.serverTimestamp(),
