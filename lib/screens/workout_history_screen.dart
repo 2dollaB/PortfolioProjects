@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
+import '../models/workout_summary.dart';
+import '../services/auth_service.dart';
 import '../services/mock_data.dart';
+import '../services/workout_repository.dart';
 import '../widgets/mobile_frame.dart';
 import '../widgets/zone_badge.dart';
 
@@ -18,7 +21,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
   String? _typeFilter; // null means "any type"
 
   static const _timeFilters = ['All', 'This week', 'This month'];
-  static const _typeFilters = ['HIIT', 'Strength', 'Endurance', 'Cardio', 'CrossFit'];
+  static const _typeFilters = ['HIIT', 'Cardio', 'Strength', 'Cycling', 'Yoga'];
 
   /// Quick heuristic: map the mock "date" string to a day-ago count.
   /// Real implementation would compare DateTime objects from the workout.
@@ -30,26 +33,76 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
     return 10;
   }
 
-  List<MockWorkout> _applyFilters() {
-    return MockData.recentWorkouts.where((w) {
-      // Time filter
+  List<WorkoutSummary> _applyFilters(List<WorkoutSummary> all) {
+    final now = DateTime.now();
+    return all.where((w) {
       switch (_timeFilter) {
         case 'This week':
-          if (_daysAgo(w.date) > 7) return false;
+          if (now.difference(w.startTime).inDays > 7) return false;
           break;
         case 'This month':
-          if (_daysAgo(w.date) > 31) return false;
+          if (now.difference(w.startTime).inDays > 31) return false;
           break;
       }
-      // Type filter
-      if (_typeFilter != null && w.type != _typeFilter) return false;
+      if (_typeFilter != null && w.typeLabel != _typeFilter) return false;
       return true;
     }).toList();
   }
 
+  /// Demo fallback (prototypeMode): adapt the mock cards into the view model.
+  List<WorkoutSummary> _mockSummaries() {
+    final now = DateTime.now();
+    return MockData.recentWorkouts.map((m) {
+      final start = now.subtract(
+        Duration(days: _daysAgo(m.date), minutes: m.durationMin),
+      );
+      return WorkoutSummary(
+        id: '${m.date}-${m.type}',
+        type: m.type.toLowerCase(),
+        startTime: start,
+        endTime: start.add(Duration(minutes: m.durationMin)),
+        avgHr: m.avgBpm,
+        maxHr: m.maxBpm,
+        calories: m.calories,
+        trimp: m.trimp,
+        dominantZone: m.dominantZone,
+        zoneDist: m.zoneDist,
+      );
+    }).toList();
+  }
+
+  Widget _buildList(List<WorkoutSummary> all) {
+    final filtered = _applyFilters(all);
+    if (filtered.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Text(
+            all.isEmpty
+                ? 'No workouts yet.\nFinish a session and it shows up here.'
+                : 'No workouts match your filters.',
+            style: AppTheme.caption(),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.md,
+        AppSpacing.xl,
+        AppSpacing.xl,
+      ),
+      itemCount: filtered.length,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
+      itemBuilder: (context, i) => _HistoryRow(workout: filtered[i]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filtered = _applyFilters();
+    final uid = AuthService.currentUid;
     return MobileFrame(
       child: Scaffold(
         backgroundColor: AppColors.darkBgPrimary,
@@ -101,29 +154,27 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
               ),
               const Divider(color: AppColors.darkBorder, height: 1),
               Expanded(
-                child: filtered.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.xl),
-                          child: Text(
-                            'No workouts match your filters.',
-                            style: AppTheme.caption(),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.xl,
-                          AppSpacing.md,
-                          AppSpacing.xl,
-                          AppSpacing.xl,
-                        ),
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: AppSpacing.xs),
-                        itemBuilder: (context, i) =>
-                            _HistoryRow(workout: filtered[i]),
+                child: uid == null
+                    ? _buildList(_mockSummaries())
+                    : StreamBuilder<List<WorkoutSummary>>(
+                        stream: WorkoutRepository.watchRecent(uid),
+                        builder: (context, snap) {
+                          if (snap.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          if (snap.hasError) {
+                            return Center(
+                              child: Text(
+                                'Could not load workouts.',
+                                style: AppTheme.caption(),
+                              ),
+                            );
+                          }
+                          return _buildList(snap.data ?? const []);
+                        },
                       ),
               ),
             ],
@@ -183,7 +234,7 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _HistoryRow extends StatelessWidget {
-  final MockWorkout workout;
+  final WorkoutSummary workout;
   const _HistoryRow({required this.workout});
 
   @override
@@ -217,12 +268,12 @@ class _HistoryRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      workout.type,
+                      workout.typeLabel,
                       style: AppTheme.bodyLarge(weight: FontWeight.w600)
                           .copyWith(fontSize: 15),
                     ),
                     Text(
-                      '${workout.date} · ${workout.durationLabel}',
+                      '${workout.dateLabel} · ${workout.durationLabel}',
                       style: AppTheme.caption(),
                     ),
                   ],
@@ -251,9 +302,9 @@ class _HistoryRow extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              _MiniStat(label: 'AVG', value: '${workout.avgBpm}'),
+              _MiniStat(label: 'AVG', value: '${workout.avgHr}'),
               const SizedBox(width: AppSpacing.md),
-              _MiniStat(label: 'MAX', value: '${workout.maxBpm}'),
+              _MiniStat(label: 'MAX', value: '${workout.maxHr}'),
               const SizedBox(width: AppSpacing.md),
               _MiniStat(label: 'KCAL', value: '${workout.calories}'),
               const Spacer(),
@@ -271,12 +322,14 @@ class _HistoryRow extends StatelessWidget {
         return Icons.bolt_rounded;
       case 'strength':
         return Icons.fitness_center_rounded;
-      case 'endurance':
+      case 'cardio':
         return Icons.directions_run_rounded;
-      case 'crossfit':
-        return Icons.local_fire_department_rounded;
+      case 'cycling':
+        return Icons.directions_bike_rounded;
+      case 'yoga':
+        return Icons.self_improvement_rounded;
       default:
-        return Icons.directions_run_rounded;
+        return Icons.favorite_rounded;
     }
   }
 }

@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/workout_summary.dart';
 
 /// Writes/reads the `workouts` collection. Each doc is owned by one user
 /// (`userId` == owner uid); the schema stores summary fields, not raw HR
-/// samples. Display/read APIs arrive in Part 2.
+/// samples.
 class WorkoutRepository {
   WorkoutRepository._();
 
@@ -37,5 +38,18 @@ class WorkoutRepository {
       'createdAt': FieldValue.serverTimestamp(),
     });
     return ref.id;
+  }
+
+  /// Streams a user's workouts, most recent first (uses the userId+startTime
+  /// composite index).
+  static Stream<List<WorkoutSummary>> watchRecent(String uid, {int limit = 50}) {
+    return _workouts
+        .where('userId', isEqualTo: uid)
+        .orderBy('startTime', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((d) => WorkoutSummary.fromDoc(d.id, d.data()))
+            .toList());
   }
 }
