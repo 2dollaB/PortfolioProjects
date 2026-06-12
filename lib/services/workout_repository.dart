@@ -11,7 +11,7 @@ class WorkoutRepository {
       FirebaseFirestore.instance.collection('workouts');
 
   /// Persists a completed workout's summary; returns the new doc id.
-  /// (`sessionId` linkage arrives with cloud sessions.)
+  /// [sessionId] links the workout to the cloud group session it was part of.
   static Future<String> save({
     required String userId,
     required String type,
@@ -23,6 +23,7 @@ class WorkoutRepository {
     required int trimp,
     required List<int> zoneDist,
     required int dominantZone,
+    String? sessionId,
   }) async {
     final ref = await _workouts.add({
       'userId': userId,
@@ -35,6 +36,7 @@ class WorkoutRepository {
       'trimp': trimp,
       'zoneDist': zoneDist,
       'dominantZone': dominantZone,
+      'sessionId': ?sessionId,
       'createdAt': FieldValue.serverTimestamp(),
     });
     return ref.id;

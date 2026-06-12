@@ -6,8 +6,10 @@ import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/hr_zones.dart';
 import '../config/theme.dart';
+import '../models/cloud_session.dart';
 import '../models/user_profile.dart';
 import '../services/auth_service.dart';
+import '../services/session_repository.dart';
 import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/bpm_display.dart';
@@ -24,6 +26,10 @@ class WorkoutScreen extends StatefulWidget {
   final UserProfile profile;
   final bool inGroupSession;
 
+  /// Production group session — when set (and signed in), the workout
+  /// publishes the athlete's HR to the session's live board ~1/sec.
+  final CloudSession? session;
+
   /// Picked from the WorkoutTypeSheet before launch. Saved with the workout
   /// so history can filter by type.
   final WorkoutType? workoutType;
@@ -32,6 +38,7 @@ class WorkoutScreen extends StatefulWidget {
     super.key,
     required this.profile,
     this.inGroupSession = false,
+    this.session,
     this.workoutType,
   });
 
@@ -78,6 +85,37 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       _kcal += 0.18 * pct * widget.profile.weightKg / 60;
       _trimp += pct * pct * widget.profile.trimpGenderFactor * 0.05;
     });
+    _publishHr();
+  }
+
+  int get _avgBpm => _bpmHistory.isEmpty
+      ? _bpm
+      : _bpmHistory.reduce((a, b) => a + b) ~/ _bpmHistory.length;
+
+  DateTime? _lastHrPush;
+
+  /// ~1/sec heartbeat to the group session's live board. Failures (e.g. the
+  /// trainer just ended the session) are non-fatal — the personal workout
+  /// keeps running.
+  void _publishHr() {
+    final session = widget.session;
+    final uid = AuthService.currentUid;
+    if (session == null || uid == null) return;
+    final now = DateTime.now();
+    if (_lastHrPush != null &&
+        now.difference(_lastHrPush!) < const Duration(seconds: 1)) {
+      return;
+    }
+    _lastHrPush = now;
+    final hrMax = widget.profile.hrMax;
+    SessionRepository.writeHr(
+      sessionId: session.id,
+      uid: uid,
+      bpm: _bpm,
+      avgBpm: _avgBpm,
+      zone: HrZones.fromBpm(_bpm, hrMax).clamp(0, 5),
+      hrMax: hrMax,
+    ).catchError((_) {});
   }
 
   @override
@@ -120,14 +158,19 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       ),
     );
     if (confirm == true && mounted) {
+      final session = widget.session;
+      final uid = AuthService.currentUid;
+      if (session != null && uid != null) {
+        // Drop off the live board; fails harmlessly if the session ended.
+        unawaited(SessionRepository.removeHr(sessionId: session.id, uid: uid)
+            .catchError((_) {}));
+      }
       unawaited(_persistWorkout());
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => WorkoutSummaryScreen(
             durationMin: _stopwatch.elapsed.inMinutes,
-            avgBpm: _bpmHistory.isEmpty
-                ? _bpm
-                : _bpmHistory.reduce((a, b) => a + b) ~/ _bpmHistory.length,
+            avgBpm: _avgBpm,
             maxBpm: _maxBpm,
             calories: _kcal.round(),
             trimp: _trimp.round(),
@@ -146,9 +189,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final uid = AuthService.currentUid;
     if (uid == null) return; // prototype / not signed in
     final hrMax = widget.profile.hrMax;
-    final avg = _bpmHistory.isEmpty
-        ? _bpm
-        : _bpmHistory.reduce((a, b) => a + b) ~/ _bpmHistory.length;
+    final avg = _avgBpm;
     // Zone distribution (% of samples per zone 0-5) + dominant training zone.
     final counts = List<int>.filled(6, 0);
     for (final b in _bpmHistory) {
@@ -177,6 +218,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         trimp: _trimp.round(),
         zoneDist: zoneDist,
         dominantZone: dominantZone,
+        sessionId: widget.session?.id,
       );
     } catch (_) {
       // Non-blocking; ignore transient write failures.

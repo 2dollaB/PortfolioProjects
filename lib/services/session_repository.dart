@@ -80,6 +80,15 @@ class SessionRepository {
     }, SetOptions(merge: true));
   }
 
+  /// Removes the athlete's row when they leave (only works while the session
+  /// is still live — rules block hr writes after it ends).
+  static Future<void> removeHr({
+    required String sessionId,
+    required String uid,
+  }) {
+    return _sessions.doc(sessionId).collection('hr').doc(uid).delete();
+  }
+
   /// The live HR board (trainer monitor / TV view).
   static Stream<List<SessionHrEntry>> watchHr(String sessionId) {
     return _sessions.doc(sessionId).collection('hr').snapshots().map(

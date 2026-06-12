@@ -120,7 +120,9 @@ class HomeScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, 0,
               ),
-              sliver: SliverToBoxAdapter(child: const _JoinSessionCard()),
+              sliver: SliverToBoxAdapter(
+                child: _JoinSessionCard(profile: profile),
+              ),
             ),
 
             // STATS THIS WEEK
@@ -545,7 +547,8 @@ class _JoinStudioCard extends StatelessWidget {
 }
 
 class _JoinSessionCard extends StatelessWidget {
-  const _JoinSessionCard();
+  final UserProfile profile;
+  const _JoinSessionCard({required this.profile});
 
   @override
   Widget build(BuildContext context) {
@@ -554,7 +557,9 @@ class _JoinSessionCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const JoinSessionScreen()),
+          MaterialPageRoute(
+            builder: (_) => JoinSessionScreen(profile: profile),
+          ),
         ),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
