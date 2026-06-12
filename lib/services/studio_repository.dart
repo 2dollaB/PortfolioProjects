@@ -41,6 +41,13 @@ class StudioRepository {
     return ref.id;
   }
 
+  /// One-shot studio fetch (settings header / "My studio" row).
+  static Future<Studio?> load(String studioId) async {
+    final doc = await _studios.doc(studioId).get();
+    final data = doc.data();
+    return data == null ? null : Studio.fromDoc(doc.id, data);
+  }
+
   /// Streams a studio doc (live member count / invite code on trainer screens).
   static Stream<Studio?> watch(String studioId) {
     return _studios.doc(studioId).snapshots().map((doc) {

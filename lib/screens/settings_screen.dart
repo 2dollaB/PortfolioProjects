@@ -3,20 +3,66 @@ import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
+import '../models/studio.dart';
 import '../models/user_profile.dart';
+import '../models/workout_summary.dart';
+import '../services/auth_service.dart';
 import '../services/mock_data.dart';
+import '../services/studio_repository.dart';
+import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
+import '../widgets/home_header.dart';
 import 'edit_profile_screen.dart';
 
 /// Athlete profile + settings â€” stats overview, then grouped settings sections.
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   final UserProfile? profile;
   final VoidCallback? onSignOut;
   const SettingsScreen({super.key, this.profile, this.onSignOut});
 
   @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  Studio? _studio;
+  List<WorkoutSummary>? _workouts;
+
+  bool get _production => AuthService.currentUid != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final uid = AuthService.currentUid;
+    if (uid == null) return;
+    final sid = widget.profile?.studioId;
+    if (sid != null) {
+      StudioRepository.load(sid).then((s) {
+        if (mounted) setState(() => _studio = s);
+      }).catchError((_) {});
+    }
+    WorkoutRepository.fetchRecent(uid, limit: 200).then((w) {
+      if (mounted) setState(() => _workouts = w);
+    }).catchError((_) {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final p = profile ?? MockData.athleteProfile;
+    final p = widget.profile ?? MockData.athleteProfile;
+    final studioName = _production ? _studio?.name : MockData.studioName;
+    final workouts = _workouts;
+    String workoutCount, totalTime;
+    if (!_production) {
+      workoutCount = '47';
+      totalTime = '36h';
+    } else if (workouts == null) {
+      workoutCount = '–';
+      totalTime = '–';
+    } else {
+      workoutCount = '${workouts.length}';
+      final minutes = workouts.fold(0, (s, w) => s + w.durationMin);
+      totalTime = '${(minutes / 60).round()}h';
+    }
     // When pushed as a route (e.g. from the trainer home avatar), Navigator
     // can pop — show a back arrow. When mounted as a nav-shell tab, hide it.
     final canPop = Navigator.canPop(context);
@@ -80,7 +126,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      _initials(p.name),
+                      HomeHeader.initialsOf(p.name),
                       style: AppTheme.h1(color: AppColors.brandRed)
                           .copyWith(fontWeight: FontWeight.w700, fontSize: 22),
                     ),
@@ -94,7 +140,8 @@ class SettingsScreen extends StatelessWidget {
                           p.name.isEmpty ? 'Athlete' : p.name,
                           style: AppTheme.h2(),
                         ),
-                        Text(MockData.studioName, style: AppTheme.caption()),
+                        if (studioName != null)
+                          Text(studioName, style: AppTheme.caption()),
                         const SizedBox(height: AppSpacing.xs),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -106,7 +153,7 @@ class SettingsScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(AppRadius.pill),
                           ),
                           child: Text(
-                            'Athlete',
+                            p.role.displayName,
                             style: AppTheme.micro(color: AppColors.success)
                                 .copyWith(fontWeight: FontWeight.w600),
                           ),
@@ -122,9 +169,9 @@ class SettingsScreen extends StatelessWidget {
             // Quick stats
             Row(
               children: [
-                Expanded(child: _StatBlock(label: 'Workouts', value: '47')),
+                Expanded(child: _StatBlock(label: 'Workouts', value: workoutCount)),
                 const SizedBox(width: AppSpacing.xs),
-                Expanded(child: _StatBlock(label: 'Total time', value: '36h')),
+                Expanded(child: _StatBlock(label: 'Total time', value: totalTime)),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(child: _StatBlock(label: 'HR max', value: '${p.hrMax}')),
               ],
@@ -160,9 +207,19 @@ class SettingsScreen extends StatelessWidget {
               _SettingItem(icon: Icons.straighten_rounded, label: 'Units', trailing: 'Metric'),
             ]),
 
-            _Section(title: 'Studio', items: const [
-              _SettingItem(icon: Icons.groups_rounded, label: 'My studio', trailing: 'Pulse Studio'),
-              _SettingItem(icon: Icons.workspace_premium_outlined, label: 'Subscription', trailing: 'Free'),
+            _Section(title: 'Studio', items: [
+              _SettingItem(
+                icon: Icons.groups_rounded,
+                label: 'My studio',
+                trailing: _production
+                    ? (_studio?.name ??
+                        (p.studioId == null ? 'None yet' : '–'))
+                    : 'Pulse Studio',
+              ),
+              const _SettingItem(
+                  icon: Icons.workspace_premium_outlined,
+                  label: 'Subscription',
+                  trailing: 'Free'),
             ]),
 
             _Section(title: 'Support', items: const [
@@ -179,7 +236,7 @@ class SettingsScreen extends StatelessWidget {
                 // Pop any pushed routes (athlete/trainer settings is pushed
                 // from home avatar tap), then bubble up to the prototype flow.
                 Navigator.of(context).popUntil((r) => r.isFirst);
-                onSignOut?.call();
+                widget.onSignOut?.call();
               },
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -194,13 +251,6 @@ class SettingsScreen extends StatelessWidget {
       ),
       ),
     );
-  }
-
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
-    return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
   }
 }
 

@@ -5,7 +5,9 @@ import '../config/app_spacing.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../models/workout_summary.dart';
+import '../services/auth_service.dart';
 import '../services/mock_data.dart';
+import '../services/trainer_notes_repository.dart';
 import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/home_header.dart';
@@ -30,14 +32,50 @@ class MemberDetailScreen extends StatefulWidget {
 }
 
 class _MemberDetailScreenState extends State<MemberDetailScreen> {
-  final _notesCtrl = TextEditingController(
-    text: 'Strong puller, weak push. Mention knee injury before plyo work.',
-  );
+  final _notesCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.profile;
+    if (p == null) {
+      _notesCtrl.text =
+          'Strong puller, weak push. Mention knee injury before plyo work.';
+    } else {
+      final uid = AuthService.currentUid;
+      if (uid != null) {
+        TrainerNotesRepository.load(uid, p.id).then((t) {
+          if (mounted && t.isNotEmpty) _notesCtrl.text = t;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
     _notesCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveNotes() async {
+    final p = widget.profile;
+    final uid = AuthService.currentUid;
+    var message = 'Notes saved';
+    if (p != null && uid != null) {
+      try {
+        await TrainerNotesRepository.save(uid, p.id, _notesCtrl.text.trim());
+      } catch (_) {
+        message = 'Could not save notes.';
+      }
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   static const int _heatmapWeeks = 12;
@@ -294,15 +332,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
             BeatPrimaryButton(
               label: 'Save notes',
               icon: Icons.check_rounded,
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Notes saved'),
-                    behavior: SnackBarBehavior.floating,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              },
+              onPressed: _saveNotes,
             ),
           ],
         ),

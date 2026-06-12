@@ -131,6 +131,13 @@ service cloud.firestore {
       // TODO(Phase D): move trainer read to custom claims; add CEO read.
     }
 
+    // ── trainer_notes/{trainerUid}/members/{memberUid} ───────
+    // A trainer's private notes about a member. Trainer-only, both ways —
+    // the member never sees them.
+    match /trainer_notes/{trainerUid}/members/{memberUid} {
+      allow read, write: if isUser(trainerUid);
+    }
+
     // ── audit_log/{entryId} ──────────────────────────────────
     // Cloud Functions only (Admin SDK bypasses these rules). No client access.
     match /audit_log/{entryId} {
