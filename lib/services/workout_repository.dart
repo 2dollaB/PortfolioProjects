@@ -40,6 +40,20 @@ class WorkoutRepository {
     return ref.id;
   }
 
+  /// One-shot variant of [watchRecent] — used for cross-member aggregations
+  /// (studio analytics) where N live streams would be wasteful.
+  static Future<List<WorkoutSummary>> fetchRecent(String uid,
+      {int limit = 50}) async {
+    final snap = await _workouts
+        .where('userId', isEqualTo: uid)
+        .orderBy('startTime', descending: true)
+        .limit(limit)
+        .get();
+    return snap.docs
+        .map((d) => WorkoutSummary.fromDoc(d.id, d.data()))
+        .toList();
+  }
+
   /// Streams a user's workouts, most recent first (uses the userId+startTime
   /// composite index).
   static Stream<List<WorkoutSummary>> watchRecent(String uid, {int limit = 50}) {
