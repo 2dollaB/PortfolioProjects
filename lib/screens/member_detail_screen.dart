@@ -3,16 +3,27 @@ import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
+import '../models/user_profile.dart';
+import '../models/workout_summary.dart';
 import '../services/mock_data.dart';
+import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
+import '../widgets/home_header.dart';
 import '../widgets/mobile_frame.dart';
 import '../widgets/stat_chip.dart';
 
 /// Trainer-side detail view of a single member.
 /// Shows profile + attendance heatmap + TRIMP trend + notes.
 class MemberDetailScreen extends StatefulWidget {
-  final MockMember member;
-  const MemberDetailScreen({super.key, required this.member});
+  /// Demo (prototype) payload — seeded-random visuals. Null in production.
+  final MockMember? member;
+
+  /// Production payload — stats stream from the member's real workouts.
+  final UserProfile? profile;
+
+  const MemberDetailScreen({super.key, this.member, this.profile})
+      : assert((member == null) != (profile == null),
+            'Pass exactly one of member/profile');
 
   @override
   State<MemberDetailScreen> createState() => _MemberDetailScreenState();
@@ -29,24 +40,122 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
     super.dispose();
   }
 
-  String get _initials {
-    final parts = widget.member.name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
-    return (parts.first.characters.first + parts.last.characters.first)
-        .toUpperCase();
+  static const int _heatmapWeeks = 12;
+  static const int _trendWeeks = 8;
+
+  /// Monday of the current week, at midnight.
+  DateTime get _weekStart {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return today.subtract(Duration(days: today.weekday - 1));
   }
 
-  /// Mock 8-week TRIMP trend, seeded from the member's name so it's stable
-  /// across rebuilds.
-  List<int> get _trimpTrend {
-    final rng = math.Random(widget.member.name.hashCode);
-    return List.generate(8, (i) => 50 + rng.nextInt(60));
+  /// 7×12 cell intensities (0 = rest day) from real workouts: cell brightness
+  /// follows that day's TRIMP relative to the member's best day.
+  List<List<double>> _heatmapFrom(List<WorkoutSummary> all) {
+    final firstCol = _weekStart.subtract(Duration(days: 7 * (_heatmapWeeks - 1)));
+    final byDay = <DateTime, int>{};
+    for (final w in all) {
+      final d = DateTime(w.startTime.year, w.startTime.month, w.startTime.day);
+      byDay[d] = (byDay[d] ?? 0) + w.trimp;
+    }
+    final maxTrimp =
+        byDay.values.isEmpty ? 1 : byDay.values.reduce(math.max).clamp(1, 1 << 31);
+    return List.generate(7, (row) {
+      return List.generate(_heatmapWeeks, (col) {
+        final day = firstCol.add(Duration(days: col * 7 + row));
+        final t = byDay[day];
+        return t == null ? 0.0 : (t / maxTrimp).clamp(0.25, 1.0).toDouble();
+      });
+    });
+  }
+
+  /// Weekly TRIMP sums, oldest → newest, current week last.
+  List<int> _trendFrom(List<WorkoutSummary> all) {
+    return List.generate(_trendWeeks, (i) {
+      final start = _weekStart.subtract(Duration(days: 7 * (_trendWeeks - 1 - i)));
+      final end = start.add(const Duration(days: 7));
+      return all
+          .where((w) => !w.startTime.isBefore(start) && w.startTime.isBefore(end))
+          .fold(0, (s, w) => s + w.trimp);
+    });
+  }
+
+  /// Demo visuals: same per-cell Random sequence as the original mock screen.
+  List<List<double>> _demoHeatmap(int seed) {
+    final rng = math.Random(seed);
+    return List.generate(7, (_) {
+      return List.generate(_heatmapWeeks, (_) {
+        final v = rng.nextDouble();
+        return v > 0.65 ? v : 0.0;
+      });
+    });
+  }
+
+  List<int> _demoTrend(int seed) {
+    final rng = math.Random(seed);
+    return List.generate(_trendWeeks, (_) => 50 + rng.nextInt(60));
   }
 
   @override
   Widget build(BuildContext context) {
-    final active = widget.member.lastSeen.contains('Active');
+    final profile = widget.profile;
+    if (profile == null) {
+      final m = widget.member!;
+      return _content(
+        context,
+        name: m.name,
+        email: m.email,
+        lastSeen: m.lastSeen,
+        active: m.lastSeen.contains('Active'),
+        sessions: '${m.sessions}',
+        avgTrimp: '78',
+        avgHr: '142',
+        heatmap: _demoHeatmap(m.name.hashCode),
+        trend: _demoTrend(m.name.hashCode),
+      );
+    }
+    return StreamBuilder<List<WorkoutSummary>>(
+      stream: WorkoutRepository.watchRecent(profile.id, limit: 200),
+      builder: (context, snap) {
+        final all = snap.data;
+        final loaded = all != null;
+        int avg(num Function(WorkoutSummary) f) =>
+            (all!.map(f).reduce((a, b) => a + b) / all.length).round();
+        return _content(
+          context,
+          name: profile.name,
+          email: profile.email,
+          lastSeen: !loaded
+              ? '…'
+              : all.isEmpty
+                  ? 'No workouts yet'
+                  : 'Last workout · ${all.first.dateLabel}',
+          active: false,
+          sessions: loaded ? '${all.length}' : '–',
+          avgTrimp: loaded && all.isNotEmpty ? '${avg((w) => w.trimp)}' : '–',
+          avgHr: loaded && all.isNotEmpty ? '${avg((w) => w.avgHr)}' : '–',
+          heatmap: loaded
+              ? _heatmapFrom(all)
+              : List.generate(7, (_) => List.filled(_heatmapWeeks, 0.0)),
+          trend: loaded ? _trendFrom(all) : List.filled(_trendWeeks, 0),
+        );
+      },
+    );
+  }
+
+  Widget _content(
+    BuildContext context, {
+    required String name,
+    required String email,
+    required String lastSeen,
+    required bool active,
+    required String sessions,
+    required String avgTrimp,
+    required String avgHr,
+    required List<List<double>> heatmap,
+    required List<int> trend,
+  }) {
     return MobileFrame(
       child: Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
@@ -87,7 +196,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        _initials,
+                        HomeHeader.initialsOf(name),
                         style: AppTheme.h1(color: AppColors.brandRed)
                             .copyWith(fontWeight: FontWeight.w800, fontSize: 26),
                       ),
@@ -116,10 +225,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.member.name,
-                          style: AppTheme.h1().copyWith(fontSize: 22)),
+                      Text(name, style: AppTheme.h1().copyWith(fontSize: 22)),
                       const SizedBox(height: 2),
-                      Text(widget.member.email, style: AppTheme.caption()),
+                      Text(email, style: AppTheme.caption()),
                       const SizedBox(height: 4),
                       Row(
                         children: [
@@ -132,7 +240,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            widget.member.lastSeen,
+                            lastSeen,
                             style: AppTheme.caption(
                               color: active
                                   ? AppColors.success
@@ -151,33 +259,24 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
             // Quick stats
             Row(
               children: [
-                Expanded(child: StatChip(
-                  label: 'Sessions',
-                  value: '${widget.member.sessions}',
-                )),
+                Expanded(child: StatChip(label: 'Sessions', value: sessions)),
                 const SizedBox(width: AppSpacing.xs),
-                Expanded(child: const StatChip(
-                  label: 'Avg TRIMP',
-                  value: '78',
-                )),
+                Expanded(child: StatChip(label: 'Avg TRIMP', value: avgTrimp)),
                 const SizedBox(width: AppSpacing.xs),
-                Expanded(child: const StatChip(
-                  label: 'Avg HR',
-                  value: '142',
-                  unit: 'bpm',
-                )),
+                Expanded(
+                    child: StatChip(label: 'Avg HR', value: avgHr, unit: 'bpm')),
               ],
             ),
 
             const SizedBox(height: AppSpacing.lg),
             Text('Attendance · last 12 weeks', style: AppTheme.h2()),
             const SizedBox(height: AppSpacing.sm),
-            _AttendanceHeatmap(seed: widget.member.name.hashCode),
+            _AttendanceHeatmap(intensities: heatmap),
 
             const SizedBox(height: AppSpacing.lg),
             Text('TRIMP trend · last 8 weeks', style: AppTheme.h2()),
             const SizedBox(height: AppSpacing.sm),
-            _TrimpTrend(values: _trimpTrend),
+            _TrimpTrend(values: trend),
 
             const SizedBox(height: AppSpacing.lg),
             Text('Trainer notes', style: AppTheme.h2()),
@@ -213,15 +312,14 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
   }
 }
 
-/// 12-week attendance heatmap — 7 days × 12 cols.
-/// Cell intensity = fake "attended that day" probability.
+/// Attendance heatmap — 7 day-rows × 12 week-columns.
+/// Cell intensity 0 = rest day; >0 sets the trained-cell brightness.
 class _AttendanceHeatmap extends StatelessWidget {
-  final int seed;
-  const _AttendanceHeatmap({required this.seed});
+  final List<List<double>> intensities;
+  const _AttendanceHeatmap({required this.intensities});
 
   @override
   Widget build(BuildContext context) {
-    final rng = math.Random(seed);
     return AspectRatio(
       aspectRatio: 12 / 7,
       child: Container(
@@ -237,12 +335,12 @@ class _AttendanceHeatmap extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    for (int col = 0; col < 12; col++)
+                    for (int col = 0; col < intensities[row].length; col++)
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.all(1.5),
                           child: _Cell(
-                            intensity: rng.nextDouble(),
+                            intensity: intensities[row][col],
                           ),
                         ),
                       ),
@@ -262,8 +360,7 @@ class _Cell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Only ~30% of cells are "trained" days for realism
-    final trained = intensity > 0.65;
+    final trained = intensity > 0;
     return Container(
       decoration: BoxDecoration(
         color: trained

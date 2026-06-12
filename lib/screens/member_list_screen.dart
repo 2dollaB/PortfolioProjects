@@ -175,10 +175,15 @@ class _MemberListScreenState extends State<MemberListScreen> {
                 itemCount: filtered.length,
                 separatorBuilder: (_, _) =>
                     const SizedBox(height: AppSpacing.xs),
-                // Per-member stats + detail need member workout reads — Phase D.
                 itemBuilder: (context, i) => _MemberRow(
                   name: filtered[i].name,
                   subtitle: filtered[i].email,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          MemberDetailScreen(profile: filtered[i]),
+                    ),
+                  ),
                 ),
               );
             }

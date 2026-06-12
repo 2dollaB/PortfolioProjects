@@ -104,17 +104,31 @@ service cloud.firestore {
       }
     }
 
+    // The requester owns the studio that this workout's owner belongs to
+    // (same self-assert membership as isOwnerOfUsersStudio; costs 2 gets).
+    function isTrainerOfWorkoutOwner() {
+      let owner = get(/databases/$(database)/documents/users/$(resource.data.userId)).data;
+      return isSignedIn()
+        && 'studioId' in owner
+        && owner.studioId is string
+        && studioData(owner.studioId).ownerUid == request.auth.uid;
+    }
+
     // ── workouts/{workoutId} ─────────────────────────────────
-    // Owned by a single user; only that user reads/writes.
+    // Owned by a single user; that user reads/writes. The trainer of the
+    // studio the owner joined may also read (member detail / analytics).
     match /workouts/{workoutId} {
-      allow read, delete: if isSignedIn()
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid
+            || isTrainerOfWorkoutOwner());
+      allow delete: if isSignedIn()
         && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn()
         && request.resource.data.userId == request.auth.uid;
       allow update: if isSignedIn()
         && resource.data.userId == request.auth.uid
         && request.resource.data.userId == request.auth.uid;
-      // TODO(Phase D): allow CEO/trainer read of members' workouts via claims.
+      // TODO(Phase D): move trainer read to custom claims; add CEO read.
     }
 
     // ── audit_log/{entryId} ──────────────────────────────────
