@@ -18,7 +18,7 @@ Flutter app for real-time heart-rate monitoring during group fitness sessions in
 - **Project:** `beatsync-prod` (project number `918880027506`).
 - **Firestore:** `(default)` DB in `eur3`. Rules in `firestore.rules`, indexes in `firestore.indexes.json` — **deployed**. Deploy with `firebase deploy --only firestore --project beatsync-prod`.
 - **Auth:** Email/Password enabled.
-- **Web API key:** `AIzaSyDg9ZvT3haD97oEA5QtqDOeFFecGx4-5WE` (for REST verification scripts).
+- **Web API key:** in `lib/firebase_options.dart` (public by design for Firebase web apps — protection is the security rules + auth, not key secrecy). Copy it from there for REST verification scripts; don't paste it into this file (GitGuardian flagged it here on 2026-06-12).
 - **Collections:** `users/{uid}`, `studios/{id}`, `invite_codes/{code}`, `workouts/{id}` (with optional `sessionId`), `sessions/{id}` + `sessions/{id}/hr/{uid}` (live board, ~1 write/sec/athlete), `trainer_notes/{trainerUid}/members/{memberUid}`. Rules tested live incl. negative/cross-user cases (owner-only docs; scoped self-assert trainer reads of member profiles + workouts; owner-only session hosting; hr writes need membership + live status — Phase D moves these to custom claims).
 
 ## Current mode
@@ -33,7 +33,10 @@ flutter run -d chrome --web-port 5599   # web works; Firebase works; BLE/HR is s
 
 ## Test accounts (real, in beatsync-prod)
 - **Athlete:** `jan@gmail.com` (created via the app; password set by user).
-- **Trainer:** `coach@beatsync.app` / `beatsync123` — owns studio **"Pulse Studio"**, **invite code `653572`** (seeded for testing the athlete join flow).
+- **Trainer:** `coach@beatsync.app` — owns studio **"Pulse Studio"**. Password + invite code are in **`HANDOFF.local.md`** (untracked). The old password was leaked in this file's git history and has been **rotated** — `beatsync123` is dead.
+
+## Secrets (⚠️ this repo is PUBLIC)
+Anything sensitive lives in `HANDOFF.local.md` (gitignored): coach password, studio invite code, Firebase CLI OAuth client pair for REST scripts. Never put passwords, tokens or invite codes in this file — it's committed and GitGuardian scans it.
 
 ## ✅ Done (all merged to main, verified)
 | Increment | What |
@@ -78,7 +81,7 @@ flutter run -d chrome --web-port 5599   # web works; Firebase works; BLE/HR is s
 - **Commit style:** `Stage 2 (2x): <what>` + a body explaining rules changes and how they were live-verified; handoff updated and pushed after each merge.
 
 ## Verification helper (REST, owner-token)
-The Firebase CLI refresh token lives at `C:\Users\tinmi\.config\configstore\firebase-tools.json`. Exchange it for an access token (client_id `563584335869-...apps.googleusercontent.com`, secret `j9iVZfS8kkCEFUPaAeJV0sAi`, grant_type refresh_token) to hit Google REST APIs (Firestore admin, Identity Toolkit) bypassing rules — used for seeding/cleanup. For *rules* tests, sign up a throwaway user and use their idToken (respects rules). Clean up test users/docs after (force-delete enabled accounts via `accounts:batchDelete` with `force:true`).
+The Firebase CLI refresh token lives at `C:\Users\tinmi\.config\configstore\firebase-tools.json`. Exchange it for an access token using the Firebase CLI's OAuth client (id + secret in `HANDOFF.local.md`; grant_type refresh_token) to hit Google REST APIs (Firestore admin, Identity Toolkit) bypassing rules — used for seeding/cleanup. For *rules* tests, sign up a throwaway user and use their idToken (respects rules). Clean up test users/docs after (force-delete enabled accounts via `accounts:batchDelete` with `force:true`).
 
 ## Environment / tooling
 - `flutter` 3.44, `dart` 3.12, `firebase-tools` 15.20, `flutterfire` 1.4 (at `C:\Users\tinmi\AppData\Local\Pub\Cache\bin`). PowerShell execution policy: `RemoteSigned` (CurrentUser).
