@@ -9,7 +9,7 @@ import '../services/mock_data.dart';
 import '../services/session_repository.dart';
 import '../services/session_store.dart';
 import '../services/studio_repository.dart';
-import '../services/user_repository.dart';
+import '../services/uid_name_cache.dart';
 import '../widgets/adaptive_grid.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/floating_pills.dart';
@@ -30,22 +30,6 @@ class TrainerMonitorScreen extends StatefulWidget {
   State<TrainerMonitorScreen> createState() => _TrainerMonitorScreenState();
 }
 
-/// What one grid tile needs, regardless of where it came from.
-class _Athlete {
-  final String id;
-  final String name;
-  final int bpm;
-  final int avgBpm;
-  final int hrMax;
-  const _Athlete({
-    required this.id,
-    required this.name,
-    required this.bpm,
-    required this.avgBpm,
-    required this.hrMax,
-  });
-}
-
 enum _SortMode { alphabet, intensity }
 
 class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
@@ -61,8 +45,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
   int _athleteCount = 10;
 
   Stream<List<SessionHrEntry>>? _hrStream;
-  final Map<String, String> _names = {};
-  final Set<String> _nameFetches = {};
+  final _names = UidNameCache();
   String? _inviteCode;
 
   @override
@@ -89,23 +72,6 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       ? _stopwatch.elapsed
       : DateTime.now().difference(widget.session!.startedAt);
 
-  /// Resolves display names for hr-board uids we haven't seen yet.
-  void _ensureNames(List<SessionHrEntry> entries) {
-    final missing = entries
-        .map((e) => e.uid)
-        .where((u) => !_nameFetches.contains(u))
-        .toList();
-    if (missing.isEmpty) return;
-    _nameFetches.addAll(missing);
-    UserRepository.loadMany(missing).then((profiles) {
-      if (!mounted) return;
-      setState(() {
-        for (final p in profiles) {
-          _names[p.id] = p.name;
-        }
-      });
-    });
-  }
 
   void _seedBpm() {
     for (final p in MockData.liveSession) {
@@ -173,7 +139,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     if (stream == null) {
       final hrMax = MockData.athleteProfile.hrMax;
       final athletes = MockData.liveOf(_athleteCount)
-          .map((p) => _Athlete(
+          .map((p) => BoardAthlete(
                 id: p.id,
                 name: p.name,
                 bpm: _liveBpm[p.id] ?? p.bpm,
@@ -187,11 +153,13 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       stream: stream,
       builder: (context, snap) {
         final entries = snap.data ?? const <SessionHrEntry>[];
-        _ensureNames(entries);
+        _names.ensure(entries.map((e) => e.uid), () {
+          if (mounted) setState(() {});
+        });
         final athletes = entries
-            .map((e) => _Athlete(
+            .map((e) => BoardAthlete(
                   id: e.uid,
-                  name: _names[e.uid] ?? 'Athlete',
+                  name: _names.nameFor(e.uid),
                   bpm: e.bpm,
                   avgBpm: e.avgBpm,
                   hrMax: e.hrMax > 0 ? e.hrMax : 190,
@@ -202,7 +170,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     );
   }
 
-  Widget _buildScaffold(BuildContext context, List<_Athlete> athletes) {
+  Widget _buildScaffold(BuildContext context, List<BoardAthlete> athletes) {
     // Use the mobile/column layout up to 800px so tablets get clean stacking
     // rather than overlapping floating pills. Only true desktop / TV-cast use
     // cases (≥ 800) keep the floating-pills-over-grid look.
@@ -234,7 +202,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
 
   /// Shared by both layouts: live grid, or a waiting hint while the cloud
   /// session has no athletes yet.
-  Widget _grid(List<_Athlete> sorted, EdgeInsets padding) {
+  Widget _grid(List<BoardAthlete> sorted, EdgeInsets padding) {
     if (sorted.isEmpty) {
       return Center(
         child: Text(
@@ -289,7 +257,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
 
   // ─────────── Mobile layout — header / scrollable grid / footer ───────
   Widget _buildMobile(
-    List<_Athlete> sorted,
+    List<BoardAthlete> sorted,
     int avgBpm,
     int inZ4Plus,
   ) {
@@ -426,7 +394,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
 
   // ─────────── Desktop layout — floating pills over full-bleed grid ───
   Widget _buildDesktop(
-    List<_Athlete> sorted,
+    List<BoardAthlete> sorted,
     int avgBpm,
     int inZ4Plus,
   ) {

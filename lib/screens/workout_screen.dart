@@ -385,7 +385,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 child: _ViewStudioButton(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const TvHostScreen(),
+                      builder: (_) => TvHostScreen(
+                        studioId: widget.session == null
+                            ? null
+                            : widget.profile.studioId,
+                      ),
                     ),
                   ),
                 ),

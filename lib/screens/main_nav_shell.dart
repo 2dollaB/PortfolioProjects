@@ -66,7 +66,7 @@ class _MainNavShellState extends State<MainNavShell> {
             // Mock trainer profiles have no studioId, so the demo path holds.
             MemberListScreen(studioId: widget.profile.studioId),
             StudioAnalyticsScreen(studioId: widget.profile.studioId),
-            const TvHostScreen(),
+            TvHostScreen(studioId: widget.profile.studioId),
           ]
         : [
             HomeScreen(

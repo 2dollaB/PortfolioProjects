@@ -60,6 +60,23 @@ class CloudSession {
   }
 }
 
+/// What one live-board grid tile renders, regardless of source — built from
+/// [SessionHrEntry] + a resolved name in production, or mock data in demo.
+class BoardAthlete {
+  final String id;
+  final String name;
+  final int bpm;
+  final int avgBpm;
+  final int hrMax;
+  const BoardAthlete({
+    required this.id,
+    required this.name,
+    required this.bpm,
+    required this.avgBpm,
+    required this.hrMax,
+  });
+}
+
 /// One athlete's row on the live HR board (`sessions/{id}/hr/{uid}`).
 class SessionHrEntry {
   final String uid;
