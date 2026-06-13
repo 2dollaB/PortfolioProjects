@@ -16,6 +16,7 @@ import '../widgets/floating_pills.dart';
 import '../widgets/invite_sheet.dart';
 import '../widgets/participant_card.dart';
 import '../widgets/session_status_banner.dart';
+import 'cloud_session_detail_screen.dart';
 import 'session_detail_screen.dart';
 
 /// Trainer session control panel — full-bleed adaptive grid with floating
@@ -252,7 +253,13 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       return;
     }
     if (!mounted) return;
-    Navigator.of(context).pop();
+    // Hand off to the results screen (replaces the dead monitor so Back goes
+    // home). Results trickle in as athletes save their workouts.
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => CloudSessionDetailScreen(session: s),
+      ),
+    );
   }
 
   // ─────────── Mobile layout — header / scrollable grid / footer ───────

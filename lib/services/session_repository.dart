@@ -48,6 +48,21 @@ class SessionRepository {
             : CloudSession.fromDoc(snap.docs.first.id, snap.docs.first.data()));
   }
 
+  /// One-shot: sessions started on/after [since], newest first. Used for the
+  /// trainer-home "Active today" / "Sessions / wk" stats. Reuses the
+  /// studioId+startedAt index (equality on studioId, range on startedAt).
+  static Future<List<CloudSession>> fetchSince(
+      String studioId, DateTime since) async {
+    final snap = await _sessions
+        .where('studioId', isEqualTo: studioId)
+        .where('startedAt', isGreaterThanOrEqualTo: Timestamp.fromDate(since))
+        .orderBy('startedAt', descending: true)
+        .get();
+    return snap.docs
+        .map((d) => CloudSession.fromDoc(d.id, d.data()))
+        .toList();
+  }
+
   /// Past + current sessions, newest first (studioId+startedAt index).
   static Stream<List<CloudSession>> watchRecent(String studioId,
       {int limit = 20}) {

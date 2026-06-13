@@ -10,6 +10,7 @@ import '../services/mock_data.dart';
 import '../services/session_repository.dart';
 import '../services/session_store.dart';
 import '../services/studio_repository.dart';
+import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/home_header.dart';
 import '../widgets/mobile_frame.dart';
@@ -133,15 +134,19 @@ class TrainerHomeScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             Text('Studio at a glance', style: AppTheme.h2()),
             const SizedBox(height: AppSpacing.sm),
-            // Active today / sessions-per-week need cloud sessions (not built
-            // yet) — production shows '–' until then.
+            // Active today / sessions-per-week are computed from cloud
+            // sessions; '–' only while the studio doc is still loading.
             production
-                ? _StudioStats(
-                    activeToday: '–',
-                    members:
-                        studio == null ? '–' : '${studio.athleteUids.length}',
-                    sessionsPerWeek: '–',
-                  )
+                ? (studio == null
+                    ? const _StudioStats(
+                        activeToday: '–',
+                        members: '–',
+                        sessionsPerWeek: '–',
+                      )
+                    : _StudioStatsLoader(
+                        studioId: studioId,
+                        members: studio.athleteUids.length,
+                      ))
                 : const _StudioStats(
                     activeToday: '8',
                     members: '34',
@@ -174,6 +179,59 @@ class TrainerHomeScreen extends StatelessWidget {
         ),
       ),
       ),
+    );
+  }
+}
+
+/// Loads the two cloud-derived stats once (memoized on [studioId]) and renders
+/// [_StudioStats] — '–' for the computed chips while the fetch is in flight.
+/// "Sessions / wk" = sessions started in the last 7 days; "Active today" =
+/// distinct athletes with a saved workout linked to a session that started
+/// today (bounded by the day's session count, not member count).
+class _StudioStatsLoader extends StatefulWidget {
+  final String studioId;
+  final int members;
+  const _StudioStatsLoader({required this.studioId, required this.members});
+
+  @override
+  State<_StudioStatsLoader> createState() => _StudioStatsLoaderState();
+}
+
+class _StudioStatsLoaderState extends State<_StudioStatsLoader> {
+  late Future<(int active, int week)> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load(widget.studioId);
+  }
+
+  static Future<(int, int)> _load(String studioId) async {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final sessions = await SessionRepository.fetchSince(
+        studioId, now.subtract(const Duration(days: 7)));
+    final today = sessions.where((s) => !s.startedAt.isBefore(todayStart));
+    final active = <String>{};
+    for (final s in today) {
+      final workouts = await WorkoutRepository.fetchBySession(s.id);
+      active.addAll(workouts.map((w) => w.userId).whereType<String>());
+    }
+    return (active.length, sessions.length);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<(int, int)>(
+      future: _future,
+      builder: (context, snap) {
+        final data = snap.data;
+        return _StudioStats(
+          activeToday: data == null ? '–' : '${data.$1}',
+          members: '${widget.members}',
+          sessionsPerWeek: data == null ? '–' : '${data.$2}',
+        );
+      },
     );
   }
 }

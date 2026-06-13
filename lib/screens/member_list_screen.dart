@@ -10,6 +10,7 @@ import '../services/auth_service.dart';
 import '../services/mock_data.dart';
 import '../services/studio_repository.dart';
 import '../services/user_repository.dart';
+import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/home_header.dart';
 import '../widgets/invite_sheet.dart';
@@ -31,8 +32,8 @@ class _MemberListScreenState extends State<MemberListScreen> {
 
   Stream<Studio?>? _studioStream;
 
-  // Memoized so search-field setStates don't refetch; refreshed on uid change.
-  Future<List<UserProfile>>? _membersFuture;
+  // Memoized so search/filter setStates don't refetch; refreshed on uid change.
+  Future<List<_MemberActivity>>? _membersFuture;
   List<String>? _memberUids;
 
   @override
@@ -50,17 +51,47 @@ class _MemberListScreenState extends State<MemberListScreen> {
     super.dispose();
   }
 
-  Future<List<UserProfile>> _membersFor(List<String> uids) {
+  Future<List<_MemberActivity>> _membersFor(List<String> uids) {
     if (_membersFuture == null || !listEquals(_memberUids, uids)) {
       _memberUids = List.of(uids);
-      _membersFuture = UserRepository.loadMany(uids);
+      _membersFuture = _loadActivity(uids);
     }
     return _membersFuture!;
+  }
+
+  /// Loads each member's profile + recent workouts (one fan-out fetch, same
+  /// pattern as the analytics screen) and folds them into session count +
+  /// last-workout date for the list subtitle and activity filters.
+  static Future<List<_MemberActivity>> _loadActivity(List<String> uids) async {
+    final members = await UserRepository.loadMany(uids);
+    final workouts = await Future.wait(
+      members.map((m) => WorkoutRepository.fetchRecent(m.id, limit: 100)),
+    );
+    return [
+      for (var i = 0; i < members.length; i++)
+        _MemberActivity(
+          profile: members[i],
+          sessions: workouts[i].length,
+          lastWorkout:
+              workouts[i].isEmpty ? null : workouts[i].first.startTime,
+        ),
+    ];
   }
 
   bool _matchesSearch(String name) {
     final q = _search.text.toLowerCase();
     return q.isEmpty || name.toLowerCase().contains(q);
+  }
+
+  bool _matchesFilter(_MemberActivity m) {
+    switch (_filter) {
+      case 'Active today':
+        return m.activeToday;
+      case 'Inactive':
+        return m.inactive;
+      default:
+        return true;
+    }
   }
 
   void _showDemoInviteSheet() {
@@ -142,7 +173,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
             body: const Center(child: CircularProgressIndicator()),
           );
         }
-        return FutureBuilder<List<UserProfile>>(
+        return FutureBuilder<List<_MemberActivity>>(
           future: _membersFor(studio.athleteUids),
           builder: (context, msnap) {
             final members = msnap.data;
@@ -166,8 +197,10 @@ class _MemberListScreenState extends State<MemberListScreen> {
                 ),
               );
             } else {
-              final filtered =
-                  members.where((m) => _matchesSearch(m.name)).toList();
+              final filtered = members
+                  .where((m) =>
+                      _matchesSearch(m.profile.name) && _matchesFilter(m))
+                  .toList();
               body = ListView.separated(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.xl, 0, AppSpacing.xl, 100,
@@ -176,12 +209,14 @@ class _MemberListScreenState extends State<MemberListScreen> {
                 separatorBuilder: (_, _) =>
                     const SizedBox(height: AppSpacing.xs),
                 itemBuilder: (context, i) => _MemberRow(
-                  name: filtered[i].name,
-                  subtitle: filtered[i].email,
+                  name: filtered[i].profile.name,
+                  subtitle:
+                      '${filtered[i].sessions} sessions · ${filtered[i].lastSeenLabel}',
+                  active: filtered[i].activeToday,
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) =>
-                          MemberDetailScreen(profile: filtered[i]),
+                          MemberDetailScreen(profile: filtered[i].profile),
                     ),
                   ),
                 ),
@@ -192,6 +227,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
               count: members == null ? '–' : '${members.length}',
               onInvite: () =>
                   InviteSheet.show(context, code: studio.inviteCode),
+              showActivityFilters: true,
               body: body,
             );
           },
@@ -309,6 +345,41 @@ class _MemberListScreenState extends State<MemberListScreen> {
         ),
       ),
     );
+  }
+}
+
+/// A studio member plus the activity derived from their workouts: how many
+/// they've logged and when they last trained — drives the subtitle, the
+/// "active" dot and the activity filters.
+class _MemberActivity {
+  final UserProfile profile;
+  final int sessions;
+  final DateTime? lastWorkout;
+  const _MemberActivity({
+    required this.profile,
+    required this.sessions,
+    required this.lastWorkout,
+  });
+
+  /// Whole days since the last workout (calendar days), or null if none.
+  int? get _daysSince {
+    final d = lastWorkout;
+    if (d == null) return null;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return today.difference(DateTime(d.year, d.month, d.day)).inDays;
+  }
+
+  bool get activeToday => _daysSince == 0;
+  bool get inactive => (_daysSince ?? 999) >= 7;
+
+  String get lastSeenLabel {
+    final n = _daysSince;
+    if (n == null) return 'No sessions yet';
+    if (n == 0) return 'Active today';
+    if (n == 1) return 'Yesterday';
+    if (n < 7) return '$n days ago';
+    return '${lastWorkout!.day}/${lastWorkout!.month}';
   }
 }
 
