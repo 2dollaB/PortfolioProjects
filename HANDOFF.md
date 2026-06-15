@@ -68,7 +68,7 @@ Anything sensitive lives in `HANDOFF.local.md` (gitignored): coach password, stu
 ## ⬜ Not done yet
 - **BLE hardware test** — the whole BLE path (2m) is analyze/build-verified only. Needs the user's phone + a strap or a watch in HR-broadcast mode (Garmin/Polar/Coros/Samsung…; Apple Watch can't broadcast): pair via Settings → Connected devices, start a workout, confirm real BPM replaces the curve and the chip shows the device + battery. iOS `Info.plist` has no `NSBluetoothAlwaysUsageDescription` yet (Android-first; add before any iOS run).
 - **Device test pass** — end-to-end on a real phone (+strap): BLE, Android build, foreground service, background throttling.
-- **Next.js admin panel** (trainer + CEO) — Stages 3–5, **0% started**; own repo, shares beatsync-prod. Needs repo-location/stack decisions from the user first.
+- **Next.js admin panel** (trainer + CEO) — Stages 3–5, **0% started**; own **private** repo at `C:\dev\beatsync-admin`, shares beatsync-prod. **Bridge handoff written → `C:\dev\beatsync-admin\docs\HANDOFF.md`** (read it first; repo not yet scaffolded). Decisions locked: separate private GitHub repo, local-dev-only for now (Vercel recommended later), stack per `IMPLEMENTATION_PLAN.md` Stage 3.
 - **Cloud Functions + custom claims + tightened rules** — Stage 6 (needs Blaze plan). Replaces the self-assert rules and their extra `get()` read costs.
 - **Deploy** — hosting (TV link), Crashlytics/Analytics, store submission, privacy/ToS — Stage 7.
 
