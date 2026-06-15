@@ -56,9 +56,12 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
 
   void _react(CloudSession? s) {
     if (_navigated || !mounted) return;
+    // Null = stream still resolving or a transient read hiccup. Stay put in
+    // the lobby rather than bouncing the athlete back (that looked like Join
+    // doing nothing). Only an explicit kick or a real 'ended' leaves.
+    if (s == null) return;
     final uid = AuthService.currentUid;
-    // Kicked, or the session vanished/ended before starting → leave.
-    if (uid != null && s != null && s.isKicked(uid)) {
+    if (uid != null && s.isKicked(uid)) {
       _navigated = true;
       _removePresence();
       Navigator.of(context).pop();
@@ -67,7 +70,7 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
       );
       return;
     }
-    if (s == null || s.status == 'ended') {
+    if (s.status == 'ended') {
       _navigated = true;
       Navigator.of(context).pop();
       return;
@@ -149,16 +152,27 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    StreamBuilder<List<SessionHrEntry>>(
-                      stream: SessionRepository.watchHr(widget.session.id),
-                      builder: (context, hrSnap) {
-                        final n = hrSnap.data?.length ?? 1;
-                        return Text(
-                          n == 1 ? "You're in the room" : '$n in the room',
-                          style: AppTheme.caption(color: AppColors.success),
-                        );
-                      },
-                    ),
+                    if (snap.hasError)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md),
+                        child: Text(
+                          'Connection issue: ${snap.error}',
+                          style: AppTheme.caption(color: AppColors.danger),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    else
+                      StreamBuilder<List<SessionHrEntry>>(
+                        stream: SessionRepository.watchHr(widget.session.id),
+                        builder: (context, hrSnap) {
+                          final n = hrSnap.data?.length ?? 1;
+                          return Text(
+                            n == 1 ? "You're in the room" : '$n in the room',
+                            style: AppTheme.caption(color: AppColors.success),
+                          );
+                        },
+                      ),
                     const Spacer(),
                     BeatSecondaryButton(
                       label: 'Leave',
