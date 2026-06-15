@@ -114,6 +114,11 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
           child: StreamBuilder<CloudSession?>(
             stream: _stream,
             builder: (context, snap) {
+              // Don't act on the initial (still-loading) null — only a real
+              // emission tells us the session is gone/ended/running/kicked.
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
               final s = snap.data;
               // React to lifecycle changes after the frame (can't navigate mid-build).
               WidgetsBinding.instance.addPostFrameCallback((_) => _react(s));
