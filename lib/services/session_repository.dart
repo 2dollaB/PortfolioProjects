@@ -17,6 +17,9 @@ class SessionRepository {
     required String trainerUid,
     required String name,
     required String type,
+    int workSec = 0,
+    int restSec = 0,
+    int rounds = 1,
   }) async {
     final ref = await _sessions.add({
       'studioId': studioId,
@@ -30,6 +33,9 @@ class SessionRepository {
       'runningSince': null,
       'accumulatedMs': 0,
       'kickedUids': <String>[],
+      'workSec': workSec,
+      'restSec': restSec,
+      'rounds': rounds,
     });
     return ref.id;
   }

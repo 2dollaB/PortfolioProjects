@@ -60,6 +60,9 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
     }
 
     setState(() => _launching = true);
+    final w = _intervals ? _workSec : 0;
+    final r = _intervals ? _restSec : 0;
+    final rounds = _intervals ? _rounds : 1;
     final String sessionId;
     try {
       sessionId = await SessionRepository.start(
@@ -67,6 +70,9 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
         trainerUid: uid,
         name: name,
         type: _type.name,
+        workSec: w,
+        restSec: r,
+        rounds: rounds,
       );
     } catch (_) {
       if (!mounted) return;
@@ -88,6 +94,9 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
             type: _type.name,
             status: 'live',
             startedAt: DateTime.now(),
+            workSec: w,
+            restSec: r,
+            rounds: rounds,
           ),
         ),
       ),

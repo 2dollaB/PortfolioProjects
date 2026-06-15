@@ -39,9 +39,8 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
   final _rng = math.Random();
   final Map<String, int> _liveBpm = {};
   SessionPhase _phase = SessionPhase.work;
-  int _phaseRemainingSec = 45;
-  int _round = 3;
-  final int _totalRounds = 8;
+  int _phaseRemainingSec = 0;
+  int _round = 1;
   _SortMode _sort = _SortMode.alphabet;
   int _athleteCount = 10;
 
@@ -86,6 +85,19 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
 
   bool get _isRunning => _runState == 'running';
 
+  // Interval-timer config — from the cloud session (production) or the demo
+  // SessionStore. workSec == 0 means no interval timer was set.
+  int get _cfgWork => widget.session == null
+      ? (SessionStore.instance.live.value?.workSec ?? 0)
+      : (_session?.workSec ?? 0);
+  int get _cfgRest => widget.session == null
+      ? (SessionStore.instance.live.value?.restSec ?? 0)
+      : (_session?.restSec ?? 0);
+  int get _cfgRounds => widget.session == null
+      ? (SessionStore.instance.live.value?.rounds ?? 1)
+      : (_session?.rounds ?? 1);
+  bool get _hasIntervals => _cfgWork > 0;
+
   void _snack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -93,6 +105,12 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
   }
 
   Future<void> _onStart() async {
+    // Reset the interval timer to round 1 / work phase from the config.
+    setState(() {
+      _phase = SessionPhase.work;
+      _round = 1;
+      _phaseRemainingSec = _cfgWork;
+    });
     final s = widget.session;
     if (s == null) {
       SessionStore.instance.beginLive();
@@ -192,16 +210,16 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       // Lobby/paused: rebuild only to refresh the clock; don't advance the
       // interval phase or the demo BPM curve.
       if (!_isRunning) return;
-      if (_phaseRemainingSec > 0) {
-        _phaseRemainingSec--;
-      } else {
-        if (_phase == SessionPhase.work) {
+      if (_hasIntervals) {
+        if (_phaseRemainingSec > 0) {
+          _phaseRemainingSec--;
+        } else if (_phase == SessionPhase.work) {
           _phase = SessionPhase.rest;
-          _phaseRemainingSec = 20;
+          _phaseRemainingSec = _cfgRest;
         } else {
           _phase = SessionPhase.work;
-          _phaseRemainingSec = 45;
-          _round = math.min(_round + 1, _totalRounds);
+          _phaseRemainingSec = _cfgWork;
+          _round = math.min(_round + 1, _cfgRounds);
         }
       }
       if (widget.session == null) {
@@ -410,7 +428,8 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     final paused = _runState == 'paused';
     return Row(
       children: [
-        if (widget.session == null && _isRunning) ...[
+        // Skip the current work/rest phase (interval timer only).
+        if (_isRunning && _hasIntervals) ...[
           Expanded(
             child: BeatSecondaryButton(
               label: 'Skip',
@@ -476,6 +495,29 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
   }
 
   Future<void> _onEndSession() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.darkBgSecondary,
+        title: const Text('End session?'),
+        content: Text(
+          'This ends the workout for everyone and shows the results.',
+          style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.brandRed),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('End session'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
     final s = widget.session;
     if (s == null) {
       final record = SessionStore.instance.endLive();
@@ -562,14 +604,17 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
               const SizedBox(height: AppSpacing.xs),
               Row(
                 children: [
-                  Expanded(
-                    child: PhasePill(
-                      phase: _phase,
-                      remaining: Duration(seconds: _phaseRemainingSec),
-                      roundLabel: 'Round $_round/$_totalRounds',
+                  if (_hasIntervals) ...[
+                    Expanded(
+                      child: PhasePill(
+                        phase: _phase,
+                        remaining: Duration(seconds: _phaseRemainingSec),
+                        roundLabel: 'Round $_round/$_cfgRounds',
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
+                    const SizedBox(width: AppSpacing.xs),
+                  ] else
+                    const Spacer(),
                   GlassPill(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -692,12 +737,14 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
                   onChanged: (v) => setState(() => _athleteCount = v),
                 ),
               ],
-              const SizedBox(width: 8),
-              PhasePill(
-                phase: _phase,
-                remaining: Duration(seconds: _phaseRemainingSec),
-                roundLabel: 'Round $_round/$_totalRounds',
-              ),
+              if (_hasIntervals) ...[
+                const SizedBox(width: 8),
+                PhasePill(
+                  phase: _phase,
+                  remaining: Duration(seconds: _phaseRemainingSec),
+                  roundLabel: 'Round $_round/$_cfgRounds',
+                ),
+              ],
               const SizedBox(width: 8),
               GlassPill(
                 padding: const EdgeInsets.all(8),

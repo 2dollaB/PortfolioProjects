@@ -19,6 +19,11 @@ class CloudSession {
   final int accumulatedMs; // elapsed before the current running segment
   final List<String> kickedUids;
 
+  // ── interval timer config (set at launch) ──
+  final int workSec; // 0 = no interval timer
+  final int restSec;
+  final int rounds;
+
   const CloudSession({
     required this.id,
     required this.studioId,
@@ -33,6 +38,9 @@ class CloudSession {
     this.runningSince,
     this.accumulatedMs = 0,
     this.kickedUids = const [],
+    this.workSec = 0,
+    this.restSec = 0,
+    this.rounds = 1,
   });
 
   bool get isLive => status == 'live';
@@ -41,6 +49,7 @@ class CloudSession {
   bool get isRunning => runState == 'running';
   bool get isPaused => runState == 'paused';
   bool isKicked(String uid) => kickedUids.contains(uid);
+  bool get hasIntervals => workSec > 0;
 
   /// Pause-aware live clock (lobby/running/paused). Identical math on every
   /// client: accumulated time plus the current running segment.
@@ -91,6 +100,9 @@ class CloudSession {
       accumulatedMs: (d['accumulatedMs'] as num?)?.toInt() ?? 0,
       kickedUids:
           (d['kickedUids'] as List?)?.whereType<String>().toList() ?? const [],
+      workSec: (d['workSec'] as num?)?.toInt() ?? 0,
+      restSec: (d['restSec'] as num?)?.toInt() ?? 0,
+      rounds: (d['rounds'] as num?)?.toInt() ?? 1,
     );
   }
 }
