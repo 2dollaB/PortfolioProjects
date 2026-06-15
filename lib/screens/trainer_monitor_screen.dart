@@ -42,6 +42,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
   int _phaseRemainingSec = 0;
   int _round = 1;
   bool _phaseDone = false; // all rounds finished — stop the interval timer
+  bool _completing = false; // ending/navigating to results (once-only guard)
   _SortMode _sort = _SortMode.alphabet;
   int _athleteCount = 10;
 
@@ -246,6 +247,10 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
         }
       }
     });
+    // Interval block finished naturally → auto-end into the results screen.
+    if (_phaseDone && !_completing) {
+      _endAndShowResults();
+    }
   }
 
   @override
@@ -530,22 +535,34 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       ),
     );
     if (ok != true || !mounted) return;
+    await _endAndShowResults();
+  }
+
+  /// Ends the session and hands off to the results screen — used by both the
+  /// manual End button and natural completion (all rounds finished). Replaces
+  /// the dead monitor so the results screen's Back goes home.
+  Future<void> _endAndShowResults() async {
+    if (_completing) return;
+    _completing = true;
     final s = widget.session;
     if (s == null) {
       final record = SessionStore.instance.endLive();
-      Navigator.of(context).pop();
+      if (!mounted) return;
       if (record != null) {
-        Navigator.of(context).push(
+        Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => SessionDetailScreen(record: record),
           ),
         );
+      } else {
+        Navigator.of(context).pop();
       }
       return;
     }
     try {
       await SessionRepository.end(s.id);
     } catch (_) {
+      _completing = false;
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not end the session. Try again.')),
@@ -553,8 +570,6 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       return;
     }
     if (!mounted) return;
-    // Hand off to the results screen (replaces the dead monitor so Back goes
-    // home). Results trickle in as athletes save their workouts.
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => CloudSessionDetailScreen(session: s),

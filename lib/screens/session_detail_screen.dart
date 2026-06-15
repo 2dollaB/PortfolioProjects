@@ -102,11 +102,12 @@ class SessionDetailScreen extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
             ],
             const SizedBox(height: AppSpacing.lg),
-            // Finalize action — feels like a proper end to the workflow.
+            // Finalize action — returns all the way to the home screen.
             BeatPrimaryButton(
-              label: 'Done',
-              icon: Icons.check_rounded,
-              onPressed: () => Navigator.of(context).pop(),
+              label: 'Back to home',
+              icon: Icons.home_rounded,
+              onPressed: () =>
+                  Navigator.of(context).popUntil((r) => r.isFirst),
             ),
             const SizedBox(height: AppSpacing.md),
           ],
