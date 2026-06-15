@@ -219,17 +219,21 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
         if (_phaseRemainingSec > 0) {
           _phaseRemainingSec--;
         } else if (_phase == SessionPhase.work) {
-          // Work done → rest (or finish if this was the last round and no rest).
-          if (_round >= _cfgRounds && _cfgRest <= 0) {
+          // Rest only sits *between* rounds. After the final round's work the
+          // workout is complete — no trailing rest.
+          if (_round >= _cfgRounds) {
             _phaseDone = true;
-          } else {
+          } else if (_cfgRest > 0) {
             _phase = SessionPhase.rest;
             _phaseRemainingSec = _cfgRest;
+          } else {
+            // No rest configured → straight to the next round's work.
+            _phase = SessionPhase.work;
+            _phaseRemainingSec = _cfgWork;
+            _round++;
           }
-        } else if (_round >= _cfgRounds) {
-          // Last round's rest finished → the whole interval block is done.
-          _phaseDone = true;
         } else {
+          // Rest finished → next round's work.
           _phase = SessionPhase.work;
           _phaseRemainingSec = _cfgWork;
           _round++;
