@@ -456,20 +456,23 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
           ),
           const SizedBox(width: AppSpacing.xs),
         ],
-        Expanded(
-          child: paused
-              ? BeatPrimaryButton(
-                  label: 'Resume',
-                  icon: Icons.play_arrow_rounded,
-                  onPressed: _onResume,
-                )
-              : BeatSecondaryButton(
-                  label: 'Pause',
-                  icon: Icons.pause_rounded,
-                  onPressed: _onPause,
-                ),
-        ),
-        const SizedBox(width: AppSpacing.xs),
+        // No Pause once the workout is complete — it's wrapping up to results.
+        if (!_phaseDone) ...[
+          Expanded(
+            child: paused
+                ? BeatPrimaryButton(
+                    label: 'Resume',
+                    icon: Icons.play_arrow_rounded,
+                    onPressed: _onResume,
+                  )
+                : BeatSecondaryButton(
+                    label: 'Pause',
+                    icon: Icons.pause_rounded,
+                    onPressed: _onPause,
+                  ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+        ],
         Expanded(
           child: BeatPrimaryButton(
             label: 'End',
