@@ -9,6 +9,7 @@ import '../models/studio.dart';
 import '../services/auth_service.dart';
 import '../services/mock_data.dart';
 import '../services/session_repository.dart';
+import '../services/session_store.dart';
 import '../services/studio_repository.dart';
 import '../services/uid_name_cache.dart';
 import '../widgets/adaptive_grid.dart';
@@ -81,6 +82,9 @@ class _TvHostScreenState extends State<TvHostScreen> {
       return;
     }
     setState(() {
+      // Demo lobby/paused: freeze the interval phase + mock BPM curve.
+      final ls = SessionStore.instance.live.value;
+      if (ls != null && !ls.isRunning) return;
       if (_phaseRemainingSec > 0) {
         _phaseRemainingSec--;
       } else {
@@ -119,6 +123,18 @@ class _TvHostScreenState extends State<TvHostScreen> {
     return '$m:$s';
   }
 
+  /// Effective lifecycle state — cloud session in production, SessionStore in
+  /// demo (defaults to running when there's no demo session in play).
+  String _runStateFor(CloudSession? live) {
+    if (live != null) return live.runState;
+    return SessionStore.instance.live.value?.runState ?? 'running';
+  }
+
+  Duration _elapsedFor(CloudSession? live) {
+    if (live != null) return live.liveElapsed;
+    return SessionStore.instance.live.value?.liveElapsed ?? _stopwatch.elapsed;
+  }
+
   Stream<List<SessionHrEntry>> _hrFor(String sessionId) {
     if (_hrSessionId != sessionId) {
       _hrSessionId = sessionId;
@@ -142,6 +158,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
     final liveStream = _liveStream;
     if (liveStream == null) {
       final hrMax = MockData.athleteProfile.hrMax;
+      if (_runStateFor(null) == 'lobby') return _lobby(context, null);
       final athletes = MockData.liveOf(_athleteCount)
           .map((p) => BoardAthlete(
                 id: p.id,
@@ -164,6 +181,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
         }
         final live = snap.data;
         if (live == null) return _idle(context);
+        if (live.isLobby) return _lobby(context, live);
         return StreamBuilder<List<SessionHrEntry>>(
           stream: _hrFor(live.id),
           builder: (context, hrSnap) {
@@ -240,16 +258,111 @@ class _TvHostScreenState extends State<TvHostScreen> {
     final studioName =
         live == null ? MockData.studioName : (_studio?.name ?? '');
     final subtitle = '$studioName · ${list.length} athletes';
-    final elapsed = _formatDuration(live == null
-        ? _stopwatch.elapsed
-        : DateTime.now().difference(live.startedAt));
+    final elapsed = _formatDuration(_elapsedFor(live));
+    final paused = _runStateFor(live) == 'paused';
 
     return Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
       body: SafeArea(
-        child: isMobile
-            ? _buildMobile(list, avgHr, inZ4Plus, title, subtitle, elapsed)
-            : _buildDesktop(list, avgHr, inZ4Plus, title, subtitle, elapsed),
+        child: Stack(
+          children: [
+            isMobile
+                ? _buildMobile(list, avgHr, inZ4Plus, title, subtitle, elapsed)
+                : _buildDesktop(list, avgHr, inZ4Plus, title, subtitle, elapsed),
+            if (paused)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.pause_circle_filled_rounded,
+                          color: AppColors.warning, size: 72),
+                      const SizedBox(height: AppSpacing.md),
+                      Text('PAUSED',
+                          style: AppTheme.h1(color: AppColors.warning)
+                              .copyWith(fontSize: 40, letterSpacing: 4)),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Pre-start splash for the wall screen — invites athletes to join.
+  Widget _lobby(BuildContext context, CloudSession? live) {
+    final title = live?.name ?? 'Friday HIIT 18:00';
+    final studioName =
+        live == null ? MockData.studioName : (_studio?.name ?? '');
+    final code = _production ? _studio?.inviteCode : null;
+    return Scaffold(
+      backgroundColor: AppColors.darkBgPrimary,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(studioName.toUpperCase(),
+                  style: AppTheme.micro(color: AppColors.darkTextSecondary)
+                      .copyWith(letterSpacing: 2)),
+              const SizedBox(height: AppSpacing.sm),
+              Text(title, style: AppTheme.h1().copyWith(fontSize: 44)),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                        color: AppColors.brandRed, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text('STARTING SOON',
+                      style: AppTheme.micro(color: AppColors.brandRed).copyWith(
+                          letterSpacing: 2, fontWeight: FontWeight.w700)),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Text('Get into position — scan the code to join',
+                  style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary)),
+              if (code != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.darkBgSecondary,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(
+                        color: AppColors.brandRed.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(code,
+                      style: AppTheme.statNumber(
+                              fontSize: 40, color: AppColors.brandRed)
+                          .copyWith(letterSpacing: 8)),
+                ),
+              ],
+              if (live != null) ...[
+                const SizedBox(height: AppSpacing.lg),
+                StreamBuilder<List<SessionHrEntry>>(
+                  stream: _hrFor(live.id),
+                  builder: (context, snap) {
+                    final n = snap.data?.length ?? 0;
+                    return Text(
+                      n == 0 ? 'Waiting for athletes…' : '$n in the room',
+                      style: AppTheme.caption(color: AppColors.success),
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

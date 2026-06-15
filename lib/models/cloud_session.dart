@@ -8,9 +8,16 @@ class CloudSession {
   final String trainerUid;
   final String name;
   final String type; // workout type enum name, e.g. 'hiit'
-  final String status; // 'live' | 'ended'
-  final DateTime startedAt;
+  final String status; // 'live' | 'ended' — permission/joinable state
+  final DateTime startedAt; // creation time (recent-list ordering)
   final DateTime? endedAt;
+
+  // ── lifecycle (orthogonal to status) ──────────────────────
+  final String runState; // 'lobby' | 'running' | 'paused'
+  final DateTime? workoutStartedAt; // first Start; null in lobby
+  final DateTime? runningSince; // start of current running segment; null if paused/lobby
+  final int accumulatedMs; // elapsed before the current running segment
+  final List<String> kickedUids;
 
   const CloudSession({
     required this.id,
@@ -21,9 +28,28 @@ class CloudSession {
     required this.status,
     required this.startedAt,
     this.endedAt,
+    this.runState = 'lobby',
+    this.workoutStartedAt,
+    this.runningSince,
+    this.accumulatedMs = 0,
+    this.kickedUids = const [],
   });
 
   bool get isLive => status == 'live';
+
+  bool get isLobby => runState == 'lobby';
+  bool get isRunning => runState == 'running';
+  bool get isPaused => runState == 'paused';
+  bool isKicked(String uid) => kickedUids.contains(uid);
+
+  /// Pause-aware live clock (lobby/running/paused). Identical math on every
+  /// client: accumulated time plus the current running segment.
+  Duration get liveElapsed {
+    final base = Duration(milliseconds: accumulatedMs);
+    final since = runningSince;
+    if (since == null) return base; // paused or lobby
+    return base + DateTime.now().difference(since);
+  }
 
   Duration get duration =>
       (endedAt ?? DateTime.now()).difference(startedAt);
@@ -56,6 +82,15 @@ class CloudSession {
       status: d['status'] as String? ?? 'ended',
       startedAt: ts(d['startedAt']),
       endedAt: d['endedAt'] == null ? null : ts(d['endedAt']),
+      // Docs predating this feature have no runState — treat them as running.
+      runState: d['runState'] as String? ?? 'running',
+      workoutStartedAt:
+          d['workoutStartedAt'] == null ? null : ts(d['workoutStartedAt']),
+      runningSince:
+          d['runningSince'] == null ? null : ts(d['runningSince']),
+      accumulatedMs: (d['accumulatedMs'] as num?)?.toInt() ?? 0,
+      kickedUids:
+          (d['kickedUids'] as List?)?.whereType<String>().toList() ?? const [],
     );
   }
 }

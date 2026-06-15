@@ -10,7 +10,8 @@ class SessionRepository {
   static final CollectionReference<Map<String, dynamic>> _sessions =
       FirebaseFirestore.instance.collection('sessions');
 
-  /// Starts a live session in [studioId]; returns the new session id.
+  /// Opens a session in [studioId] in the **lobby** state — joinable (status
+  /// 'live') but the workout clock hasn't started yet. Returns the new id.
   static Future<String> start({
     required String studioId,
     required String trainerUid,
@@ -24,14 +25,62 @@ class SessionRepository {
       'type': type,
       'status': 'live',
       'startedAt': FieldValue.serverTimestamp(),
+      'runState': 'lobby',
+      'workoutStartedAt': null,
+      'runningSince': null,
+      'accumulatedMs': 0,
+      'kickedUids': <String>[],
     });
     return ref.id;
+  }
+
+  /// Trainer presses Start — the workout clock begins for everyone.
+  static Future<void> beginWorkout(String sessionId) {
+    return _sessions.doc(sessionId).update({
+      'runState': 'running',
+      'workoutStartedAt': FieldValue.serverTimestamp(),
+      'runningSince': FieldValue.serverTimestamp(),
+      'accumulatedMs': 0,
+    });
+  }
+
+  /// Freeze the clock. [accumulatedMs] is the caller-computed total elapsed up
+  /// to this moment (previous accumulated + the segment since runningSince).
+  static Future<void> pause(String sessionId, {required int accumulatedMs}) {
+    return _sessions.doc(sessionId).update({
+      'runState': 'paused',
+      'accumulatedMs': accumulatedMs,
+      'runningSince': null,
+    });
+  }
+
+  static Future<void> resume(String sessionId) {
+    return _sessions.doc(sessionId).update({
+      'runState': 'running',
+      'runningSince': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Remove an athlete from the session and block their rejoin (their app sees
+  /// the kick and self-leaves; the hardened hr rule also rejects their writes).
+  static Future<void> kick(String sessionId, String uid) {
+    return _sessions.doc(sessionId).update({
+      'kickedUids': FieldValue.arrayUnion([uid]),
+    });
+  }
+
+  /// Streams a single session doc (lifecycle for athletes/TV/monitor).
+  static Stream<CloudSession?> watch(String sessionId) {
+    return _sessions.doc(sessionId).snapshots().map(
+        (d) => d.exists ? CloudSession.fromDoc(d.id, d.data()!) : null);
   }
 
   static Future<void> end(String sessionId) {
     return _sessions.doc(sessionId).update({
       'status': 'ended',
       'endedAt': FieldValue.serverTimestamp(),
+      'runState': 'ended',
+      'runningSince': null,
     });
   }
 

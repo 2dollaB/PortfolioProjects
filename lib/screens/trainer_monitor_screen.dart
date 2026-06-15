@@ -49,14 +49,26 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
   final _names = UidNameCache();
   String? _inviteCode;
 
+  /// Live session doc (production) — drives runState/elapsed. Starts from the
+  /// constructor snapshot, then tracks the Firestore stream.
+  CloudSession? _session;
+  StreamSubscription<CloudSession?>? _sessionSub;
+
+  /// Locally-hidden athletes (demo kick; production kicks remove themselves).
+  final Set<String> _kicked = {};
+
   @override
   void initState() {
     super.initState();
     final s = widget.session;
+    _session = s;
     if (s == null) {
       _seedBpm();
     } else {
       _hrStream = SessionRepository.watchHr(s.id);
+      _sessionSub = SessionRepository.watch(s.id).listen((sess) {
+        if (mounted && sess != null) setState(() => _session = sess);
+      });
       StudioRepository.load(s.studioId).then((studio) {
         if (mounted && studio != null) {
           setState(() => _inviteCode = studio.inviteCode);
@@ -67,11 +79,105 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     _tick = Timer.periodic(const Duration(milliseconds: 800), (_) => _step());
   }
 
-  /// Production sessions measure from the cloud start time so reopening the
-  /// monitor doesn't reset the clock.
+  /// Effective lifecycle state across both modes.
+  String get _runState => widget.session == null
+      ? (SessionStore.instance.live.value?.runState ?? 'running')
+      : (_session?.runState ?? 'lobby');
+
+  bool get _isRunning => _runState == 'running';
+
+  void _snack(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> _onStart() async {
+    final s = widget.session;
+    if (s == null) {
+      SessionStore.instance.beginLive();
+      setState(() {});
+      return;
+    }
+    try {
+      await SessionRepository.beginWorkout(s.id);
+    } catch (_) {
+      _snack('Could not start the workout. Try again.');
+    }
+  }
+
+  Future<void> _onPause() async {
+    final s = widget.session;
+    if (s == null) {
+      SessionStore.instance.pauseLive();
+      setState(() {});
+      return;
+    }
+    final sess = _session;
+    if (sess == null) return;
+    final acc = sess.accumulatedMs +
+        (sess.runningSince == null
+            ? 0
+            : DateTime.now().difference(sess.runningSince!).inMilliseconds);
+    try {
+      await SessionRepository.pause(s.id, accumulatedMs: acc);
+    } catch (_) {
+      _snack('Could not pause. Try again.');
+    }
+  }
+
+  Future<void> _onResume() async {
+    final s = widget.session;
+    if (s == null) {
+      SessionStore.instance.resumeLive();
+      setState(() {});
+      return;
+    }
+    try {
+      await SessionRepository.resume(s.id);
+    } catch (_) {
+      _snack('Could not resume. Try again.');
+    }
+  }
+
+  Future<void> _onKick(String id, String name) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.darkBgSecondary,
+        title: Text('Remove $name?'),
+        content: Text(
+          "They'll be dropped from the session and can't rejoin it.",
+          style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.brandRed),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() => _kicked.add(id));
+    if (widget.session != null) {
+      try {
+        await SessionRepository.kick(widget.session!.id, id);
+      } catch (_) {
+        _snack('Could not remove athlete. Try again.');
+      }
+    }
+  }
+
+  /// Pause-aware workout clock from the (cloud or demo) session lifecycle —
+  /// 00:00 in the lobby, frozen while paused, survives reopening the monitor.
   Duration get _elapsed => widget.session == null
-      ? _stopwatch.elapsed
-      : DateTime.now().difference(widget.session!.startedAt);
+      ? (SessionStore.instance.live.value?.liveElapsed ?? Duration.zero)
+      : (_session?.liveElapsed ?? Duration.zero);
 
 
   void _seedBpm() {
@@ -83,6 +189,9 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
   void _step() {
     if (!mounted) return;
     setState(() {
+      // Lobby/paused: rebuild only to refresh the clock; don't advance the
+      // interval phase or the demo BPM curve.
+      if (!_isRunning) return;
       if (_phaseRemainingSec > 0) {
         _phaseRemainingSec--;
       } else {
@@ -112,6 +221,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
   @override
   void dispose() {
     _tick?.cancel();
+    _sessionSub?.cancel();
     _stopwatch.stop();
     super.dispose();
   }
@@ -147,6 +257,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
                 avgBpm: p.avgBpm,
                 hrMax: hrMax,
               ))
+          .where((a) => !_kicked.contains(a.id))
           .toList();
       return _buildScaffold(context, athletes);
     }
@@ -165,6 +276,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
                   avgBpm: e.avgBpm,
                   hrMax: e.hrMax > 0 ? e.hrMax : 190,
                 ))
+            .where((a) => !_kicked.contains(a.id))
             .toList();
         return _buildScaffold(context, athletes);
       },
@@ -192,10 +304,144 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     return Scaffold(
       backgroundColor: AppColors.darkBgPrimary,
       body: SafeArea(
-        child: isMobile
-            ? _buildMobile(sorted, avgBpm, inZ4Plus)
-            : _buildDesktop(sorted, avgBpm, inZ4Plus),
+        child: _runState == 'lobby'
+            ? _buildLobby(context, sorted)
+            : (isMobile
+                ? _buildMobile(sorted, avgBpm, inZ4Plus)
+                : _buildDesktop(sorted, avgBpm, inZ4Plus)),
       ),
+    );
+  }
+
+  // ─────────── Lobby — waiting room before the workout starts ──────────
+  Widget _buildLobby(BuildContext context, List<BoardAthlete> athletes) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm,
+          ),
+          decoration: const BoxDecoration(
+            color: AppColors.darkBgPrimary,
+            border: Border(bottom: BorderSide(color: AppColors.darkBorder)),
+          ),
+          child: Row(
+            children: [
+              GlassPill(
+                padding: const EdgeInsets.all(8),
+                onTap: () => Navigator.of(context).pop(),
+                child: const Icon(Icons.arrow_back_rounded,
+                    color: AppColors.darkTextPrimary, size: 20),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_sessionName,
+                        style: AppTheme.bodyLarge(weight: FontWeight.w700)
+                            .copyWith(fontSize: 16),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    Text('Lobby · waiting to start', style: AppTheme.micro()),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              GlassPill(
+                padding: const EdgeInsets.all(8),
+                onTap: _showQrModal,
+                child: const Icon(Icons.qr_code_rounded,
+                    color: AppColors.darkTextPrimary, size: 20),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xs,
+          ),
+          child: Row(
+            children: [
+              Text('In the room', style: AppTheme.h2()),
+              const Spacer(),
+              Text('${athletes.length}', style: AppTheme.statNumber(fontSize: 22)),
+            ],
+          ),
+        ),
+        Expanded(
+          child: athletes.isEmpty
+              ? Center(
+                  child: Text(
+                    'Waiting for athletes to join…\nShare the QR / invite code.',
+                    style: AppTheme.caption(),
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.xl, AppSpacing.xs, AppSpacing.xl, AppSpacing.md,
+                  ),
+                  itemCount: athletes.length,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSpacing.xs),
+                  itemBuilder: (context, i) =>
+                      _LobbyRow(athlete: athletes[i], onKick: _onKick),
+                ),
+        ),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: const BoxDecoration(
+            color: AppColors.darkBgPrimary,
+            border: Border(top: BorderSide(color: AppColors.darkBorder)),
+          ),
+          child: BeatPrimaryButton(
+            label: 'Start training',
+            icon: Icons.play_arrow_rounded,
+            onPressed: _onStart,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Footer controls during a running/paused workout (shared by both layouts).
+  Widget _footer() {
+    final paused = _runState == 'paused';
+    return Row(
+      children: [
+        if (widget.session == null && _isRunning) ...[
+          Expanded(
+            child: BeatSecondaryButton(
+              label: 'Skip',
+              icon: Icons.skip_next_rounded,
+              onPressed: () => setState(() => _phaseRemainingSec = 0),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+        ],
+        Expanded(
+          child: paused
+              ? BeatPrimaryButton(
+                  label: 'Resume',
+                  icon: Icons.play_arrow_rounded,
+                  onPressed: _onResume,
+                )
+              : BeatSecondaryButton(
+                  label: 'Pause',
+                  icon: Icons.pause_rounded,
+                  onPressed: _onPause,
+                ),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: BeatPrimaryButton(
+            label: 'End',
+            icon: Icons.stop_rounded,
+            onPressed: _onEndSession,
+          ),
+        ),
+      ],
     );
   }
 
@@ -371,27 +617,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: BeatSecondaryButton(
-                      label: 'Skip',
-                      icon: Icons.skip_next_rounded,
-                      onPressed: () => setState(() => _phaseRemainingSec = 0),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    flex: 3,
-                    child: BeatPrimaryButton(
-                      label: 'End session',
-                      icon: Icons.stop_rounded,
-                      onPressed: _onEndSession,
-                    ),
-                  ),
-                ],
-              ),
+              _footer(),
             ],
           ),
         ),
@@ -428,7 +654,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
               SessionTitlePill(
                 sessionName: _sessionName,
                 subtitle:
-                    '${sorted.length} athletes · ${_formatDuration(_elapsed)}',
+                    '${sorted.length} athletes · ${_formatDuration(_elapsed)}${_runState == 'paused' ? ' · Paused' : ''}',
               ),
             ],
           ),
@@ -499,29 +725,83 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
           left: 16,
           right: 16,
           bottom: 16,
-          child: Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: BeatSecondaryButton(
-                  label: 'Skip',
-                  icon: Icons.skip_next_rounded,
-                  onPressed: () => setState(() => _phaseRemainingSec = 0),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                flex: 3,
-                child: BeatPrimaryButton(
-                  label: 'End session',
-                  icon: Icons.stop_rounded,
-                  onPressed: _onEndSession,
-                ),
-              ),
-            ],
-          ),
+          child: _footer(),
         ),
       ],
+    );
+  }
+}
+
+/// One athlete row in the lobby — name, ready/BPM marker, and a kick button.
+class _LobbyRow extends StatelessWidget {
+  final BoardAthlete athlete;
+  final Future<void> Function(String id, String name) onKick;
+  const _LobbyRow({required this.athlete, required this.onKick});
+
+  String get _initials {
+    final n = athlete.name.trim();
+    if (n.isEmpty) return '?';
+    return n
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0])
+        .take(2)
+        .join()
+        .toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ready = athlete.bpm <= 0;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.darkBgSecondary,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.darkBorder),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.brandRed.withValues(alpha: 0.18),
+              border:
+                  Border.all(color: AppColors.brandRed.withValues(alpha: 0.35)),
+            ),
+            child: Text(
+              _initials,
+              style: AppTheme.bodyLarge(color: AppColors.brandRed)
+                  .copyWith(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              athlete.name,
+              style: AppTheme.bodyLarge(weight: FontWeight.w600)
+                  .copyWith(fontSize: 15),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Text(
+            ready ? 'Ready' : '${athlete.bpm} bpm',
+            style: AppTheme.caption(
+              color: ready ? AppColors.success : AppColors.darkTextSecondary,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.person_remove_alt_1_rounded, size: 20),
+            color: AppColors.darkTextTertiary,
+            tooltip: 'Remove',
+            onPressed: () => onKick(athlete.id, athlete.name),
+          ),
+        ],
+      ),
     );
   }
 }

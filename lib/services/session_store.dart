@@ -28,7 +28,8 @@ class SessionStore {
 
   // ── Mutations ──
 
-  /// Start a new live session. Picks the first [athleteCount] mock participants.
+  /// Open a new session in the **lobby** (mirrors production: joinable, but the
+  /// clock hasn't started). Picks the first [athleteCount] mock participants.
   void startLive({
     required String name,
     required WorkoutType type,
@@ -49,6 +50,30 @@ class SessionStore {
     );
   }
 
+  /// Demo lifecycle — mirror of SessionRepository.beginWorkout/pause/resume.
+  void beginLive() {
+    final l = live.value;
+    if (l == null) return;
+    live.value = l.copyWith(
+        runState: 'running', runningSince: DateTime.now(), accumulatedMs: 0);
+  }
+
+  void pauseLive() {
+    final l = live.value;
+    if (l == null || l.runningSince == null) return;
+    final acc = l.accumulatedMs +
+        DateTime.now().difference(l.runningSince!).inMilliseconds;
+    live.value =
+        l.copyWith(runState: 'paused', accumulatedMs: acc, clearRunningSince: true);
+  }
+
+  void resumeLive() {
+    final l = live.value;
+    if (l == null) return;
+    live.value =
+        l.copyWith(runState: 'running', runningSince: DateTime.now());
+  }
+
   /// End the current live session, capturing analytics + moving to history.
   /// Returns the newly-stored record (also added to [history]).
   SessionRecord? endLive() {
@@ -56,8 +81,8 @@ class SessionStore {
     if (l == null) return null;
 
     final endedAt = DateTime.now();
-    final durationMin =
-        math.max(1, endedAt.difference(l.startedAt).inMinutes);
+    // Count only running time (excludes lobby wait + paused spans).
+    final durationMin = math.max(1, l.liveElapsed.inMinutes);
 
     final participants = MockData.liveOf(l.athleteCount);
     final rng = math.Random();
@@ -208,6 +233,11 @@ class LiveSession {
   final int restSec;
   final int rounds;
 
+  // ── lifecycle (mirror of CloudSession) ──
+  final String runState; // 'lobby' | 'running' | 'paused'
+  final DateTime? runningSince;
+  final int accumulatedMs;
+
   LiveSession({
     required this.id,
     required this.name,
@@ -217,7 +247,43 @@ class LiveSession {
     required this.workSec,
     required this.restSec,
     required this.rounds,
+    this.runState = 'lobby',
+    this.runningSince,
+    this.accumulatedMs = 0,
   });
+
+  bool get isLobby => runState == 'lobby';
+  bool get isRunning => runState == 'running';
+  bool get isPaused => runState == 'paused';
+
+  Duration get liveElapsed {
+    final base = Duration(milliseconds: accumulatedMs);
+    final since = runningSince;
+    if (since == null) return base;
+    return base + DateTime.now().difference(since);
+  }
+
+  LiveSession copyWith({
+    String? runState,
+    DateTime? runningSince,
+    bool clearRunningSince = false,
+    int? accumulatedMs,
+  }) {
+    return LiveSession(
+      id: id,
+      name: name,
+      type: type,
+      startedAt: startedAt,
+      athleteCount: athleteCount,
+      workSec: workSec,
+      restSec: restSec,
+      rounds: rounds,
+      runState: runState ?? this.runState,
+      runningSince:
+          clearRunningSince ? null : (runningSince ?? this.runningSince),
+      accumulatedMs: accumulatedMs ?? this.accumulatedMs,
+    );
+  }
 }
 
 class SessionRecord {

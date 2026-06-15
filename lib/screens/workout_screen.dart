@@ -69,6 +69,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   bool _bleLive = false;
   StreamSubscription<HrData>? _bleSub;
 
+  /// Production group session — streamed so the athlete reacts to the trainer's
+  /// pause / resume / end / kick. Pause is trainer-controlled in group mode.
+  StreamSubscription<CloudSession?>? _sessionSub;
+  bool _finishing = false; // guards against double save / navigation
+
   @override
   void initState() {
     super.initState();
@@ -80,9 +85,57 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     if (!kIsWeb && !FeatureFlags.prototypeMode) {
       unawaited(startForegroundService());
     }
+    final gs = widget.session;
+    if (gs != null && AuthService.currentUid != null) {
+      _sessionSub = SessionRepository.watch(gs.id).listen(_onSessionUpdate);
+    }
     _stopwatch.start();
     _tick = Timer.periodic(const Duration(milliseconds: 800), (_) => _step());
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  /// Trainer-driven lifecycle for production group sessions.
+  void _onSessionUpdate(CloudSession? s) {
+    if (!mounted || _finishing) return;
+    final uid = AuthService.currentUid;
+    if (s == null) {
+      _goToSummary(); // session doc gone — treat as ended
+      return;
+    }
+    if (uid != null && s.isKicked(uid)) {
+      _handleKicked();
+      return;
+    }
+    if (s.status == 'ended') {
+      _goToSummary();
+      return;
+    }
+    // Mirror the trainer's pause/resume onto the local clock + tracking.
+    setState(() {
+      if (s.isPaused && !_paused) {
+        _paused = true;
+        _stopwatch.stop();
+      } else if (s.isRunning && _paused) {
+        _paused = false;
+        _stopwatch.start();
+      }
+    });
+  }
+
+  Future<void> _handleKicked() async {
+    if (_finishing) return;
+    _finishing = true;
+    final session = widget.session;
+    final uid = AuthService.currentUid;
+    if (session != null && uid != null) {
+      unawaited(SessionRepository.removeHr(sessionId: session.id, uid: uid)
+          .catchError((_) {}));
+    }
+    if (!mounted) return;
+    Navigator.of(context).popUntil((r) => r.isFirst);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('You were removed from the session.')),
+    );
   }
 
   void _step() {
@@ -153,6 +206,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   void dispose() {
     _tick?.cancel();
     _bleSub?.cancel();
+    _sessionSub?.cancel();
     if (!kIsWeb && !FeatureFlags.prototypeMode) {
       unawaited(stopForegroundService());
     }
@@ -193,28 +247,38 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       ),
     );
     if (confirm == true && mounted) {
-      final session = widget.session;
-      final uid = AuthService.currentUid;
-      if (session != null && uid != null) {
-        // Drop off the live board; fails harmlessly if the session ended.
-        unawaited(SessionRepository.removeHr(sessionId: session.id, uid: uid)
-            .catchError((_) {}));
-      }
-      unawaited(_persistWorkout());
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => WorkoutSummaryScreen(
-            durationMin: _stopwatch.elapsed.inMinutes,
-            avgBpm: _avgBpm,
-            maxBpm: _maxBpm,
-            calories: _kcal.round(),
-            trimp: _trimp.round(),
-            profile: widget.profile,
-            workoutType: widget.workoutType,
-          ),
-        ),
-      );
+      await _goToSummary();
     }
+  }
+
+  /// Finalize the workout: drop off the live board, persist the summary, and
+  /// show the results. Shared by the athlete's Leave/End and the trainer's End.
+  /// Guarded so trainer-end + manual-leave can't both fire it.
+  Future<void> _goToSummary() async {
+    if (_finishing) return;
+    _finishing = true;
+    final session = widget.session;
+    final uid = AuthService.currentUid;
+    if (session != null && uid != null) {
+      // Drop off the live board; fails harmlessly if the session ended.
+      unawaited(SessionRepository.removeHr(sessionId: session.id, uid: uid)
+          .catchError((_) {}));
+    }
+    unawaited(_persistWorkout());
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => WorkoutSummaryScreen(
+          durationMin: _stopwatch.elapsed.inMinutes,
+          avgBpm: _avgBpm,
+          maxBpm: _maxBpm,
+          calories: _kcal.round(),
+          trimp: _trimp.round(),
+          profile: widget.profile,
+          workoutType: widget.workoutType,
+        ),
+      ),
+    );
   }
 
   /// Persist this session's summary to Firestore when signed in (production).
@@ -379,6 +443,35 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               ),
             ),
 
+            if (_paused)
+              Container(
+                margin: const EdgeInsets.fromLTRB(
+                  AppSpacing.md, AppSpacing.xs, AppSpacing.md, 0,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  border:
+                      Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.pause_rounded,
+                        size: 16, color: AppColors.warning),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.inGroupSession ? 'Paused by trainer' : 'Paused',
+                      style: AppTheme.caption(color: AppColors.warning)
+                          .copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+
             SizedBox(height: shortScreen ? AppSpacing.sm : AppSpacing.lg),
             const Spacer(),
 
@@ -464,34 +557,42 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg, AppSpacing.xs, AppSpacing.lg, AppSpacing.lg,
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: BeatSecondaryButton(
-                      label: _paused ? 'Resume' : 'Pause',
-                      icon: _paused
-                          ? Icons.play_arrow_rounded
-                          : Icons.pause_rounded,
-                      onPressed: () => setState(() {
-                        _paused = !_paused;
-                        if (_paused) {
-                          _stopwatch.stop();
-                        } else {
-                          _stopwatch.start();
-                        }
-                      }),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: BeatPrimaryButton(
-                      label: widget.inGroupSession ? 'Leave' : 'End',
+              // In a group session, Pause/Resume is the trainer's call — the
+              // athlete just gets Leave. Solo workouts keep their own Pause.
+              child: widget.inGroupSession
+                  ? BeatPrimaryButton(
+                      label: 'Leave',
                       icon: Icons.stop_rounded,
                       onPressed: _endWorkout,
+                    )
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: BeatSecondaryButton(
+                            label: _paused ? 'Resume' : 'Pause',
+                            icon: _paused
+                                ? Icons.play_arrow_rounded
+                                : Icons.pause_rounded,
+                            onPressed: () => setState(() {
+                              _paused = !_paused;
+                              if (_paused) {
+                                _stopwatch.stop();
+                              } else {
+                                _stopwatch.start();
+                              }
+                            }),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: BeatPrimaryButton(
+                            label: 'End',
+                            icon: Icons.stop_rounded,
+                            onPressed: _endWorkout,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),

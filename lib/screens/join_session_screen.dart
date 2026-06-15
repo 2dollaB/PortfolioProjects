@@ -10,7 +10,7 @@ import '../services/mock_data.dart';
 import '../services/session_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/logo_heartbeat.dart';
-import '../widgets/workout_type_sheet.dart';
+import 'session_lobby_screen.dart';
 import 'workout_screen.dart';
 
 /// Join a group session.
@@ -50,24 +50,27 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
   }
 
   void _join(CloudSession live) {
-    final profile = widget.profile!;
+    final uid = AuthService.currentUid;
+    if (uid != null && live.isKicked(uid)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You were removed from this session.')),
+      );
+      return;
+    }
+    // Into the waiting room — the workout begins when the trainer hits Start.
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => WorkoutScreen(
-          profile: profile,
-          inGroupSession: true,
+        builder: (_) => SessionLobbyScreen(
+          profile: widget.profile!,
           session: live,
-          workoutType: WorkoutType.values.firstWhere(
-            (t) => t.name == live.type,
-            orElse: () => WorkoutType.hiit,
-          ),
         ),
       ),
     );
   }
 
-  String _startedLabel(DateTime startedAt) {
-    final m = DateTime.now().difference(startedAt).inMinutes;
+  String _stateLabel(CloudSession live) {
+    if (!live.isRunning) return 'waiting to start';
+    final m = DateTime.now().difference(live.workoutStartedAt ?? live.startedAt).inMinutes;
     if (m < 1) return 'just started';
     return 'started ${m}m ago';
   }
@@ -111,7 +114,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
                       if (live == null) return const _NoLiveSession();
                       return _LiveSessionCard(
                         session: live,
-                        startedLabel: _startedLabel(live.startedAt),
+                        startedLabel: _stateLabel(live),
                         onJoin: () => _join(live),
                       );
                     },

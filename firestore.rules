@@ -88,12 +88,14 @@ service cloud.firestore {
     }
 
     // An athlete may feed the live HR board only for themselves, only while
-    // the session is live, and only if they belong to the session's studio.
+    // the session is live, only if they belong to the session's studio, and
+    // only if the trainer hasn't kicked them.
     function canWriteHr(sessionId, uid) {
       let session = get(/databases/$(database)/documents/sessions/$(sessionId)).data;
       return isUser(uid)
         && session.status == 'live'
-        && request.auth.uid in studioData(session.studioId).memberUids;
+        && request.auth.uid in studioData(session.studioId).memberUids
+        && !(uid in session.get('kickedUids', []));
     }
 
     // ── sessions/{sessionId} ─────────────────────────────────
@@ -107,10 +109,13 @@ service cloud.firestore {
         && resource.data.trainerUid == request.auth.uid;
 
       // Live HR feed — one subdoc per athlete, written ~1/sec during a session.
+      // Delete stays self-only so a kicked athlete can drop their own tile even
+      // though canWriteHr now blocks them from posting new readings.
       match /hr/{uid} {
         allow read: if isSignedIn()
           && isStudioMember(get(/databases/$(database)/documents/sessions/$(sessionId)).data.studioId);
-        allow write: if canWriteHr(sessionId, uid);
+        allow create, update: if canWriteHr(sessionId, uid);
+        allow delete: if isUser(uid);
       }
     }
 
