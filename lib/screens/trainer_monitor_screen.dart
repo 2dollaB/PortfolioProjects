@@ -41,6 +41,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
   SessionPhase _phase = SessionPhase.work;
   int _phaseRemainingSec = 0;
   int _round = 1;
+  bool _phaseDone = false; // all rounds finished — stop the interval timer
   _SortMode _sort = _SortMode.alphabet;
   int _athleteCount = 10;
 
@@ -97,6 +98,8 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       ? (SessionStore.instance.live.value?.rounds ?? 1)
       : (_session?.rounds ?? 1);
   bool get _hasIntervals => _cfgWork > 0;
+  String get _roundLabel =>
+      _phaseDone ? 'Complete' : 'Round $_round/$_cfgRounds';
 
   void _snack(String msg) {
     if (!mounted) return;
@@ -109,6 +112,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     setState(() {
       _phase = SessionPhase.work;
       _round = 1;
+      _phaseDone = false;
       _phaseRemainingSec = _cfgWork;
     });
     final s = widget.session;
@@ -210,16 +214,24 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       // Lobby/paused: rebuild only to refresh the clock; don't advance the
       // interval phase or the demo BPM curve.
       if (!_isRunning) return;
-      if (_hasIntervals) {
+      if (_hasIntervals && !_phaseDone) {
         if (_phaseRemainingSec > 0) {
           _phaseRemainingSec--;
         } else if (_phase == SessionPhase.work) {
-          _phase = SessionPhase.rest;
-          _phaseRemainingSec = _cfgRest;
+          // Work done → rest (or finish if this was the last round and no rest).
+          if (_round >= _cfgRounds && _cfgRest <= 0) {
+            _phaseDone = true;
+          } else {
+            _phase = SessionPhase.rest;
+            _phaseRemainingSec = _cfgRest;
+          }
+        } else if (_round >= _cfgRounds) {
+          // Last round's rest finished → the whole interval block is done.
+          _phaseDone = true;
         } else {
           _phase = SessionPhase.work;
           _phaseRemainingSec = _cfgWork;
-          _round = math.min(_round + 1, _cfgRounds);
+          _round++;
         }
       }
       if (widget.session == null) {
@@ -429,7 +441,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     return Row(
       children: [
         // Skip the current work/rest phase (interval timer only).
-        if (_isRunning && _hasIntervals) ...[
+        if (_isRunning && _hasIntervals && !_phaseDone) ...[
           Expanded(
             child: BeatSecondaryButton(
               label: 'Skip',
@@ -609,7 +621,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
                       child: PhasePill(
                         phase: _phase,
                         remaining: Duration(seconds: _phaseRemainingSec),
-                        roundLabel: 'Round $_round/$_cfgRounds',
+                        roundLabel: _roundLabel,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.xs),
@@ -742,7 +754,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
                 PhasePill(
                   phase: _phase,
                   remaining: Duration(seconds: _phaseRemainingSec),
-                  roundLabel: 'Round $_round/$_cfgRounds',
+                  roundLabel: _roundLabel,
                 ),
               ],
               const SizedBox(width: 8),
