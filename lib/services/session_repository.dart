@@ -21,6 +21,9 @@ class SessionRepository {
     int restSec = 0,
     int rounds = 1,
   }) async {
+    // Enforce one live session per studio: end any leftovers first (e.g. a
+    // session whose monitor tab was closed without ending it).
+    await _endExistingLive(studioId);
     final ref = await _sessions.add({
       'studioId': studioId,
       'trainerUid': trainerUid,
@@ -38,6 +41,23 @@ class SessionRepository {
       'rounds': rounds,
     });
     return ref.id;
+  }
+
+  /// Ends every still-live session in the studio (used before opening a new
+  /// one so there's never more than one live session for athletes to find).
+  static Future<void> _endExistingLive(String studioId) async {
+    final snap = await _sessions
+        .where('studioId', isEqualTo: studioId)
+        .where('status', isEqualTo: 'live')
+        .get();
+    for (final d in snap.docs) {
+      await d.reference.update({
+        'status': 'ended',
+        'endedAt': FieldValue.serverTimestamp(),
+        'runState': 'ended',
+        'runningSince': null,
+      });
+    }
   }
 
   /// Trainer presses Start — the workout clock begins for everyone.
