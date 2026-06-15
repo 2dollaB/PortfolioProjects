@@ -156,6 +156,13 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
                           icon: Icons.refresh_rounded,
                           onPressed: _load,
                         ),
+                        const SizedBox(height: AppSpacing.sm),
+                        BeatPrimaryButton(
+                          label: 'Back to home',
+                          icon: Icons.home_rounded,
+                          onPressed: () => Navigator.of(context)
+                              .popUntil((r) => r.isFirst),
+                        ),
                       ],
                     ),
                   ),
