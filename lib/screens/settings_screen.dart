@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/studio.dart';
 import '../models/user_profile.dart';
@@ -55,19 +56,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }).catchError((_) {});
   }
 
-  String get _themeModeLabel {
-    switch (BeatSyncApp.appKey.currentState?.themeMode ?? ThemeMode.dark) {
-      case ThemeMode.light:
-        return 'Light';
-      case ThemeMode.dark:
-        return 'Dark';
-      case ThemeMode.system:
-        return 'System';
-    }
-  }
+  String _themeLabel(ThemeMode m) => switch (m) {
+        ThemeMode.light => Strings.themeLight,
+        ThemeMode.dark => Strings.themeDark,
+        ThemeMode.system => Strings.themeSystem,
+      };
+
+  String get _themeModeLabel => _themeLabel(
+      BeatSyncApp.appKey.currentState?.themeMode ?? ThemeMode.dark);
 
   void _setThemeMode(ThemeMode mode) {
     BeatSyncApp.appKey.currentState?.setThemeMode(mode);
+    if (mounted) setState(() {}); // refresh the trailing label
+  }
+
+  void _setLang(AppLang lang) {
+    BeatSyncApp.appKey.currentState?.setLang(lang);
     if (mounted) setState(() {}); // refresh the trailing label
   }
 
@@ -86,13 +90,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             const SizedBox(height: AppSpacing.sm),
             for (final opt in const [
-              (ThemeMode.light, 'Light', Icons.light_mode_outlined),
-              (ThemeMode.dark, 'Dark', Icons.dark_mode_outlined),
-              (ThemeMode.system, 'System', Icons.brightness_auto_outlined),
+              (ThemeMode.light, Icons.light_mode_outlined),
+              (ThemeMode.dark, Icons.dark_mode_outlined),
+              (ThemeMode.system, Icons.brightness_auto_outlined),
             ])
               ListTile(
-                leading: Icon(opt.$3, color: AppColors.textSecondary),
-                title: Text(opt.$2, style: AppTheme.bodyLarge()),
+                leading: Icon(opt.$2, color: AppColors.textSecondary),
+                title: Text(_themeLabel(opt.$1), style: AppTheme.bodyLarge()),
                 trailing: current == opt.$1
                     ? const Icon(Icons.check_rounded, color: AppColors.brandRed)
                     : null,
@@ -120,19 +124,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: AppSpacing.sm),
-            ListTile(
-              leading: const Icon(Icons.check_rounded, color: AppColors.brandRed),
-              title: Text('English', style: AppTheme.bodyLarge()),
-              onTap: () => Navigator.of(ctx).pop(),
-            ),
-            ListTile(
-              enabled: false,
-              leading: Icon(Icons.translate_rounded,
-                  color: AppColors.textTertiary),
-              title: Text('Hrvatski',
-                  style: AppTheme.bodyLarge(color: AppColors.textTertiary)),
-              trailing: Text('Coming soon', style: AppTheme.caption()),
-            ),
+            for (final l in AppLang.values)
+              ListTile(
+                leading:
+                    Icon(Icons.translate_rounded, color: AppColors.textSecondary),
+                title: Text(l.label, style: AppTheme.bodyLarge()),
+                trailing: Strings.lang == l
+                    ? const Icon(Icons.check_rounded, color: AppColors.brandRed)
+                    : null,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _setLang(l);
+                },
+              ),
             const SizedBox(height: AppSpacing.sm),
           ],
         ),
@@ -253,7 +257,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          p.name.isEmpty ? 'Athlete' : p.name,
+                          p.name.isEmpty ? Strings.athlete : p.name,
                           style: AppTheme.h2(),
                         ),
                         if (studioName != null)
@@ -269,7 +273,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             borderRadius: BorderRadius.circular(AppRadius.pill),
                           ),
                           child: Text(
-                            p.role.displayName,
+                            p.role == UserRole.trainer
+                                ? Strings.trainer
+                                : Strings.athlete,
                             style: AppTheme.micro(color: AppColors.success)
                                 .copyWith(fontWeight: FontWeight.w600),
                           ),
@@ -285,20 +291,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Quick stats
             Row(
               children: [
-                Expanded(child: _StatBlock(label: 'Workouts', value: workoutCount)),
+                Expanded(child: _StatBlock(label: Strings.workouts, value: workoutCount)),
                 const SizedBox(width: AppSpacing.xs),
-                Expanded(child: _StatBlock(label: 'Total time', value: totalTime)),
+                Expanded(child: _StatBlock(label: Strings.totalTime, value: totalTime)),
                 const SizedBox(width: AppSpacing.xs),
-                Expanded(child: _StatBlock(label: 'HR max', value: '${p.hrMax}')),
+                Expanded(child: _StatBlock(label: Strings.hrMax, value: '${p.hrMax}')),
               ],
             ),
 
             const SizedBox(height: AppSpacing.lg),
 
-            _Section(title: 'Account', items: [
+            _Section(title: Strings.account, items: [
               _SettingItem(
                 icon: Icons.person_outline_rounded,
-                label: 'Personal info',
+                label: Strings.personalInfo,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => EditProfileScreen(profile: p),
@@ -307,7 +313,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _SettingItem(
                 icon: Icons.favorite_outline_rounded,
-                label: 'Health data',
+                label: Strings.healthData,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => HealthDataScreen(profile: p),
@@ -316,9 +322,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _SettingItem(
                 icon: Icons.bluetooth_rounded,
-                label: 'Connected devices',
+                label: Strings.connectedDevices,
                 trailing: _production
-                    ? (BleHrService.instance.connectedDeviceName ?? 'None')
+                    ? (BleHrService.instance.connectedDeviceName ?? Strings.none)
                     : 'Polar H10',
                 onTap: _production
                     ? () => Navigator.of(context)
@@ -331,59 +337,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ]),
 
-            _Section(title: 'App', items: [
+            _Section(title: Strings.app, items: [
               _SettingItem(
                 icon: Icons.dark_mode_outlined,
-                label: 'Appearance',
+                label: Strings.appearance,
                 trailing: _themeModeLabel,
                 onTap: _showAppearanceSheet,
               ),
               _SettingItem(
                 icon: Icons.language_rounded,
-                label: 'Language',
-                trailing: 'English',
+                label: Strings.language,
+                trailing: Strings.lang.label,
                 onTap: _showLanguageSheet,
               ),
             ]),
 
-            _Section(title: 'Studio', items: [
+            _Section(title: Strings.studio, items: [
               _SettingItem(
                 icon: Icons.groups_rounded,
-                label: 'My studio',
+                label: Strings.myStudio,
                 trailing: _production
                     ? (_studio?.name ??
-                        (p.studioId == null ? 'None yet' : '–'))
+                        (p.studioId == null ? Strings.noStudioYet : '–'))
                     : 'Pulse Studio',
                 onTap: _production ? () => _openStudio(p) : null,
               ),
               _SettingItem(
                 icon: Icons.workspace_premium_outlined,
-                label: 'Subscription',
-                trailing: 'Free',
+                label: Strings.subscription,
+                trailing: Strings.free,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
                 ),
               ),
             ]),
 
-            _Section(title: 'Support', items: [
+            _Section(title: Strings.support, items: [
               _SettingItem(
                 icon: Icons.help_outline_rounded,
-                label: 'Help & FAQ',
+                label: Strings.helpFaq,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const HelpFaqScreen()),
                 ),
               ),
               _SettingItem(
                 icon: Icons.shield_outlined,
-                label: 'Privacy policy',
+                label: Strings.privacyPolicy,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => LegalDocScreen.privacy()),
                 ),
               ),
               _SettingItem(
                 icon: Icons.description_outlined,
-                label: 'Terms of service',
+                label: Strings.termsOfService,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => LegalDocScreen.terms()),
                 ),
@@ -392,7 +398,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             const SizedBox(height: AppSpacing.lg),
             BeatSecondaryButton(
-              label: 'Sign out',
+              label: Strings.signOut,
               icon: Icons.logout_rounded,
               onPressed: () {
                 // Pop any pushed routes (athlete/trainer settings is pushed

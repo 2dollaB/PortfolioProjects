@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../widgets/beat_button.dart';
@@ -34,33 +35,31 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
               const SizedBox(height: AppSpacing.lg),
               const LogoHeartbeat(size: 28, showWordmark: true),
               const SizedBox(height: AppSpacing.xxl),
-              Text('Pick your role', style: AppTheme.h1()),
+              Text(Strings.pickYourRole, style: AppTheme.h1()),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                "We'll tailor the experience for how you train.",
+                Strings.roleTailor,
                 style: AppTheme.bodyLarge(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.xl),
               _RoleCard(
                 icon: Icons.directions_run_rounded,
-                title: "I'm an athlete",
-                desc:
-                    'Connect your HR strap, join sessions, track your training history.',
+                title: Strings.imAthlete,
+                desc: Strings.athleteCardDesc,
                 selected: _selected == UserRole.athlete,
                 onTap: () => setState(() => _selected = UserRole.athlete),
               ),
               const SizedBox(height: AppSpacing.md),
               _RoleCard(
                 icon: Icons.groups_2_rounded,
-                title: "I'm a trainer",
-                desc:
-                    'Run a studio, host live sessions, see every athlete in real time.',
+                title: Strings.imTrainer,
+                desc: Strings.trainerCardDesc,
                 selected: _selected == UserRole.trainer,
                 onTap: () => setState(() => _selected = UserRole.trainer),
               ),
               const Spacer(),
               BeatPrimaryButton(
-                label: 'Continue',
+                label: Strings.continueLabel,
                 icon: Icons.arrow_forward_rounded,
                 onPressed: _selected == null
                     ? null

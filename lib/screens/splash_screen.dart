@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../widgets/logo_heartbeat.dart';
 
@@ -95,7 +96,7 @@ class _SplashScreenState extends State<SplashScreen>
                   const LogoHeartbeat(size: 80, showWordmark: true),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'TRAIN TOGETHER',
+                    Strings.trainTogether,
                     style: AppTheme.micro(
                       color: AppColors.textSecondary,
                     ).copyWith(letterSpacing: 4),

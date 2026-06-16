@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../widgets/beat_button.dart';
@@ -61,17 +62,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String? _validateEmail(String? v) {
     final value = v?.trim() ?? '';
-    if (value.isEmpty) return 'Email is required';
+    if (value.isEmpty) return Strings.emailRequired;
     if (!value.contains('@') || !value.contains('.')) {
-      return 'Enter a valid email address';
+      return Strings.emailInvalid;
     }
     return null;
   }
 
   String? _validatePassword(String? v) {
     final value = v ?? '';
-    if (value.isEmpty) return 'Password is required';
-    if (value.length < 6) return 'Password must be at least 6 characters';
+    if (value.isEmpty) return Strings.passwordRequired;
+    if (value.length < 6) return Strings.passwordTooShort;
     return null;
   }
 
@@ -104,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (password != _testPassword ||
         (email != _athleteEmail && email != _trainerEmail)) {
-      setState(() => _error = 'Invalid credentials');
+      setState(() => _error = Strings.invalidCredentials);
       return;
     }
 
@@ -137,14 +138,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 const LogoHeartbeat(size: 28, showWordmark: true),
                 const SizedBox(height: AppSpacing.xxl),
-                Text('Welcome back', style: AppTheme.h1()),
+                Text(Strings.welcomeBack, style: AppTheme.h1()),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Sign in to keep your training history in sync.',
+                  Strings.loginSubtitle,
                   style: AppTheme.bodyLarge(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: AppSpacing.xl),
-                _Label('Email'),
+                _Label(Strings.email),
                 TextFormField(
                   controller: _email,
                   keyboardType: TextInputType.emailAddress,
@@ -157,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                _Label('Password'),
+                _Label(Strings.password),
                 TextFormField(
                   controller: _password,
                   obscureText: _obscure,
@@ -181,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {},
-                    child: const Text('Forgot password?'),
+                    child: Text(Strings.forgotPassword),
                   ),
                 ),
                 if (_error != null) ...[
@@ -214,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
                 const SizedBox(height: AppSpacing.md),
                 BeatPrimaryButton(
-                  label: 'Sign in',
+                  label: Strings.signIn,
                   loading: _loading,
                   onPressed: _submit,
                 ),
@@ -225,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   _SocialButton(
                     icon: Icons.g_mobiledata_rounded,
-                    label: 'Continue with Google',
+                    label: Strings.continueWithGoogle,
                     onTap: _googleSignIn,
                   ),
                   const SizedBox(height: AppSpacing.xl),
@@ -240,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         children: [
                           Text(
-                            'DEMO ACCOUNTS',
+                            Strings.demoAccounts,
                             style: AppTheme.micro().copyWith(letterSpacing: 1.4),
                           ),
                           const SizedBox(height: 4),
@@ -262,10 +263,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("Don't have an account?", style: AppTheme.caption()),
+                      Text(Strings.noAccount, style: AppTheme.caption()),
                       TextButton(
                         onPressed: widget.onCreateAccount,
-                        child: const Text('Sign up'),
+                        child: Text(Strings.signUp),
                       ),
                     ],
                   ),
@@ -310,7 +311,7 @@ class _OrDivider extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-          child: Text('OR', style: AppTheme.micro()),
+          child: Text(Strings.or, style: AppTheme.micro()),
         ),
         Expanded(
           child: Divider(color: AppColors.border.withValues(alpha: 0.6)),

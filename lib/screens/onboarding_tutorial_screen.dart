@@ -3,6 +3,7 @@ import '../widgets/mobile_frame.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/logo_heartbeat.dart';
@@ -41,20 +42,18 @@ class _OnboardingTutorialScreenState extends State<OnboardingTutorialScreen> {
   final _controller = PageController();
   int _page = 0;
 
-  static const _slides = [
-    _Slide(
-      icon: Icons.bluetooth_searching_rounded,
-      title: 'Connect your strap',
-      body:
-          'BeatSync pairs with any Bluetooth heart-rate strap â€” Polar, Wahoo, Garmin, generic. Your BPM is live the moment you walk into the gym.',
-    ),
-    _Slide(
-      icon: Icons.favorite_rounded,
-      title: 'Not a competition',
-      body:
-          'BeatSync is a heart-rate monitoring tool for trainers. Train together, see the studio in real time â€” no podium, no ranking pressure.',
-    ),
-  ];
+  List<_Slide> get _slides => [
+        _Slide(
+          icon: Icons.bluetooth_searching_rounded,
+          title: Strings.onbConnectTitle,
+          body: Strings.onbConnectBody,
+        ),
+        _Slide(
+          icon: Icons.favorite_rounded,
+          title: Strings.onbNotCompTitle,
+          body: Strings.onbNotCompBody,
+        ),
+      ];
 
   @override
   void dispose() {
@@ -100,7 +99,7 @@ class _OnboardingTutorialScreenState extends State<OnboardingTutorialScreen> {
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.textSecondary,
                     ),
-                    child: const Text('Skip'),
+                    child: Text(Strings.skip),
                   ),
                 ],
               ),
@@ -141,8 +140,8 @@ class _OnboardingTutorialScreenState extends State<OnboardingTutorialScreen> {
                   const SizedBox(height: AppSpacing.md),
                   BeatPrimaryButton(
                     label: _page == _slides.length - 1
-                        ? 'Get started'
-                        : 'Next',
+                        ? Strings.getStarted
+                        : Strings.next,
                     icon: _page == _slides.length - 1
                         ? Icons.check_rounded
                         : Icons.arrow_forward_rounded,

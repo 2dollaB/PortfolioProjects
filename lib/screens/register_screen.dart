@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/logo_heartbeat.dart';
@@ -50,29 +51,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   String? _validateName(String? v) {
-    if ((v ?? '').trim().isEmpty) return 'Name is required';
+    if ((v ?? '').trim().isEmpty) return Strings.nameRequired;
     return null;
   }
 
   String? _validateEmail(String? v) {
     final value = v?.trim() ?? '';
-    if (value.isEmpty) return 'Email is required';
+    if (value.isEmpty) return Strings.emailRequired;
     if (!value.contains('@') || !value.contains('.')) {
-      return 'Enter a valid email address';
+      return Strings.emailInvalid;
     }
     return null;
   }
 
   String? _validatePassword(String? v) {
     final value = v ?? '';
-    if (value.isEmpty) return 'Password is required';
-    if (value.length < 6) return 'Password must be at least 6 characters';
+    if (value.isEmpty) return Strings.passwordRequired;
+    if (value.length < 6) return Strings.passwordTooShort;
     return null;
   }
 
   String? _validateConfirm(String? v) {
-    if ((v ?? '').isEmpty) return 'Please confirm your password';
-    if (v != _password.text) return 'Passwords do not match';
+    if ((v ?? '').isEmpty) return Strings.confirmPasswordRequired;
+    if (v != _password.text) return Strings.passwordsDontMatch;
     return null;
   }
 
@@ -132,14 +133,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 const LogoHeartbeat(size: 28, showWordmark: true),
                 const SizedBox(height: AppSpacing.xl),
-                Text('Create your account', style: AppTheme.h1()),
+                Text(Strings.createYourAccount, style: AppTheme.h1()),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Two minutes â€” then you can train.',
+                  Strings.registerTagline,
                   style: AppTheme.bodyLarge(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: AppSpacing.xl),
-                _label('Name'),
+                _label(Strings.name),
                 TextFormField(
                   controller: _name,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -151,7 +152,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                _label('Email'),
+                _label(Strings.email),
                 TextFormField(
                   controller: _email,
                   keyboardType: TextInputType.emailAddress,
@@ -164,7 +165,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                _label('Password'),
+                _label(Strings.password),
                 TextFormField(
                   controller: _password,
                   obscureText: _obscure,
@@ -183,7 +184,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                _label('Confirm password'),
+                _label(Strings.confirmPassword),
                 TextFormField(
                   controller: _confirm,
                   obscureText: _obscure,
@@ -198,7 +199,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 BeatPrimaryButton(
-                  label: 'Create account',
+                  label: Strings.createAccount,
                   loading: _loading,
                   onPressed: _submit,
                 ),
@@ -209,14 +210,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   _SocialButton(
                     icon: Icons.g_mobiledata_rounded,
-                    label: 'Continue with Google',
+                    label: Strings.continueWithGoogle,
                     onTap: _googleSignup,
                   ),
                 ],
                 const SizedBox(height: AppSpacing.md),
                 Center(
                   child: Text(
-                    'By signing up you agree to our Terms & Privacy Policy.',
+                    Strings.bySigningUp,
                     textAlign: TextAlign.center,
                     style: AppTheme.caption(),
                   ),
@@ -226,10 +227,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('Already have an account?', style: AppTheme.caption()),
+                      Text(Strings.haveAccount, style: AppTheme.caption()),
                       TextButton(
                         onPressed: widget.onBackToLogin,
-                        child: const Text('Back to login'),
+                        child: Text(Strings.backToLogin),
                       ),
                     ],
                   ),
@@ -265,7 +266,7 @@ class _OrDivider extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-          child: Text('OR', style: AppTheme.micro()),
+          child: Text(Strings.or, style: AppTheme.micro()),
         ),
         Expanded(
           child: Divider(color: AppColors.border.withValues(alpha: 0.6)),

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'config/app_colors.dart';
 import 'config/feature_flags.dart';
+import 'config/strings.dart';
 import 'config/theme.dart';
 import 'models/user_profile.dart';
 import 'screens/login_screen.dart';
@@ -62,6 +63,8 @@ void main() async {
         : saved == 'system'
             ? ThemeMode.system
             : ThemeMode.dark;
+    Strings.lang =
+        prefs.getString('app_lang') == 'hr' ? AppLang.hr : AppLang.en;
   }
   // Keep the color tokens in sync with the chosen mode before the first build,
   // so screens that read AppColors' semantic getters render the right palette.
@@ -99,6 +102,18 @@ class BeatSyncAppState extends State<BeatSyncApp> {
 
   /// Current theme mode — read by the Settings appearance row.
   ThemeMode get themeMode => _themeMode;
+
+  /// Current language — read by the Settings language row.
+  AppLang get lang => Strings.lang;
+
+  /// Switch app language, persist it, and rebuild so every string getter
+  /// re-resolves.
+  void setLang(AppLang lang) {
+    Strings.lang = lang;
+    setState(() {});
+    SharedPreferences.getInstance()
+        .then((p) => p.setString('app_lang', lang.code));
+  }
 
   void setThemeMode(ThemeMode mode) {
     AppColors.brightness = brightnessForMode(mode);
