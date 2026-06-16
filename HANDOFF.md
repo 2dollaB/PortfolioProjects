@@ -2,7 +2,19 @@
 
 Last updated: 2026-06-15 (after 2p — session lobby + Start/Pause/Resume + kick; auto-end into results). Read this first when resuming in a fresh session.
 
-**Where we are in one line:** every mobile screen runs on real Firebase (auth, studios, workouts, trainer analytics/notes, full live-session loop incl. a pre-start **lobby** with Start/Pause/Resume + kick + an interval timer, TV board, trainer-home/member-list activity stats), BLE heart-rate is code-complete (pairing screen + real HR into the workout screen) and sessions auto-end into a results screen; what's left is the live-session + hardware test passes, the admin panel, and ship chores.
+**Where we are in one line:** every mobile screen runs on real Firebase (auth, studios, workouts, trainer analytics/notes, full live-session loop incl. a pre-start **lobby** with Start/Pause/Resume + kick + an interval timer, TV board, trainer-home/member-list activity stats), BLE heart-rate is code-complete (pairing screen + real HR into the workout screen) and sessions auto-end into a results screen; **next up is Stage 3 (Settings-screen polish, below), THEN the admin panel (now Stage 4)**, plus the live-session + hardware test passes and ship chores.
+
+## ▶ NEXT TASK — Stage 3: Settings-screen polish (do this BEFORE the admin panel, which becomes Stage 4)
+
+User-requested, 2026-06-15. All in the trainer/athlete **Settings screen** (`lib/screens/settings_screen.dart`) unless noted. Brainstorm/confirm scope with the user first (light mode + i18n are bigger than they look — see caveats).
+
+1. **Hide Notifications** — remove/hide the `Notifications` row (under APP) for now.
+2. **Language: Croatian + English** — wire the `Language` row to switch between **en** and **hr**, persist the choice. ⚠️ **No i18n exists yet** (no `localizationsDelegates`/`supportedLocales` in `main.dart`; strings are hardcoded). Needs localization infra from scratch (`flutter_localizations` + `intl`/ARB, or a lightweight custom `LangProvider` + string maps) **plus** translating the UI strings. This is a large piece — agree an approach + scope (whole app vs. key screens first) with the user.
+3. **Light mode** — wire the `Appearance` row to actually toggle dark/light (+ persist). ⚠️ The **theme plumbing already exists** (`main.dart`: `AppTheme.lightTheme`/`darkTheme`, `themeMode` persisted, `setThemeMode`, reachable via `BeatSyncApp.appKey`), BUT screens hardcode `AppColors.darkBg*`/`darkText*` directly instead of `Theme.of(context)` — so flipping the mode won't relight the UI until those colors are made theme-aware. The color refactor is the real effort; likely the biggest item. Scope with the user (a full light theme is a sizable refactor).
+4. **Subscription** — leave the feature unbuilt; tapping the `Subscription` row → a simple **"Subscriptions — coming soon"** screen.
+5. **Support routes** — build real **Privacy Policy** and **Terms of Service** screens (new files) and wire the rows to them. Write reasonable content for a group-fitness HR app: data collected (email, profile, HR/workout summaries, studio membership), stored in Firebase, shared with the athlete's studio trainer; not medical advice / consult a doctor; account deletion; contact. Draft the copy as part of the task.
+
+Then **Stage 4 = Next.js admin panel** (separate private repo `C:\dev\beatsync-admin`; bridge handoff already at `C:\dev\beatsync-admin\docs\HANDOFF.md`).
 
 ## What BeatSync is
 Flutter app for real-time heart-rate monitoring during group fitness sessions in small studios. Cheaper alternative to MyZone/OrangeTheory. Solo dev project. Full plan: `IMPLEMENTATION_PLAN.md` (mobile app → Next.js admin panel → backend → deploy).
@@ -91,9 +103,10 @@ The Firebase CLI refresh token lives at `C:\Users\tinmi\.config\configstore\fire
 - **Skills active:** superpowers (14 skills in `~/.claude/skills/` — installed manually since `/plugin` is unavailable in this environment; loads on session start) + Karpathy guidelines (`~/.claude/CLAUDE.md`). Follow brainstorm → design → implement → verify.
 
 ## Suggested next steps (in order)
+0. **Stage 3 — Settings-screen polish** (the immediate next task; full checklist in the "▶ NEXT TASK" section near the top).
 1. **Two-window end-to-end live-session test** (user, see "Not done yet"): trainer (coach@beatsync.app) Launch → **Lobby**; athlete joins → **waiting room** → trainer **Start** → both run; try **Pause/Resume**, **Skip**, **Remove (kick)**, and let the interval finish → **auto-ends into results**. **Dev-server gotchas learned in 2p:** (a) run `flutter run -d web-server --web-port <fresh-port>` — the **web-server** device survives closing a browser tab (the `-d chrome` device dies when the tab closes); (b) Flutter web's **service worker caches aggressively** — after a rebuild either hard-reload (Empty Cache and Hard Reload) or, simplest, **bump to a fresh port** (new origin = zero cache); (c) Firebase **auth is shared across all tabs of one Chrome profile**, so test the two roles in a normal window + an **Incognito** window (not two tabs).
 2. **BLE hardware test** (user's phone + strap/watch): `flutter run` on Android, pair via Settings → Connected devices, verify live BPM in a workout. First Android build of the project — expect possible Gradle/SDK chores.
-3. Start the **Next.js admin panel** (separate private repo `C:\dev\beatsync-admin`; bridge handoff already at `C:\dev\beatsync-admin\docs\HANDOFF.md`).
+3. **Stage 4 — Next.js admin panel** (separate private repo `C:\dev\beatsync-admin`; bridge handoff already at `C:\dev\beatsync-admin\docs\HANDOFF.md`).
 
 **2p notes:** session lifecycle is one source of truth on `sessions/{id}` (`runState` + pause-aware clock `accumulatedMs`/`runningSince`); the interval phase countdown is **trainer-monitor-local** (not synced to athletes/TV — the TV has its own independent phase sim, still cosmetic). `start()` ends any existing live session for the studio first (one-live invariant). Spec: `docs/superpowers/specs/2026-06-15-session-lobby-start-stop-design.md`.
 
