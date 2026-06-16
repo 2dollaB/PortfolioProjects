@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 
 /// Workout type — picked before starting a solo workout.
@@ -107,10 +108,10 @@ class _WorkoutTypeSheetContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            Text('What are you training?', style: AppTheme.h2()),
+            Text(Strings.whatTraining, style: AppTheme.h2()),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              "We'll tag your session so you can filter by type later.",
+              Strings.tagSessionHint,
               style: AppTheme.caption(),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -164,11 +165,12 @@ class _TypeOption extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      type.displayName,
+                      Strings.workoutTypeLabel(type.displayName),
                       style: AppTheme.bodyLarge(weight: FontWeight.w600)
                           .copyWith(fontSize: 15),
                     ),
-                    Text(type.description, style: AppTheme.caption()),
+                    Text(Strings.workoutTypeDesc(type.displayName),
+                        style: AppTheme.caption()),
                   ],
                 ),
               ),

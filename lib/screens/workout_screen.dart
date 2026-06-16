@@ -7,6 +7,7 @@ import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/feature_flags.dart';
 import '../config/hr_zones.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/cloud_session.dart';
 import '../models/hr_data.dart';
@@ -134,7 +135,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     if (!mounted) return;
     Navigator.of(context).popUntil((r) => r.isFirst);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('You were removed from the session.')),
+      SnackBar(content: Text(Strings.removedFromSession)),
     );
   }
 
@@ -228,20 +229,20 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgSecondary,
-        title: const Text('End workout?'),
+        title: Text(Strings.endWorkoutTitle),
         content: Text(
-          "We'll save your session and show you the summary.",
+          Strings.endWorkoutBody,
           style: AppTheme.bodyLarge(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(Strings.cancel),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.brandRed),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('End'),
+            child: Text(Strings.endLabel),
           ),
         ],
       ),
@@ -341,7 +342,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           ? Icons.bluetooth_connected_rounded
           : Icons.bluetooth_disabled_rounded;
     } else if (AuthService.currentUid != null) {
-      label = 'Simulated';
+      label = Strings.simulated;
       color = AppColors.textSecondary;
       icon = Icons.bluetooth_disabled_rounded;
     } else {
@@ -429,7 +430,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'LIVE · Studio session',
+                            Strings.liveStudioSession,
                             style: AppTheme.micro(color: AppColors.brandRed)
                                 .copyWith(fontWeight: FontWeight.w600),
                           ),
@@ -464,7 +465,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                         size: 16, color: AppColors.warning),
                     const SizedBox(width: 6),
                     Text(
-                      widget.inGroupSession ? 'Paused by trainer' : 'Paused',
+                      widget.inGroupSession ? Strings.pausedByTrainer : Strings.paused,
                       style: AppTheme.caption(color: AppColors.warning)
                           .copyWith(fontWeight: FontWeight.w600),
                     ),
@@ -495,7 +496,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 children: [
                   Expanded(
                     child: _LiveStat(
-                      label: 'Duration',
+                      label: Strings.duration,
                       value: _formatDuration(_stopwatch.elapsed),
                       color: AppColors.textPrimary,
                     ),
@@ -507,7 +508,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   ),
                   Expanded(
                     child: _LiveStat(
-                      label: 'Calories',
+                      label: Strings.calories,
                       value: _kcal.round().toString(),
                       unit: 'kcal',
                       color: zoneColor,
@@ -561,7 +562,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               // athlete just gets Leave. Solo workouts keep their own Pause.
               child: widget.inGroupSession
                   ? BeatPrimaryButton(
-                      label: 'Leave',
+                      label: Strings.leave,
                       icon: Icons.stop_rounded,
                       onPressed: _endWorkout,
                     )
@@ -569,7 +570,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       children: [
                         Expanded(
                           child: BeatSecondaryButton(
-                            label: _paused ? 'Resume' : 'Pause',
+                            label: _paused ? Strings.resume : Strings.pause,
                             icon: _paused
                                 ? Icons.play_arrow_rounded
                                 : Icons.pause_rounded,
@@ -586,7 +587,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: BeatPrimaryButton(
-                            label: 'End',
+                            label: Strings.endLabel,
                             icon: Icons.stop_rounded,
                             onPressed: _endWorkout,
                           ),
@@ -697,12 +698,12 @@ class _ViewStudioButton extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'View whole studio',
+                      Strings.viewWholeStudio,
                       style: AppTheme.bodyLarge(weight: FontWeight.w600)
                           .copyWith(fontSize: 15),
                     ),
                     Text(
-                      'See everyone training together',
+                      Strings.seeEveryone,
                       style: AppTheme.caption(),
                     ),
                   ],

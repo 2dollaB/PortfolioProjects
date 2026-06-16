@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/cloud_session.dart';
 import '../models/user_profile.dart';
@@ -53,7 +54,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
     final uid = AuthService.currentUid;
     if (uid != null && live.isKicked(uid)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You were removed from this session.')),
+        SnackBar(content: Text(Strings.removedFromSession)),
       );
       return;
     }
@@ -69,10 +70,10 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
   }
 
   String _stateLabel(CloudSession live) {
-    if (!live.isRunning) return 'waiting to start';
+    if (!live.isRunning) return Strings.waitingToStart;
     final m = DateTime.now().difference(live.workoutStartedAt ?? live.startedAt).inMinutes;
-    if (m < 1) return 'just started';
-    return 'started ${m}m ago';
+    if (m < 1) return Strings.justStarted;
+    return Strings.startedMinAgo(m);
   }
 
   @override
@@ -86,7 +87,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
       child: Scaffold(
         backgroundColor: AppColors.bgPrimary,
         appBar: AppBar(
-          title: const Text('Join session'),
+          title: Text(Strings.joinSession),
           leading: IconButton(
             icon: const Icon(Icons.close_rounded),
             onPressed: () => Navigator.of(context).pop(),
@@ -99,7 +100,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
             child: stream == null
                 ? Center(
                     child: Text(
-                      'Join a studio first —\ngroup sessions happen inside one.',
+                      Strings.joinStudioFirst,
                       style: AppTheme.caption(),
                       textAlign: TextAlign.center,
                     ),
@@ -130,7 +131,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
       child: Scaffold(
       backgroundColor: AppColors.bgPrimary,
       appBar: AppBar(
-        title: const Text('Join session'),
+        title: Text(Strings.joinSession),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.of(context).pop(),
@@ -143,12 +144,12 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Scan the QR code from your trainer',
+                Strings.scanQrTitle,
                 style: AppTheme.h2(),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Hold your phone steady â€” we connect automatically.',
+                Strings.holdSteady,
                 style: AppTheme.bodyLarge(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -162,7 +163,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                    child: Text('OR ENTER CODE', style: AppTheme.micro()),
+                    child: Text(Strings.orEnterCode, style: AppTheme.micro()),
                   ),
                   Expanded(
                       child: Divider(
@@ -185,7 +186,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
               ),
               const SizedBox(height: AppSpacing.md),
               BeatPrimaryButton(
-                label: 'Join session',
+                label: Strings.joinSession,
                 icon: Icons.login_rounded,
                 onPressed: () => Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
@@ -231,10 +232,10 @@ class _NoLiveSession extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('No live session right now', style: AppTheme.h2()),
+          Text(Strings.noLiveSession, style: AppTheme.h2()),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'When your trainer starts one,\nit shows up here automatically.',
+            Strings.noLiveSessionHint,
             style: AppTheme.caption(),
             textAlign: TextAlign.center,
           ),
@@ -288,7 +289,7 @@ class _LiveSessionCard extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
-                  'LIVE NOW',
+                  Strings.liveNow,
                   style: AppTheme.micro(color: AppColors.brandRed).copyWith(
                     letterSpacing: 1.5,
                     fontWeight: FontWeight.w700,
@@ -300,12 +301,12 @@ class _LiveSessionCard extends StatelessWidget {
             Text(session.name, style: AppTheme.h1().copyWith(fontSize: 26)),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              '${session.typeLabel} · $startedLabel',
+              '${Strings.workoutTypeLabel(session.typeLabel)} · $startedLabel',
               style: AppTheme.bodyLarge(color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.lg),
             BeatPrimaryButton(
-              label: 'Join session',
+              label: Strings.joinSession,
               icon: Icons.login_rounded,
               onPressed: onJoin,
             ),
@@ -370,7 +371,7 @@ class _ScannerStage extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   Text(
-                    'Scanningâ€¦',
+                    Strings.scanning,
                     style: AppTheme.caption(color: AppColors.success),
                   ),
                 ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/hr_zones.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../models/workout_summary.dart';
@@ -42,15 +43,15 @@ class HomeScreen extends StatelessWidget {
 
   String _firstName() {
     final n = profile.name.trim();
-    if (n.isEmpty) return 'Athlete';
+    if (n.isEmpty) return Strings.athlete;
     return n.split(RegExp(r'\s+')).first;
   }
 
   String _greeting() {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning';
-    if (h < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 12) return Strings.goodMorning;
+    if (h < 18) return Strings.goodAfternoon;
+    return Strings.goodEvening;
   }
 
   @override
@@ -130,7 +131,7 @@ class HomeScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xs,
               ),
-              sliver: SliverToBoxAdapter(child: _SectionHeader('This week')),
+              sliver: SliverToBoxAdapter(child: _SectionHeader(Strings.thisWeek)),
             ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
@@ -146,14 +147,14 @@ class HomeScreen extends StatelessWidget {
               ),
               sliver: SliverToBoxAdapter(
                 child: _SectionHeader(
-                  'Recent workouts',
+                  Strings.recentWorkouts,
                   trailing: TextButton(
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => const WorkoutHistoryScreen(),
                       ),
                     ),
-                    child: const Text('See all'),
+                    child: Text(Strings.seeAll),
                   ),
                 ),
               ),
@@ -239,18 +240,18 @@ class _HeroCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.xs),
               Text(
-                'READY WHEN YOU ARE',
+                Strings.readyWhenYouAre,
                 style: AppTheme.micro(color: AppColors.brandRed)
                     .copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w600),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('Start workout',
+          Text(Strings.startWorkout,
               style: AppTheme.h1().copyWith(fontSize: 32, height: 1.1)),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            "We'll connect your HR strap and pick up where you left off.",
+            Strings.startWorkoutSubtitle,
             style: AppTheme.bodyLarge(color: AppColors.textSecondary),
           ),
           if (last != null) ...[
@@ -267,14 +268,14 @@ class _HeroCard extends StatelessWidget {
                   Icon(Icons.history_rounded,
                       size: 16, color: AppColors.textSecondary),
                   const SizedBox(width: AppSpacing.xs),
-                  Text('Last session · ', style: AppTheme.caption()),
+                  Text(Strings.lastSessionPrefix, style: AppTheme.caption()),
                   Text(last.dateLabel,
                       style:
                           AppTheme.caption(color: AppColors.textPrimary)),
                   const Spacer(),
                   Text('${last.avgHr} ',
                       style: AppTheme.statNumber(fontSize: 14)),
-                  Text('avg · ${last.durationLabel}',
+                  Text(Strings.avgDuration(last.durationLabel),
                       style: AppTheme.caption()),
                 ],
               ),
@@ -282,7 +283,7 @@ class _HeroCard extends StatelessWidget {
           ],
           const SizedBox(height: AppSpacing.md),
           BeatPrimaryButton(
-            label: 'Start workout',
+            label: Strings.startWorkout,
             icon: Icons.play_arrow_rounded,
             onPressed: () async {
               final type = await WorkoutTypeSheet.show(context);
@@ -327,9 +328,10 @@ class _WeeklyStats extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-            child: StatChip(label: 'Sessions', value: sessions, unit: 'this week')),
+            child: StatChip(
+                label: Strings.sessions, value: sessions, unit: Strings.thisWeekUnit)),
         const SizedBox(width: AppSpacing.xs),
-        Expanded(child: StatChip(label: 'Time', value: time)),
+        Expanded(child: StatChip(label: Strings.time, value: time)),
         const SizedBox(width: AppSpacing.xs),
         Expanded(child: StatChip(label: 'TRIMP', value: trimp)),
       ],
@@ -361,7 +363,7 @@ class _RecentList extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            'No workouts yet.\nFinish a session and it shows up here.',
+            Strings.noWorkoutsYet,
             style: AppTheme.caption(),
             textAlign: TextAlign.center,
           ),
@@ -417,7 +419,7 @@ class _WorkoutRow extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(workout.typeLabel,
+                        Text(Strings.workoutTypeLabel(workout.typeLabel),
                             style: AppTheme.bodyLarge(weight: FontWeight.w600)
                                 .copyWith(fontSize: 15)),
                         const SizedBox(width: AppSpacing.xs),
@@ -529,9 +531,9 @@ class _JoinStudioCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Join a studio',
+                    Text(Strings.joinAStudio,
                         style: AppTheme.bodyLarge(weight: FontWeight.w700)),
-                    Text("Enter your trainer's 6-digit code",
+                    Text(Strings.joinStudioHint,
                         style: AppTheme.caption()),
                   ],
                 ),
@@ -585,11 +587,11 @@ class _JoinSessionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Join a group session',
+                    Text(Strings.joinGroupSession,
                         style: AppTheme.bodyLarge(weight: FontWeight.w600)),
                     const SizedBox(height: 2),
                     Text(
-                      'Scan the QR from your trainer',
+                      Strings.scanQrFromTrainer,
                       style: AppTheme.caption(),
                     ),
                   ],

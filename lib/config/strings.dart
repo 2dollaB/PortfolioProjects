@@ -247,6 +247,179 @@ class Strings {
       'You can upgrade your plan later if you outgrow this.',
       'Plan možete nadograditi kasnije ako prerastete ovo.');
 
+  // ── Athlete home ─────────────────────────────────────────────
+  static String get goodMorning => _pick('Good morning', 'Dobro jutro');
+  static String get goodAfternoon => _pick('Good afternoon', 'Dobar dan');
+  static String get goodEvening => _pick('Good evening', 'Dobra večer');
+  static String get readyWhenYouAre =>
+      _pick('READY WHEN YOU ARE', 'SPREMNI KAD I VI');
+  static String get startWorkout => _pick('Start workout', 'Započni trening');
+  static String get startWorkoutSubtitle => _pick(
+      "We'll connect your HR strap and pick up where you left off.",
+      'Povezat ćemo vaš mjerač pulsa i nastaviti gdje ste stali.');
+  static String get lastSessionPrefix =>
+      _pick('Last session · ', 'Zadnji trening · ');
+  static String avgDuration(String dur) =>
+      _pick('avg · $dur', 'prosj. · $dur');
+  static String get thisWeek => _pick('This week', 'Ovaj tjedan');
+  static String get recentWorkouts =>
+      _pick('Recent workouts', 'Nedavni treninzi');
+  static String get seeAll => _pick('See all', 'Prikaži sve');
+  static String get noWorkoutsYet => _pick(
+      'No workouts yet.\nFinish a session and it shows up here.',
+      'Još nema treninga.\nZavršite trening i pojavit će se ovdje.');
+  static String get sessions => _pick('Sessions', 'Treninzi');
+  static String get thisWeekUnit => _pick('this week', 'ovaj tjedan');
+  static String get time => _pick('Time', 'Vrijeme');
+  static String get joinAStudio => _pick('Join a studio', 'Pridruži se studiju');
+  static String get joinStudioHint => _pick(
+      "Enter your trainer's 6-digit code",
+      'Unesite trenerov 6-znamenkasti kod');
+  static String get joinGroupSession =>
+      _pick('Join a group session', 'Pridruži se grupnom treningu');
+  static String get scanQrFromTrainer => _pick(
+      'Scan the QR from your trainer', 'Skenirajte QR od svog trenera');
+
+  // ── Join studio ──────────────────────────────────────────────
+  static String get enterStudioCode =>
+      _pick('Enter your studio code', 'Unesite kod studija');
+  static String get studioCodeSubtitle => _pick(
+      'Your trainer shares a 6-digit code to join their studio.',
+      'Vaš trener dijeli 6-znamenkasti kod za pridruživanje studiju.');
+  static String get enterCodeError => _pick(
+      'Enter the 6-digit code from your trainer.',
+      'Unesite 6-znamenkasti kod od svog trenera.');
+  static String get notSignedIn =>
+      _pick('You are not signed in.', 'Niste prijavljeni.');
+  static String get codeNoMatch => _pick(
+      "That code didn't match a studio.",
+      'Taj kod ne odgovara nijednom studiju.');
+  static String couldNotJoin(Object e) =>
+      _pick('Could not join: $e', 'Pridruživanje nije uspjelo: $e');
+  static String get joinedStudio =>
+      _pick('You joined the studio!', 'Pridružili ste se studiju!');
+  static String get joinStudioBtn => _pick('Join studio', 'Pridruži se');
+
+  // ── Join / live session ──────────────────────────────────────
+  static String get joinSession => _pick('Join session', 'Pridruži se treningu');
+  static String get removedFromSession => _pick(
+      'You were removed from this session.',
+      'Uklonjeni ste s ovog treninga.');
+  static String get waitingToStart =>
+      _pick('waiting to start', 'čeka početak');
+  static String get justStarted => _pick('just started', 'upravo započeo');
+  static String startedMinAgo(int m) =>
+      _pick('started ${m}m ago', 'započeo prije $m min');
+  static String get joinStudioFirst => _pick(
+      'Join a studio first —\ngroup sessions happen inside one.',
+      'Prvo se pridružite studiju —\ngrupni treninzi odvijaju se unutar njega.');
+  static String get scanQrTitle => _pick(
+      'Scan the QR code from your trainer',
+      'Skenirajte QR kod od svog trenera');
+  static String get holdSteady => _pick(
+      'Hold your phone steady — we connect automatically.',
+      'Držite telefon mirno — povezujemo se automatski.');
+  static String get orEnterCode => _pick('OR ENTER CODE', 'ILI UNESITE KOD');
+  static String get noLiveSession =>
+      _pick('No live session right now', 'Trenutno nema treninga uživo');
+  static String get noLiveSessionHint => _pick(
+      'When your trainer starts one,\nit shows up here automatically.',
+      'Kad ga vaš trener pokrene,\npojavit će se ovdje automatski.');
+  static String get liveNow => _pick('LIVE NOW', 'UŽIVO SADA');
+  static String get scanning => _pick('Scanning…', 'Skeniram…');
+
+  // Session lobby (waiting room)
+  static String get waitingForTrainer => _pick(
+      'Waiting for your trainer to start…', 'Čekanje da trener započne…');
+  static String connectionIssue(Object e) =>
+      _pick('Connection issue: $e', 'Problem s vezom: $e');
+  static String get youreInTheRoom =>
+      _pick("You're in the room", 'Vi ste u sobi');
+  static String nInTheRoom(int n) => _pick('$n in the room', '$n u sobi');
+  static String get leave => _pick('Leave', 'Napusti');
+
+  // ── Workout (live) ───────────────────────────────────────────
+  static String get endWorkoutTitle =>
+      _pick('End workout?', 'Završiti trening?');
+  static String get endWorkoutBody => _pick(
+      "We'll save your session and show you the summary.",
+      'Spremit ćemo trening i prikazati sažetak.');
+  static String get endLabel => _pick('End', 'Završi');
+  static String get simulated => _pick('Simulated', 'Simulirano');
+  static String get liveStudioSession =>
+      _pick('LIVE · Studio session', 'UŽIVO · Studijski trening');
+  static String get pausedByTrainer =>
+      _pick('Paused by trainer', 'Pauzirao trener');
+  static String get paused => _pick('Paused', 'Pauzirano');
+  static String get duration => _pick('Duration', 'Trajanje');
+  static String get calories => _pick('Calories', 'Kalorije');
+  static String get resume => _pick('Resume', 'Nastavi');
+  static String get pause => _pick('Pause', 'Pauza');
+  static String get viewWholeStudio =>
+      _pick('View whole studio', 'Pogledaj cijeli studio');
+  static String get seeEveryone => _pick(
+      'See everyone training together', 'Vidite sve kako treniraju zajedno');
+
+  // ── Workout summary ──────────────────────────────────────────
+  static String get workoutSummary =>
+      _pick('Workout summary', 'Sažetak treninga');
+  static String get workoutFallback => _pick('Workout', 'Trening');
+  static String get average => _pick('AVERAGE', 'PROSJEK');
+  static String get peak => _pick('PEAK', 'VRHUNAC');
+  static String get timeInZones => _pick('Time in zones', 'Vrijeme u zonama');
+  static String get details => _pick('Details', 'Detalji');
+  static String get avgHr => _pick('Avg HR', 'Prosj. puls');
+  static String get maxHr => _pick('Max HR', 'Maks. puls');
+  static String get hrMaxPct => _pick('HR Max %', '% maks. pulsa');
+  static String get saveWorkout => _pick('Save workout', 'Spremi trening');
+  static String get discard => _pick('Discard', 'Odbaci');
+
+  // ── Workout history ──────────────────────────────────────────
+  static String get history => _pick('History', 'Povijest');
+  static String get filterAll => _pick('All', 'Sve');
+  static String get filterThisMonth => _pick('This month', 'Ovaj mjesec');
+  static String get noWorkoutsMatch => _pick(
+      'No workouts match your filters.',
+      'Nijedan trening ne odgovara filtrima.');
+  static String get couldNotLoadWorkouts => _pick(
+      'Could not load workouts.', 'Učitavanje treninga nije uspjelo.');
+  static String get statAvg => _pick('AVG', 'PROSJ');
+  static String get statMax => _pick('MAX', 'MAKS');
+
+  /// Display label for a filter time key ('All' / 'This week' / 'This month').
+  static String timeFilterLabel(String key) => switch (key) {
+        'This week' => thisWeek,
+        'This month' => filterThisMonth,
+        _ => filterAll,
+      };
+
+  /// Localized display for an English workout type label. Values stay English
+  /// in the model; this maps them for display only.
+  static String workoutTypeLabel(String en) => switch (en.toLowerCase()) {
+        'cardio' => _pick('Cardio', 'Kardio'),
+        'strength' => _pick('Strength', 'Snaga'),
+        'cycling' => _pick('Cycling', 'Biciklizam'),
+        'yoga' => _pick('Yoga', 'Joga'),
+        'endurance' => _pick('Endurance', 'Izdržljivost'),
+        _ => en, // HIIT, CrossFit, etc. — keep as-is
+      };
+
+  static String workoutTypeDesc(String en) => switch (en.toLowerCase()) {
+        'hiit' =>
+          _pick('High-intensity intervals', 'Intervali visokog intenziteta'),
+        'strength' => _pick('Weights · resistance', 'Utezi · otpor'),
+        'endurance' => _pick('Long, steady effort', 'Dug, ravnomjeran napor'),
+        'cardio' =>
+          _pick('Sustained moderate pace', 'Umjeren, postojan tempo'),
+        'crossfit' => _pick('Functional · circuits', 'Funkcionalno · kružni'),
+        _ => '',
+      };
+  static String get whatTraining =>
+      _pick('What are you training?', 'Što treniraš?');
+  static String get tagSessionHint => _pick(
+      "We'll tag your session so you can filter by type later.",
+      'Označit ćemo trening da ga kasnije možete filtrirati po vrsti.');
+
   // ── Settings: sections + rows ────────────────────────────────
   static String get account => _pick('Account', 'Račun');
   static String get app => _pick('App', 'Aplikacija');

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../services/auth_service.dart';
 import '../services/studio_repository.dart';
@@ -33,12 +34,12 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
   Future<void> _join() async {
     final code = _code.text.trim();
     if (code.length != 6) {
-      setState(() => _error = 'Enter the 6-digit code from your trainer.');
+      setState(() => _error = Strings.enterCodeError);
       return;
     }
     final uid = AuthService.currentUid;
     if (uid == null) {
-      setState(() => _error = 'You are not signed in.');
+      setState(() => _error = Strings.notSignedIn);
       return;
     }
     setState(() {
@@ -51,7 +52,7 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
         if (!mounted) return;
         setState(() {
           _loading = false;
-          _error = "That code didn't match a studio.";
+          _error = Strings.codeNoMatch;
         });
         return;
       }
@@ -60,8 +61,8 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You joined the studio!'),
+        SnackBar(
+          content: Text(Strings.joinedStudio),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -69,7 +70,7 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Could not join: $e';
+        _error = Strings.couldNotJoin(e);
       });
     }
   }
@@ -80,7 +81,7 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
       child: Scaffold(
         backgroundColor: AppColors.bgPrimary,
         appBar: AppBar(
-          title: const Text('Join a studio'),
+          title: Text(Strings.joinAStudio),
           leading: IconButton(
             icon: const Icon(Icons.close_rounded),
             onPressed: () => Navigator.of(context).pop(),
@@ -95,10 +96,10 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 const Center(child: LogoHeartbeat(size: 28, showWordmark: false)),
                 const SizedBox(height: AppSpacing.xl),
-                Text('Enter your studio code', style: AppTheme.h2()),
+                Text(Strings.enterStudioCode, style: AppTheme.h2()),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  "Your trainer shares a 6-digit code to join their studio.",
+                  Strings.studioCodeSubtitle,
                   style: AppTheme.bodyLarge(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: AppSpacing.xl),
@@ -125,7 +126,7 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
                 ],
                 const SizedBox(height: AppSpacing.lg),
                 BeatPrimaryButton(
-                  label: 'Join studio',
+                  label: Strings.joinStudioBtn,
                   icon: Icons.login_rounded,
                   loading: _loading,
                   onPressed: _join,

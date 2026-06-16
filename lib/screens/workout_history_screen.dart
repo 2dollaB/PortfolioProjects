@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/workout_summary.dart';
 import '../services/auth_service.dart';
@@ -47,8 +48,8 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
           padding: const EdgeInsets.all(AppSpacing.xl),
           child: Text(
             all.isEmpty
-                ? 'No workouts yet.\nFinish a session and it shows up here.'
-                : 'No workouts match your filters.',
+                ? Strings.noWorkoutsYet
+                : Strings.noWorkoutsMatch,
             style: AppTheme.caption(),
             textAlign: TextAlign.center,
           ),
@@ -75,7 +76,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
       child: Scaffold(
         backgroundColor: AppColors.bgPrimary,
         appBar: AppBar(
-          title: const Text('History'),
+          title: Text(Strings.history),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded),
             onPressed: () => Navigator.of(context).pop(),
@@ -94,7 +95,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                   children: [
                     for (final f in _timeFilters) ...[
                       _FilterChip(
-                        label: f,
+                        label: Strings.timeFilterLabel(f),
                         selected: _timeFilter == f,
                         onTap: () => setState(() => _timeFilter = f),
                       ),
@@ -110,7 +111,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                     ),
                     for (final t in _typeFilters) ...[
                       _FilterChip(
-                        label: t,
+                        label: Strings.workoutTypeLabel(t),
                         selected: _typeFilter == t,
                         onTap: () => setState(() =>
                             _typeFilter = _typeFilter == t ? null : t),
@@ -136,7 +137,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                           if (snap.hasError) {
                             return Center(
                               child: Text(
-                                'Could not load workouts.',
+                                Strings.couldNotLoadWorkouts,
                                 style: AppTheme.caption(),
                               ),
                             );
@@ -236,7 +237,7 @@ class _HistoryRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      workout.typeLabel,
+                      Strings.workoutTypeLabel(workout.typeLabel),
                       style: AppTheme.bodyLarge(weight: FontWeight.w600)
                           .copyWith(fontSize: 15),
                     ),
@@ -270,9 +271,9 @@ class _HistoryRow extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              _MiniStat(label: 'AVG', value: '${workout.avgHr}'),
+              _MiniStat(label: Strings.statAvg, value: '${workout.avgHr}'),
               const SizedBox(width: AppSpacing.md),
-              _MiniStat(label: 'MAX', value: '${workout.maxHr}'),
+              _MiniStat(label: Strings.statMax, value: '${workout.maxHr}'),
               const SizedBox(width: AppSpacing.md),
               _MiniStat(label: 'KCAL', value: '${workout.calories}'),
               const Spacer(),

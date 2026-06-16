@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/cloud_session.dart';
 import '../models/user_profile.dart';
@@ -66,7 +67,7 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
       _removePresence();
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You were removed from the session.')),
+        SnackBar(content: Text(Strings.removedFromSession)),
       );
       return;
     }
@@ -141,13 +142,13 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
                     const LogoHeartbeat(size: 40, showWordmark: false),
                     const SizedBox(height: AppSpacing.lg),
                     Text(
-                      'Waiting for your trainer to start…',
+                      Strings.waitingForTrainer,
                       style: AppTheme.h2(),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      '${session.name} · ${session.typeLabel}',
+                      '${session.name} · ${Strings.workoutTypeLabel(session.typeLabel)}',
                       style: AppTheme.bodyLarge(color: AppColors.textSecondary),
                       textAlign: TextAlign.center,
                     ),
@@ -157,7 +158,7 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.md),
                         child: Text(
-                          'Connection issue: ${snap.error}',
+                          Strings.connectionIssue(snap.error ?? ''),
                           style: AppTheme.caption(color: AppColors.danger),
                           textAlign: TextAlign.center,
                         ),
@@ -168,14 +169,14 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
                         builder: (context, hrSnap) {
                           final n = hrSnap.data?.length ?? 1;
                           return Text(
-                            n == 1 ? "You're in the room" : '$n in the room',
+                            n == 1 ? Strings.youreInTheRoom : Strings.nInTheRoom(n),
                             style: AppTheme.caption(color: AppColors.success),
                           );
                         },
                       ),
                     const Spacer(),
                     BeatSecondaryButton(
-                      label: 'Leave',
+                      label: Strings.leave,
                       icon: Icons.logout_rounded,
                       onPressed: _leave,
                     ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../widgets/beat_button.dart';
@@ -58,7 +59,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
       child: Scaffold(
       backgroundColor: AppColors.bgPrimary,
       appBar: AppBar(
-        title: const Text('Workout summary'),
+        title: Text(Strings.workoutSummary),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.of(context).pop(),
@@ -89,7 +90,10 @@ class WorkoutSummaryScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(workoutType?.displayName ?? 'Workout',
+                      Text(
+                          workoutType != null
+                              ? Strings.workoutTypeLabel(workoutType!.displayName)
+                              : Strings.workoutFallback,
                           style: AppTheme.h2().copyWith(fontSize: 18)),
                       Text(
                         '${DateTime.now().toString().substring(0, 16)} · ${_formatDuration()}',
@@ -117,7 +121,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         Text(
-                          'AVERAGE',
+                          Strings.average,
                           style: AppTheme.micro().copyWith(letterSpacing: 1.4),
                         ),
                         const SizedBox(height: AppSpacing.xs),
@@ -141,7 +145,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         Text(
-                          'PEAK',
+                          Strings.peak,
                           style: AppTheme.micro().copyWith(letterSpacing: 1.4),
                         ),
                         const SizedBox(height: AppSpacing.xs),
@@ -161,7 +165,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
 
-            Text('Time in zones', style: AppTheme.h2()),
+            Text(Strings.timeInZones, style: AppTheme.h2()),
             const SizedBox(height: AppSpacing.sm),
             _ZoneDistributionBar(distribution: _zoneDist),
             const SizedBox(height: AppSpacing.md),
@@ -171,7 +175,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
             ],
 
             const SizedBox(height: AppSpacing.xl),
-            Text('Details', style: AppTheme.h2()),
+            Text(Strings.details, style: AppTheme.h2()),
             const SizedBox(height: AppSpacing.sm),
             GridView.count(
               shrinkWrap: true,
@@ -182,7 +186,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
               childAspectRatio: 1.3,
               children: [
                 StatChip(
-                  label: 'Calories',
+                  label: Strings.calories,
                   value: '$calories',
                   unit: 'kcal',
                   icon: Icons.local_fire_department_rounded,
@@ -195,25 +199,25 @@ class WorkoutSummaryScreen extends StatelessWidget {
                   accent: AppColors.warning,
                 ),
                 StatChip(
-                  label: 'Duration',
+                  label: Strings.duration,
                   value: _formatDuration(),
                   icon: Icons.timer_outlined,
                 ),
                 StatChip(
-                  label: 'Avg HR',
+                  label: Strings.avgHr,
                   value: '$avgBpm',
                   unit: 'bpm',
                   icon: Icons.favorite_outline_rounded,
                 ),
                 StatChip(
-                  label: 'Max HR',
+                  label: Strings.maxHr,
                   value: '$maxBpm',
                   unit: 'bpm',
                   icon: Icons.trending_up_rounded,
                   accent: AppColors.brandRed,
                 ),
                 StatChip(
-                  label: 'HR Max %',
+                  label: Strings.hrMaxPct,
                   value: '${(maxBpm / profile.hrMax * 100).round()}',
                   unit: '%',
                   icon: Icons.percent_rounded,
@@ -223,13 +227,13 @@ class WorkoutSummaryScreen extends StatelessWidget {
 
             const SizedBox(height: AppSpacing.xl),
             BeatPrimaryButton(
-              label: 'Save workout',
+              label: Strings.saveWorkout,
               icon: Icons.check_rounded,
               onPressed: () => Navigator.of(context).pop(),
             ),
             const SizedBox(height: AppSpacing.sm),
             BeatSecondaryButton(
-              label: 'Discard',
+              label: Strings.discard,
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
