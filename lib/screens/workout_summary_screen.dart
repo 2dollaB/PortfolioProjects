@@ -56,7 +56,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       appBar: AppBar(
         title: const Text('Workout summary'),
         leading: IconButton(
@@ -107,9 +107,9 @@ class WorkoutSummaryScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: AppColors.darkBgSecondary,
+                color: AppColors.bgSecondary,
                 borderRadius: BorderRadius.circular(AppRadius.xl),
-                border: Border.all(color: AppColors.darkBorder),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [
@@ -125,7 +125,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
                           '$avgBpm',
                           style: AppTheme.statNumber(
                             fontSize: 48,
-                            color: AppColors.darkTextPrimary,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         Text('bpm', style: AppTheme.caption()),
@@ -135,7 +135,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
                   Container(
                     width: 1,
                     height: 72,
-                    color: AppColors.darkBorder,
+                    color: AppColors.border,
                   ),
                   Expanded(
                     child: Column(
@@ -299,7 +299,7 @@ class _ZoneRow extends StatelessWidget {
               Container(
                 height: 6,
                 decoration: BoxDecoration(
-                  color: AppColors.darkBgTertiary,
+                  color: AppColors.bgTertiary,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),

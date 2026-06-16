@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -227,11 +227,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkBgSecondary,
+        backgroundColor: AppColors.bgSecondary,
         title: const Text('End workout?'),
         content: Text(
           "We'll save your session and show you the summary.",
-          style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+          style: AppTheme.bodyLarge(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -336,13 +336,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       final name = ble.connectedDeviceName ?? 'Sensor';
       final batt = ble.batteryLevel;
       label = batt >= 0 ? '$name · $batt%' : name;
-      color = _bleLive ? AppColors.success : AppColors.darkTextTertiary;
+      color = _bleLive ? AppColors.success : AppColors.textTertiary;
       icon = _bleLive
           ? Icons.bluetooth_connected_rounded
           : Icons.bluetooth_disabled_rounded;
     } else if (AuthService.currentUid != null) {
       label = 'Simulated';
-      color = AppColors.darkTextSecondary;
+      color = AppColors.textSecondary;
       icon = Icons.bluetooth_disabled_rounded;
     } else {
       label = 'H10 · ${(85 + _rng.nextInt(15))}%';
@@ -355,9 +355,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         vertical: AppSpacing.micro,
       ),
       decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
+        color: AppColors.bgSecondary,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -387,7 +387,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         child: Column(
           children: [
@@ -497,13 +497,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     child: _LiveStat(
                       label: 'Duration',
                       value: _formatDuration(_stopwatch.elapsed),
-                      color: AppColors.darkTextPrimary,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   Container(
                     width: 1,
                     height: 36,
-                    color: AppColors.darkBorder,
+                    color: AppColors.border,
                   ),
                   Expanded(
                     child: _LiveStat(
@@ -516,13 +516,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   Container(
                     width: 1,
                     height: 36,
-                    color: AppColors.darkBorder,
+                    color: AppColors.border,
                   ),
                   Expanded(
                     child: _LiveStat(
                       label: 'TRIMP',
                       value: _trimp.toStringAsFixed(0),
-                      color: AppColors.darkTextPrimary,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -663,7 +663,7 @@ class _ViewStudioButton extends StatelessWidget {
             vertical: AppSpacing.sm,
           ),
           decoration: BoxDecoration(
-            color: AppColors.darkBgSecondary,
+            color: AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: AppColors.brandRed.withValues(alpha: 0.35),

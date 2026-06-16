@@ -72,4 +72,29 @@ class StudioRepository {
       'memberUids': FieldValue.arrayUnion([uid]),
     });
   }
+
+  /// Removes [uid] from a studio's member list (scoped self-leave). The caller
+  /// must then clear their own users/{uid}.studioId.
+  static Future<void> leave({
+    required String uid,
+    required String studioId,
+  }) async {
+    await _studios.doc(studioId).update({
+      'memberUids': FieldValue.arrayRemove([uid]),
+    });
+  }
+
+  /// Owner edit of studio details. Leaves owner/members/invite code untouched.
+  static Future<void> update({
+    required String studioId,
+    required String name,
+    String? location,
+    required int maxMembers,
+  }) async {
+    await _studios.doc(studioId).update({
+      'name': name,
+      'location': location,
+      'maxMembers': maxMembers,
+    });
+  }
 }

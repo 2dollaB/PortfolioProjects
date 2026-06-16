@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
@@ -68,7 +68,7 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: FadeTransition(
         opacity: _fade,
         child: Stack(
@@ -82,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen>
                     radius: 0.9,
                     colors: [
                       AppColors.brandRed.withValues(alpha: 0.10),
-                      AppColors.darkBgPrimary,
+                      AppColors.bgPrimary,
                     ],
                   ),
                 ),
@@ -97,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen>
                   Text(
                     'TRAIN TOGETHER',
                     style: AppTheme.micro(
-                      color: AppColors.darkTextSecondary,
+                      color: AppColors.textSecondary,
                     ).copyWith(letterSpacing: 4),
                   ),
                 ],

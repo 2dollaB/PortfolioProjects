@@ -14,18 +14,19 @@ class AppTheme {
   // Legacy color aliases — point at the new tokens.
   // Do NOT add new references to these in fresh code; use AppColors.
   // ─────────────────────────────────────────────────────────────
-  static const Color background    = AppColors.darkBgPrimary;
-  static const Color surface       = AppColors.darkBgSecondary;
-  static const Color surfaceLight  = AppColors.darkBgTertiary;
+  // Mode-aware aliases — resolve through AppColors' semantic getters.
+  static Color get background    => AppColors.bgPrimary;
+  static Color get surface       => AppColors.bgSecondary;
+  static Color get surfaceLight  => AppColors.bgTertiary;
   static const Color surfaceActive = Color(0xFF2A2A35);
 
   static const Color accent      = AppColors.brandRed;
   static const Color accentLight = Color(0xFFFF3D6E);
   static const Color accentDark  = AppColors.brandRedLight;
 
-  static const Color textPrimary   = AppColors.darkTextPrimary;
-  static const Color textSecondary = AppColors.darkTextSecondary;
-  static const Color textMuted     = AppColors.darkTextTertiary;
+  static Color get textPrimary   => AppColors.textPrimary;
+  static Color get textSecondary => AppColors.textSecondary;
+  static Color get textMuted     => AppColors.textTertiary;
 
   static const Color success = AppColors.success;
   static const Color warning = AppColors.warning;
@@ -43,11 +44,11 @@ class AppTheme {
   // ─────────────────────────────────────────────────────────────
 
   /// XL display — live BPM, hero numbers. Tabular figures so live updates don't shift.
-  static TextStyle displayXL({Color color = AppColors.darkTextPrimary, Color? glow}) {
+  static TextStyle displayXL({Color? color, Color? glow}) {
     return GoogleFonts.spaceGrotesk(
       fontSize: 56,
       fontWeight: FontWeight.w700,
-      color: color,
+      color: color ?? AppColors.textPrimary,
       letterSpacing: -1.5,
       height: 1.0,
       fontFeatures: const [FontFeature.tabularFigures()],
@@ -61,52 +62,52 @@ class AppTheme {
   }
 
   /// H1 — screen titles.
-  static TextStyle h1({Color color = AppColors.darkTextPrimary}) =>
+  static TextStyle h1({Color? color}) =>
       GoogleFonts.plusJakartaSans(
         fontSize: 28,
         fontWeight: FontWeight.w600,
-        color: color,
+        color: color ?? AppColors.textPrimary,
         letterSpacing: -0.5,
         height: 1.2,
       );
 
   /// H2 — section headers, card titles.
-  static TextStyle h2({Color color = AppColors.darkTextPrimary}) =>
+  static TextStyle h2({Color? color}) =>
       GoogleFonts.plusJakartaSans(
         fontSize: 20,
         fontWeight: FontWeight.w600,
-        color: color,
+        color: color ?? AppColors.textPrimary,
         letterSpacing: -0.2,
         height: 1.3,
       );
 
   /// Body large (16) — primary content text.
   static TextStyle bodyLarge({
-    Color color = AppColors.darkTextPrimary,
+    Color? color,
     FontWeight weight = FontWeight.w400,
   }) =>
       GoogleFonts.inter(
         fontSize: 16,
         fontWeight: weight,
-        color: color,
+        color: color ?? AppColors.textPrimary,
         height: 1.5,
       );
 
   /// Caption (12) — labels, metadata, timestamps.
-  static TextStyle caption({Color color = AppColors.darkTextSecondary}) =>
+  static TextStyle caption({Color? color}) =>
       GoogleFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w400,
-        color: color,
+        color: color ?? AppColors.textSecondary,
         height: 1.4,
       );
 
   /// Micro (10) — zone badges, unit suffixes. Uppercase + letter-spacing applied at site.
-  static TextStyle micro({Color color = AppColors.darkTextSecondary}) =>
+  static TextStyle micro({Color? color}) =>
       GoogleFonts.inter(
         fontSize: 10,
         fontWeight: FontWeight.w500,
-        color: color,
+        color: color ?? AppColors.textSecondary,
         letterSpacing: 0.8,
         height: 1.4,
       );
@@ -115,12 +116,12 @@ class AppTheme {
   static TextStyle statNumber({
     double fontSize = 20,
     FontWeight weight = FontWeight.w600,
-    Color color = AppColors.darkTextPrimary,
+    Color? color,
   }) =>
       GoogleFonts.spaceGrotesk(
         fontSize: fontSize,
         fontWeight: weight,
-        color: color,
+        color: color ?? AppColors.textPrimary,
         height: 1.1,
         fontFeatures: const [FontFeature.tabularFigures()],
       );
@@ -132,14 +133,14 @@ class AppTheme {
   static TextStyle heading({
     double fontSize = 24,
     FontWeight fontWeight = FontWeight.w700,
-    Color color = AppColors.darkTextPrimary,
+    Color? color,
     double letterSpacing = 0,
     List<Shadow>? shadows,
   }) =>
       GoogleFonts.plusJakartaSans(
         fontSize: fontSize,
         fontWeight: fontWeight,
-        color: color,
+        color: color ?? AppColors.textPrimary,
         letterSpacing: letterSpacing,
         shadows: shadows,
       );
@@ -147,24 +148,24 @@ class AppTheme {
   static TextStyle body({
     double fontSize = 14,
     FontWeight fontWeight = FontWeight.w400,
-    Color color = AppColors.darkTextSecondary,
+    Color? color,
   }) =>
       GoogleFonts.inter(
         fontSize: fontSize,
         fontWeight: fontWeight,
-        color: color,
+        color: color ?? AppColors.textSecondary,
       );
 
   static TextStyle mono({
     double fontSize = 13,
     FontWeight fontWeight = FontWeight.w500,
-    Color color = AppColors.darkTextPrimary,
+    Color? color,
     double letterSpacing = 0.5,
   }) =>
       GoogleFonts.spaceGrotesk(
         fontSize: fontSize,
         fontWeight: fontWeight,
-        color: color,
+        color: color ?? AppColors.textPrimary,
         letterSpacing: letterSpacing,
       );
 
@@ -175,7 +176,7 @@ class AppTheme {
       GoogleFonts.spaceGrotesk(
         fontSize: fontSize,
         fontWeight: FontWeight.w700,
-        color: AppColors.darkTextPrimary,
+        color: AppColors.textPrimary,
         letterSpacing: -1.5,
         fontFeatures: const [FontFeature.tabularFigures()],
         shadows: [
@@ -191,10 +192,10 @@ class AppTheme {
   /// Standard card — flat, bordered, generous radius. Default for dark mode.
   static BoxDecoration card({double radius = AppRadius.lg, Color? borderColor}) {
     return BoxDecoration(
-      color: AppColors.darkBgSecondary,
+      color: AppColors.bgSecondary,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: borderColor ?? AppColors.darkBorder,
+        color: borderColor ?? AppColors.border,
         width: 1,
       ),
     );
@@ -207,9 +208,9 @@ class AppTheme {
     double glowAlpha = 0.08,
   }) {
     return BoxDecoration(
-      color: AppColors.darkBgSecondary,
+      color: AppColors.bgSecondary,
       borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: AppColors.darkBorder, width: 1),
+      border: Border.all(color: AppColors.border, width: 1),
       boxShadow: [
         BoxShadow(
           color: glow.withValues(alpha: glowAlpha),

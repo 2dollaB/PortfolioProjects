@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import 'package:flutter/services.dart';
 import '../config/app_colors.dart';
@@ -150,7 +150,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       appBar: AppBar(
         title: const Text('Personal info'),
         leading: IconButton(
@@ -195,17 +195,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          color: AppColors.darkBgSecondary,
+                          color: AppColors.bgSecondary,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.darkBorder),
+                          border: Border.all(color: AppColors.border),
                         ),
                         child: DropdownButton<Sex>(
                           value: _sex,
                           isExpanded: true,
                           underline: const SizedBox(),
-                          icon: const Icon(Icons.expand_more_rounded,
-                              color: AppColors.darkTextSecondary),
-                          dropdownColor: AppColors.darkBgSecondary,
+                          icon: Icon(Icons.expand_more_rounded,
+                              color: AppColors.textSecondary),
+                          dropdownColor: AppColors.bgSecondary,
                           style: AppTheme.bodyLarge(),
                           items: Sex.values
                               .map((s) => DropdownMenuItem(
@@ -264,7 +264,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: AppColors.darkBgSecondary,
+                color: AppColors.bgSecondary,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: AppColors.brandRed.withValues(alpha: 0.2),
@@ -319,7 +319,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         padding: const EdgeInsets.only(bottom: AppSpacing.xs),
         child: Text(
           t.toUpperCase(),
-          style: AppTheme.micro(color: AppColors.darkTextSecondary)
+          style: AppTheme.micro(color: AppColors.textSecondary)
               .copyWith(letterSpacing: 1.4),
         ),
       );
@@ -364,10 +364,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.brandRed.withValues(alpha: 0.12)
-                : AppColors.darkBgSecondary,
+                : AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: selected ? AppColors.brandRed : AppColors.darkBorder,
+              color: selected ? AppColors.brandRed : AppColors.border,
               width: selected ? 1.5 : 1,
             ),
           ),

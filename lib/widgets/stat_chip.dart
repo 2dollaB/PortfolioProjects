@@ -30,9 +30,9 @@ class StatChip extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
+        color: AppColors.bgSecondary,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

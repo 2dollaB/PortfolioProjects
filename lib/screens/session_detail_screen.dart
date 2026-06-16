@@ -1,4 +1,4 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 import '../widgets/mobile_frame.dart';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
@@ -46,7 +46,7 @@ class SessionDetailScreen extends StatelessWidget {
     final hottestZone = zones.indexOf(zones.reduce(math.max));
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       appBar: AppBar(
         title: const Text('Session analytics'),
         leading: IconButton(
@@ -163,9 +163,9 @@ class _HeroStats extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
+        color: AppColors.bgSecondary,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
@@ -186,7 +186,7 @@ class _HeroStats extends StatelessWidget {
               ],
             ),
           ),
-          Container(width: 1, height: 72, color: AppColors.darkBorder),
+          Container(width: 1, height: 72, color: AppColors.border),
           Expanded(
             child: Column(
               children: [
@@ -271,7 +271,7 @@ class _ZoneRow extends StatelessWidget {
               Container(
                 height: 6,
                 decoration: BoxDecoration(
-                  color: AppColors.darkBgTertiary,
+                  color: AppColors.bgTertiary,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -321,9 +321,9 @@ class _AthleteRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
+        color: AppColors.bgSecondary,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [

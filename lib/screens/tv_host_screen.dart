@@ -174,9 +174,9 @@ class _TvHostScreenState extends State<TvHostScreen> {
       stream: liveStream,
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            backgroundColor: AppColors.darkBgPrimary,
-            body: Center(child: CircularProgressIndicator()),
+          return Scaffold(
+            backgroundColor: AppColors.bgPrimary,
+            body: const Center(child: CircularProgressIndicator()),
           );
         }
         final live = snap.data;
@@ -208,7 +208,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
   /// Production between sessions — calm studio splash for the wall screen.
   Widget _idle(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         child: Center(
           child: Column(
@@ -262,7 +262,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
     final paused = _runStateFor(live) == 'paused';
 
     return Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         child: Stack(
           children: [
@@ -300,14 +300,14 @@ class _TvHostScreenState extends State<TvHostScreen> {
         live == null ? MockData.studioName : (_studio?.name ?? '');
     final code = _production ? _studio?.inviteCode : null;
     return Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(studioName.toUpperCase(),
-                  style: AppTheme.micro(color: AppColors.darkTextSecondary)
+                  style: AppTheme.micro(color: AppColors.textSecondary)
                       .copyWith(letterSpacing: 2)),
               const SizedBox(height: AppSpacing.sm),
               Text(title, style: AppTheme.h1().copyWith(fontSize: 44)),
@@ -329,14 +329,14 @@ class _TvHostScreenState extends State<TvHostScreen> {
               ),
               const SizedBox(height: AppSpacing.xl),
               Text('Get into position — scan the code to join',
-                  style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary)),
+                  style: AppTheme.bodyLarge(color: AppColors.textSecondary)),
               if (code != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.xl, vertical: AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: AppColors.darkBgSecondary,
+                    color: AppColors.bgSecondary,
                     borderRadius: BorderRadius.circular(AppRadius.lg),
                     border: Border.all(
                         color: AppColors.brandRed.withValues(alpha: 0.3)),
@@ -408,10 +408,10 @@ class _TvHostScreenState extends State<TvHostScreen> {
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.xs,
           ),
-          decoration: const BoxDecoration(
-            color: AppColors.darkBgPrimary,
+          decoration: BoxDecoration(
+            color: AppColors.bgPrimary,
             border: Border(
-              bottom: BorderSide(color: AppColors.darkBorder),
+              bottom: BorderSide(color: AppColors.border),
             ),
           ),
           child: Column(
@@ -428,9 +428,9 @@ class _TvHostScreenState extends State<TvHostScreen> {
                   GlassPill(
                     padding: const EdgeInsets.all(8),
                     onTap: _showQr,
-                    child: const Icon(
+                    child: Icon(
                       Icons.qr_code_rounded,
-                      color: AppColors.darkTextPrimary,
+                      color: AppColors.textPrimary,
                       size: 20,
                     ),
                   ),
@@ -438,9 +438,9 @@ class _TvHostScreenState extends State<TvHostScreen> {
                   GlassPill(
                     padding: const EdgeInsets.all(8),
                     onTap: () => Navigator.of(context).pop(),
-                    child: const Icon(
+                    child: Icon(
                       Icons.close_rounded,
-                      color: AppColors.darkTextPrimary,
+                      color: AppColors.textPrimary,
                       size: 20,
                     ),
                   ),
@@ -494,9 +494,9 @@ class _TvHostScreenState extends State<TvHostScreen> {
         ),
         Container(
           padding: const EdgeInsets.all(AppSpacing.xs),
-          decoration: const BoxDecoration(
-            color: AppColors.darkBgPrimary,
-            border: Border(top: BorderSide(color: AppColors.darkBorder)),
+          decoration: BoxDecoration(
+            color: AppColors.bgPrimary,
+            border: Border(top: BorderSide(color: AppColors.border)),
           ),
           child: Center(
             child: GroupStatsPill(
@@ -577,9 +577,9 @@ class _TvHostScreenState extends State<TvHostScreen> {
               GlassPill(
                 padding: const EdgeInsets.all(8),
                 onTap: _showQr,
-                child: const Icon(
+                child: Icon(
                   Icons.qr_code_rounded,
-                  color: AppColors.darkTextPrimary,
+                  color: AppColors.textPrimary,
                   size: 22,
                 ),
               ),
@@ -587,9 +587,9 @@ class _TvHostScreenState extends State<TvHostScreen> {
               GlassPill(
                 padding: const EdgeInsets.all(8),
                 onTap: () => Navigator.of(context).pop(),
-                child: const Icon(
+                child: Icon(
                   Icons.close_rounded,
-                  color: AppColors.darkTextPrimary,
+                  color: AppColors.textPrimary,
                   size: 22,
                 ),
               ),
@@ -638,7 +638,7 @@ class _SortChip extends StatelessWidget {
           style: AppTheme.caption(
             color: selected
                 ? AppColors.brandRed
-                : AppColors.darkTextSecondary,
+                : AppColors.textSecondary,
           ).copyWith(fontWeight: FontWeight.w700, fontSize: 12),
         ),
       ),

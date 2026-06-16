@@ -1,4 +1,4 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 import '../widgets/mobile_frame.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -373,7 +373,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
@@ -443,14 +443,14 @@ class _TopBar extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.darkBgSecondary,
+                        color: AppColors.bgSecondary,
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.darkBorder),
+                        border: Border.all(color: AppColors.border),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_rounded,
                         size: 18,
-                        color: AppColors.darkTextPrimary,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -460,7 +460,7 @@ class _TopBar extends StatelessWidget {
               const Spacer(),
               Text(
                 'BEATSYNC',
-                style: AppTheme.micro(color: AppColors.darkTextPrimary)
+                style: AppTheme.micro(color: AppColors.textPrimary)
                     .copyWith(
                   letterSpacing: 3,
                   fontWeight: FontWeight.w700,
@@ -501,7 +501,7 @@ class _TopBar extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: active
                             ? AppColors.brandRed
-                            : AppColors.darkBgTertiary,
+                            : AppColors.bgTertiary,
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -555,7 +555,7 @@ class _PageHeader extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(
             subtitle!,
-            style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+            style: AppTheme.bodyLarge(color: AppColors.textSecondary),
           ),
         ],
         const SizedBox(height: AppSpacing.lg),
@@ -575,7 +575,7 @@ class _FieldLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Text(
         text.toUpperCase(),
-        style: AppTheme.micro(color: AppColors.darkTextSecondary)
+        style: AppTheme.micro(color: AppColors.textSecondary)
             .copyWith(letterSpacing: 1.4),
       ),
     );
@@ -675,17 +675,17 @@ class _PersonalPage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: AppColors.darkBgSecondary,
+                        color: AppColors.bgSecondary,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.darkBorder),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: DropdownButton<Sex>(
                         value: sex,
                         isExpanded: true,
                         underline: const SizedBox(),
-                        icon: const Icon(Icons.expand_more_rounded,
-                            color: AppColors.darkTextSecondary),
-                        dropdownColor: AppColors.darkBgSecondary,
+                        icon: Icon(Icons.expand_more_rounded,
+                            color: AppColors.textSecondary),
+                        dropdownColor: AppColors.bgSecondary,
                         style: AppTheme.bodyLarge(),
                         items: Sex.values
                             .map((s) => DropdownMenuItem(
@@ -748,7 +748,7 @@ class _PersonalPage extends StatelessWidget {
               Tooltip(
                 message: 'Measure lying down in the morning before getting up.',
                 child: Icon(Icons.info_outline_rounded,
-                    size: 14, color: AppColors.darkTextSecondary),
+                    size: 14, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -817,7 +817,7 @@ class _FitnessPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: AppColors.darkBgSecondary,
+              color: AppColors.bgSecondary,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: AppColors.brandRed.withValues(alpha: 0.2),
@@ -857,7 +857,7 @@ class _FitnessPage extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.darkBgTertiary,
+                    color: AppColors.bgTertiary,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -900,10 +900,10 @@ class _FitnessOption extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.brandRed.withValues(alpha: 0.12)
-                : AppColors.darkBgSecondary,
+                : AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: selected ? AppColors.brandRed : AppColors.darkBorder,
+              color: selected ? AppColors.brandRed : AppColors.border,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -914,7 +914,7 @@ class _FitnessOption extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: (selected
                           ? AppColors.brandRed
-                          : AppColors.darkTextSecondary)
+                          : AppColors.textSecondary)
                       .withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -922,7 +922,7 @@ class _FitnessOption extends StatelessWidget {
                   icon,
                   color: selected
                       ? AppColors.brandRed
-                      : AppColors.darkTextSecondary,
+                      : AppColors.textSecondary,
                   size: 22,
                 ),
               ),
@@ -1004,7 +1004,7 @@ class _StrapPage extends StatelessWidget {
                   height: 100,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.darkBgSecondary,
+                    color: AppColors.bgSecondary,
                     border: Border.all(
                       color: (status == _StrapStatus.connected
                               ? AppColors.success
@@ -1062,7 +1062,7 @@ class _StrapPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: AppColors.darkBgSecondary,
+                color: AppColors.bgSecondary,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: AppColors.success.withValues(alpha: 0.4),
@@ -1202,10 +1202,10 @@ class _CapacityChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.brandRed.withValues(alpha: 0.18)
-                : AppColors.darkBgSecondary,
+                : AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected ? AppColors.brandRed : AppColors.darkBorder,
+              color: selected ? AppColors.brandRed : AppColors.border,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -1217,7 +1217,7 @@ class _CapacityChip extends StatelessWidget {
                 style: AppTheme.caption(
                   color: selected
                       ? AppColors.brandRed
-                      : AppColors.darkTextSecondary,
+                      : AppColors.textSecondary,
                 ),
               ),
               Text(
@@ -1226,7 +1226,7 @@ class _CapacityChip extends StatelessWidget {
                   fontSize: 18,
                   color: selected
                       ? AppColors.brandRed
-                      : AppColors.darkTextPrimary,
+                      : AppColors.textPrimary,
                   weight: FontWeight.w700,
                 ).copyWith(height: 1.0),
               ),
@@ -1236,7 +1236,7 @@ class _CapacityChip extends StatelessWidget {
                 style: AppTheme.caption(
                   color: selected
                       ? AppColors.brandRed
-                      : AppColors.darkTextSecondary,
+                      : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -1301,9 +1301,9 @@ class _StudioSuccessPage extends StatelessWidget {
               vertical: AppSpacing.lg,
             ),
             decoration: BoxDecoration(
-              color: AppColors.darkBgSecondary,
+              color: AppColors.bgSecondary,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.darkBorder),
+              border: Border.all(color: AppColors.border),
             ),
             child: Column(
               children: [

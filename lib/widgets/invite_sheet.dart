@@ -37,7 +37,7 @@ class InviteSheet extends StatelessWidget {
                     width: 180,
                     height: 180,
                     decoration: BoxDecoration(
-                      color: AppColors.darkBgPrimary,
+                      color: AppColors.bgPrimary,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.center,
@@ -52,7 +52,7 @@ class InviteSheet extends StatelessWidget {
                     code.split('').join(' '),
                     style: AppTheme.statNumber(
                       fontSize: 32,
-                      color: AppColors.darkBgPrimary,
+                      color: AppColors.bgPrimary,
                     ).copyWith(letterSpacing: 6, fontWeight: FontWeight.w800),
                   ),
                 ],
@@ -72,7 +72,7 @@ class InviteSheet extends StatelessWidget {
   static void show(BuildContext context, {String code = '479321'}) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkBgSecondary,
+      backgroundColor: AppColors.bgSecondary,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),

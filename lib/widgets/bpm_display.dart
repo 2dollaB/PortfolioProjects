@@ -107,7 +107,7 @@ class _BpmDisplayState extends State<BpmDisplay>
               painter: _RingPainter(
                 progress: pct,
                 color: color,
-                trackColor: AppColors.darkBorder,
+                trackColor: AppColors.border,
                 strokeWidth: 10,
               ),
             ),
@@ -124,7 +124,7 @@ class _BpmDisplayState extends State<BpmDisplay>
                     Text(
                       bpm?.toString() ?? '--',
                       style: AppTheme.displayXL(
-                        color: AppColors.darkTextPrimary,
+                        color: AppColors.textPrimary,
                         glow: color,
                       ).copyWith(fontSize: widget.size * 0.32),
                     ),

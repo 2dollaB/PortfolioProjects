@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_colors.dart';
@@ -82,7 +82,7 @@ class _OnboardingTutorialScreenState extends State<OnboardingTutorialScreen> {
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         child: Column(
           children: [
@@ -98,7 +98,7 @@ class _OnboardingTutorialScreenState extends State<OnboardingTutorialScreen> {
                   TextButton(
                     onPressed: _finish,
                     style: TextButton.styleFrom(
-                      foregroundColor: AppColors.darkTextSecondary,
+                      foregroundColor: AppColors.textSecondary,
                     ),
                     child: const Text('Skip'),
                   ),
@@ -132,7 +132,7 @@ class _OnboardingTutorialScreenState extends State<OnboardingTutorialScreen> {
                         decoration: BoxDecoration(
                           color: active
                               ? AppColors.brandRed
-                              : AppColors.darkBgTertiary,
+                              : AppColors.bgTertiary,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       );
@@ -200,7 +200,7 @@ class _SlideView extends StatelessWidget {
                 height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.darkBgSecondary,
+                  color: AppColors.bgSecondary,
                   border: Border.all(
                     color: AppColors.brandRed.withValues(alpha: 0.4),
                     width: 1.5,
@@ -219,7 +219,7 @@ class _SlideView extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             slide.body,
-            style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary)
+            style: AppTheme.bodyLarge(color: AppColors.textSecondary)
                 .copyWith(height: 1.55),
             textAlign: TextAlign.center,
           ),

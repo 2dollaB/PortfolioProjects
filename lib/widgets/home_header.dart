@@ -89,7 +89,7 @@ class HomeHeader extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       subtitle!,
-                      style: AppTheme.caption(color: AppColors.darkTextPrimary)
+                      style: AppTheme.caption(color: AppColors.textPrimary)
                           .copyWith(fontWeight: FontWeight.w500),
                     ),
                   ],

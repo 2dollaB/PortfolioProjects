@@ -112,7 +112,7 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-        backgroundColor: AppColors.darkBgPrimary,
+        backgroundColor: AppColors.bgPrimary,
         body: SafeArea(
           child: StreamBuilder<CloudSession?>(
             stream: _stream,
@@ -148,7 +148,7 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       '${session.name} · ${session.typeLabel}',
-                      style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+                      style: AppTheme.bodyLarge(color: AppColors.textSecondary),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: AppSpacing.md),

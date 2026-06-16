@@ -78,7 +78,7 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-        backgroundColor: AppColors.darkBgPrimary,
+        backgroundColor: AppColors.bgPrimary,
         appBar: AppBar(
           title: const Text('Join a studio'),
           leading: IconButton(
@@ -99,7 +99,7 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   "Your trainer shares a 6-digit code to join their studio.",
-                  style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+                  style: AppTheme.bodyLarge(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 TextField(

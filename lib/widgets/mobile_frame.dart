@@ -16,13 +16,14 @@ class MobileFrame extends StatelessWidget {
   final double maxWidth;
 
   /// Background colour shown in the side gutters on desktop.
-  final Color gutterColor;
+  /// Null → the theme-aware [AppColors.bgPrimary].
+  final Color? gutterColor;
 
   const MobileFrame({
     super.key,
     required this.child,
     this.maxWidth = 560,
-    this.gutterColor = AppColors.darkBgPrimary,
+    this.gutterColor,
   });
 
   @override
@@ -31,7 +32,7 @@ class MobileFrame extends StatelessWidget {
       builder: (context, constraints) {
         if (constraints.maxWidth <= maxWidth) return child;
         return Container(
-          color: gutterColor,
+          color: gutterColor ?? AppColors.bgPrimary,
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth),

@@ -97,7 +97,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
   void _showDemoInviteSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkBgSecondary,
+      backgroundColor: AppColors.bgSecondary,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
@@ -121,7 +121,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
                 horizontal: AppSpacing.lg, vertical: AppSpacing.md,
               ),
               decoration: BoxDecoration(
-                color: AppColors.darkBgPrimary,
+                color: AppColors.bgPrimary,
                 borderRadius: BorderRadius.circular(AppRadius.lg),
                 border: Border.all(color: AppColors.brandRed.withValues(alpha: 0.3)),
               ),
@@ -278,7 +278,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
   }) {
     return MobileFrame(
       child: Scaffold(
-        backgroundColor: AppColors.darkBgPrimary,
+        backgroundColor: AppColors.bgPrimary,
         floatingActionButton: onInvite == null
             ? null
             : FloatingActionButton.extended(
@@ -406,16 +406,16 @@ class _FilterChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.brandRed.withValues(alpha: 0.15)
-                : AppColors.darkBgSecondary,
+                : AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(AppRadius.pill),
             border: Border.all(
-              color: selected ? AppColors.brandRed : AppColors.darkBorder,
+              color: selected ? AppColors.brandRed : AppColors.border,
             ),
           ),
           child: Text(
             label,
             style: AppTheme.caption(
-              color: selected ? AppColors.brandRed : AppColors.darkTextSecondary,
+              color: selected ? AppColors.brandRed : AppColors.textSecondary,
             ).copyWith(
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               fontSize: 13,
@@ -453,9 +453,9 @@ class _MemberRow extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: AppColors.darkBgSecondary,
+            color: AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             children: [
@@ -489,7 +489,7 @@ class _MemberRow extends StatelessWidget {
                           color: AppColors.success,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppColors.darkBgSecondary,
+                            color: AppColors.bgSecondary,
                             width: 2,
                           ),
                         ),
@@ -510,15 +510,15 @@ class _MemberRow extends StatelessWidget {
                       style: AppTheme.caption(
                         color: active
                             ? AppColors.success
-                            : AppColors.darkTextSecondary,
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
               ),
               if (onTap != null)
-                const Icon(Icons.arrow_forward_ios_rounded,
-                    size: 12, color: AppColors.darkTextTertiary),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    size: 12, color: AppColors.textTertiary),
             ],
           ),
         ),

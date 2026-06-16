@@ -99,14 +99,14 @@ class _StudioAnalyticsScreenState extends State<StudioAnalyticsScreen> {
           Text('Analytics', style: AppTheme.h1().copyWith(fontSize: 26)),
           const SizedBox(height: AppSpacing.xs),
           Text('Last 8 weeks',
-              style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary)),
+              style: AppTheme.bodyLarge(color: AppColors.textSecondary)),
         ],
       );
 
   Widget _loading(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-        backgroundColor: AppColors.darkBgPrimary,
+        backgroundColor: AppColors.bgPrimary,
         body: SafeArea(
           bottom: false,
           child: Padding(
@@ -131,7 +131,7 @@ class _StudioAnalyticsScreenState extends State<StudioAnalyticsScreen> {
   Widget _content(BuildContext context, _Analytics a) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         bottom: false,
         child: ListView(
@@ -280,9 +280,9 @@ class _ChartCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
+        color: AppColors.bgSecondary,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,7 +458,7 @@ class _TopList extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: i == 0
                         ? AppColors.brandRed.withValues(alpha: 0.18)
-                        : AppColors.darkBgTertiary,
+                        : AppColors.bgTertiary,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   alignment: Alignment.center,
@@ -466,7 +466,7 @@ class _TopList extends StatelessWidget {
                     '${i + 1}',
                     style: AppTheme.micro(
                       color:
-                          i == 0 ? AppColors.brandRed : AppColors.darkTextPrimary,
+                          i == 0 ? AppColors.brandRed : AppColors.textPrimary,
                     ).copyWith(fontWeight: FontWeight.w700, fontSize: 11),
                   ),
                 ),
@@ -479,7 +479,7 @@ class _TopList extends StatelessWidget {
             ),
           ),
           if (i < items.length - 1)
-            const Divider(color: AppColors.darkBorder, height: 1),
+            Divider(color: AppColors.border, height: 1),
         ],
       ],
     );

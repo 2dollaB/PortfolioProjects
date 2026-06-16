@@ -30,7 +30,7 @@ class SessionStatusBanner extends StatelessWidget {
       case SessionPhase.rest:
         return AppColors.success;
       case SessionPhase.idle:
-        return AppColors.darkBgTertiary;
+        return AppColors.bgTertiary;
     }
   }
 
@@ -55,7 +55,7 @@ class SessionStatusBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final onColor = phase == SessionPhase.idle
-        ? AppColors.darkTextPrimary
+        ? AppColors.textPrimary
         : Colors.white;
     return Container(
       width: double.infinity,

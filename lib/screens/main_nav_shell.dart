@@ -154,7 +154,7 @@ class _MainNavShellState extends State<MainNavShell> {
         await _onWillPop();
       },
       child: Scaffold(
-        backgroundColor: AppColors.darkBgPrimary,
+        backgroundColor: AppColors.bgPrimary,
         body: IndexedStack(
           index: _index,
           children: [
@@ -169,8 +169,8 @@ class _MainNavShellState extends State<MainNavShell> {
           ],
         ),
         bottomNavigationBar: Container(
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: AppColors.darkBorder)),
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: AppColors.border)),
           ),
           child: NavigationBar(
             selectedIndex: _index,

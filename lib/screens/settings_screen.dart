@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
@@ -13,8 +13,15 @@ import '../services/studio_repository.dart';
 import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/home_header.dart';
+import '../main.dart';
 import 'device_pairing_screen.dart';
 import 'edit_profile_screen.dart';
+import 'health_data_screen.dart';
+import 'help_faq_screen.dart';
+import 'join_studio_screen.dart';
+import 'legal_doc_screen.dart';
+import 'studio_detail_screen.dart';
+import 'subscription_screen.dart';
 
 /// Athlete profile + settings â€” stats overview, then grouped settings sections.
 class SettingsScreen extends StatefulWidget {
@@ -48,6 +55,113 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }).catchError((_) {});
   }
 
+  String get _themeModeLabel {
+    switch (BeatSyncApp.appKey.currentState?.themeMode ?? ThemeMode.dark) {
+      case ThemeMode.light:
+        return 'Light';
+      case ThemeMode.dark:
+        return 'Dark';
+      case ThemeMode.system:
+        return 'System';
+    }
+  }
+
+  void _setThemeMode(ThemeMode mode) {
+    BeatSyncApp.appKey.currentState?.setThemeMode(mode);
+    if (mounted) setState(() {}); // refresh the trailing label
+  }
+
+  void _showAppearanceSheet() {
+    final current =
+        BeatSyncApp.appKey.currentState?.themeMode ?? ThemeMode.dark;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.bgSecondary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: AppSpacing.sm),
+            for (final opt in const [
+              (ThemeMode.light, 'Light', Icons.light_mode_outlined),
+              (ThemeMode.dark, 'Dark', Icons.dark_mode_outlined),
+              (ThemeMode.system, 'System', Icons.brightness_auto_outlined),
+            ])
+              ListTile(
+                leading: Icon(opt.$3, color: AppColors.textSecondary),
+                title: Text(opt.$2, style: AppTheme.bodyLarge()),
+                trailing: current == opt.$1
+                    ? const Icon(Icons.check_rounded, color: AppColors.brandRed)
+                    : null,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _setThemeMode(opt.$1);
+                },
+              ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLanguageSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.bgSecondary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: AppSpacing.sm),
+            ListTile(
+              leading: const Icon(Icons.check_rounded, color: AppColors.brandRed),
+              title: Text('English', style: AppTheme.bodyLarge()),
+              onTap: () => Navigator.of(ctx).pop(),
+            ),
+            ListTile(
+              enabled: false,
+              leading: Icon(Icons.translate_rounded,
+                  color: AppColors.textTertiary),
+              title: Text('Hrvatski',
+                  style: AppTheme.bodyLarge(color: AppColors.textTertiary)),
+              trailing: Text('Coming soon', style: AppTheme.caption()),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openStudio(UserProfile p) {
+    final sid = _studio?.id ?? p.studioId;
+    Navigator.of(context)
+        .push(MaterialPageRoute(
+          builder: (_) => sid != null
+              ? StudioDetailScreen(studioId: sid)
+              : const JoinStudioScreen(),
+        ))
+        .then((_) => _reloadStudio());
+  }
+
+  void _reloadStudio() {
+    final sid = widget.profile?.studioId;
+    if (sid == null) {
+      if (mounted) setState(() => _studio = null);
+      return;
+    }
+    StudioRepository.load(sid).then((s) {
+      if (mounted) setState(() => _studio = s);
+    }).catchError((_) {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = widget.profile ?? MockData.athleteProfile;
@@ -70,7 +184,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final canPop = Navigator.canPop(context);
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         bottom: false,
         child: ListView(
@@ -92,13 +206,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.darkBgSecondary,
+                          color: AppColors.bgSecondary,
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.darkBorder),
+                          border: Border.all(color: AppColors.border),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back_rounded,
-                          color: AppColors.darkTextPrimary,
+                          color: AppColors.textPrimary,
                           size: 20,
                         ),
                       ),
@@ -110,9 +224,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: AppColors.darkBgSecondary,
+                color: AppColors.bgSecondary,
                 borderRadius: BorderRadius.circular(AppRadius.xl),
-                border: Border.all(color: AppColors.darkBorder),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [
@@ -191,9 +305,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-              const _SettingItem(
+              _SettingItem(
                 icon: Icons.favorite_outline_rounded,
                 label: 'Health data',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => HealthDataScreen(profile: p),
+                  ),
+                ),
               ),
               _SettingItem(
                 icon: Icons.bluetooth_rounded,
@@ -212,11 +331,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ]),
 
-            _Section(title: 'App', items: const [
-              _SettingItem(icon: Icons.notifications_none_rounded, label: 'Notifications'),
-              _SettingItem(icon: Icons.dark_mode_outlined, label: 'Appearance', trailing: 'Dark'),
-              _SettingItem(icon: Icons.language_rounded, label: 'Language', trailing: 'English'),
-              _SettingItem(icon: Icons.straighten_rounded, label: 'Units', trailing: 'Metric'),
+            _Section(title: 'App', items: [
+              _SettingItem(
+                icon: Icons.dark_mode_outlined,
+                label: 'Appearance',
+                trailing: _themeModeLabel,
+                onTap: _showAppearanceSheet,
+              ),
+              _SettingItem(
+                icon: Icons.language_rounded,
+                label: 'Language',
+                trailing: 'English',
+                onTap: _showLanguageSheet,
+              ),
             ]),
 
             _Section(title: 'Studio', items: [
@@ -227,17 +354,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ? (_studio?.name ??
                         (p.studioId == null ? 'None yet' : '–'))
                     : 'Pulse Studio',
+                onTap: _production ? () => _openStudio(p) : null,
               ),
-              const _SettingItem(
-                  icon: Icons.workspace_premium_outlined,
-                  label: 'Subscription',
-                  trailing: 'Free'),
+              _SettingItem(
+                icon: Icons.workspace_premium_outlined,
+                label: 'Subscription',
+                trailing: 'Free',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+                ),
+              ),
             ]),
 
-            _Section(title: 'Support', items: const [
-              _SettingItem(icon: Icons.help_outline_rounded, label: 'Help & FAQ'),
-              _SettingItem(icon: Icons.shield_outlined, label: 'Privacy policy'),
-              _SettingItem(icon: Icons.description_outlined, label: 'Terms of service'),
+            _Section(title: 'Support', items: [
+              _SettingItem(
+                icon: Icons.help_outline_rounded,
+                label: 'Help & FAQ',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const HelpFaqScreen()),
+                ),
+              ),
+              _SettingItem(
+                icon: Icons.shield_outlined,
+                label: 'Privacy policy',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => LegalDocScreen.privacy()),
+                ),
+              ),
+              _SettingItem(
+                icon: Icons.description_outlined,
+                label: 'Terms of service',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => LegalDocScreen.terms()),
+                ),
+              ),
             ]),
 
             const SizedBox(height: AppSpacing.lg),
@@ -278,9 +428,9 @@ class _StatBlock extends StatelessWidget {
         horizontal: AppSpacing.sm, vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
+        color: AppColors.bgSecondary,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         children: [
@@ -316,17 +466,17 @@ class _Section extends StatelessWidget {
           ),
           Container(
             decoration: BoxDecoration(
-              color: AppColors.darkBgSecondary,
+              color: AppColors.bgSecondary,
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: AppColors.darkBorder),
+              border: Border.all(color: AppColors.border),
             ),
             child: Column(
               children: [
                 for (int i = 0; i < items.length; i++) ...[
                   items[i],
                   if (i < items.length - 1)
-                    const Divider(
-                      color: AppColors.darkBorder,
+                    Divider(
+                      color: AppColors.border,
                       height: 1,
                       indent: 52,
                     ),
@@ -364,17 +514,17 @@ class _SettingItem extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: AppColors.darkTextSecondary),
+              Icon(icon, size: 20, color: AppColors.textSecondary),
               const SizedBox(width: AppSpacing.sm),
               Expanded(child: Text(label, style: AppTheme.bodyLarge())),
               if (trailing != null) ...[
                 Text(trailing!, style: AppTheme.caption()),
                 const SizedBox(width: AppSpacing.xs),
               ],
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 12,
-                color: AppColors.darkTextTertiary,
+                color: AppColors.textTertiary,
               ),
             ],
           ),

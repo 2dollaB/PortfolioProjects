@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
@@ -84,7 +84,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
 
     return MobileFrame(
       child: Scaffold(
-        backgroundColor: AppColors.darkBgPrimary,
+        backgroundColor: AppColors.bgPrimary,
         appBar: AppBar(
           title: const Text('Join session'),
           leading: IconButton(
@@ -128,7 +128,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
   Widget _buildDemo(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       appBar: AppBar(
         title: const Text('Join session'),
         leading: IconButton(
@@ -149,7 +149,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 'Hold your phone steady â€” we connect automatically.',
-                style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+                style: AppTheme.bodyLarge(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.lg),
               Expanded(child: _ScannerStage(active: _scanning)),
@@ -158,7 +158,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
                 children: [
                   Expanded(
                       child: Divider(
-                          color: AppColors.darkBorder.withValues(alpha: 0.6))),
+                          color: AppColors.border.withValues(alpha: 0.6))),
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
@@ -166,7 +166,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
                   ),
                   Expanded(
                       child: Divider(
-                          color: AppColors.darkBorder.withValues(alpha: 0.6))),
+                          color: AppColors.border.withValues(alpha: 0.6))),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
@@ -220,13 +220,13 @@ class _NoLiveSession extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: AppColors.darkBgSecondary,
+              color: AppColors.bgSecondary,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.darkBorder),
+              border: Border.all(color: AppColors.border),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.podcasts_rounded,
-              color: AppColors.darkTextSecondary,
+              color: AppColors.textSecondary,
               size: 32,
             ),
           ),
@@ -261,9 +261,9 @@ class _LiveSessionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color: AppColors.darkBgSecondary,
+          color: AppColors.bgSecondary,
           borderRadius: BorderRadius.circular(AppRadius.xl),
-          border: Border.all(color: AppColors.darkBorder),
+          border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
               color: AppColors.brandRed.withValues(alpha: 0.12),
@@ -301,7 +301,7 @@ class _LiveSessionCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               '${session.typeLabel} · $startedLabel',
-              style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+              style: AppTheme.bodyLarge(color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.lg),
             BeatPrimaryButton(
@@ -324,9 +324,9 @@ class _ScannerStage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
+        color: AppColors.bgSecondary,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
       ),
       child: Stack(
         alignment: Alignment.center,

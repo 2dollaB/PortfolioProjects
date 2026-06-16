@@ -66,7 +66,7 @@ class TrainerHomeScreen extends StatelessWidget {
     final production = studioId != null;
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         bottom: false,
         child: ListView(
@@ -290,9 +290,9 @@ class _CloudRecentSessions extends StatelessWidget {
           return Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.darkBgSecondary,
+              color: AppColors.bgSecondary,
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: AppColors.darkBorder),
+              border: Border.all(color: AppColors.border),
             ),
             child: Center(
               child: Text(
@@ -356,9 +356,9 @@ class _CloudSessionRow extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: AppColors.darkBgSecondary,
+            color: AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             children: [
@@ -440,9 +440,9 @@ class _RecentSessionsList extends StatelessWidget {
           return Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.darkBgSecondary,
+              color: AppColors.bgSecondary,
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: AppColors.darkBorder),
+              border: Border.all(color: AppColors.border),
             ),
             child: Center(
               child: Text(
@@ -469,9 +469,9 @@ class _RecentSessionsList extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: AppColors.darkBgSecondary,
+                        color: AppColors.bgSecondary,
                         borderRadius: BorderRadius.circular(AppRadius.lg),
-                        border: Border.all(color: AppColors.darkBorder),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: Row(
                         children: [
@@ -516,10 +516,10 @@ class _RecentSessionsList extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(width: AppSpacing.xs),
-                          const Icon(
+                          Icon(
                             Icons.arrow_forward_ios_rounded,
                             size: 12,
-                            color: AppColors.darkTextTertiary,
+                            color: AppColors.textTertiary,
                           ),
                         ],
                       ),
@@ -551,9 +551,9 @@ class _LiveSessionHero extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
+        color: AppColors.bgSecondary,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
             color: AppColors.brandRed.withValues(alpha: 0.12),
@@ -590,7 +590,7 @@ class _LiveSessionHero extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(
             subtitle,
-            style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+            style: AppTheme.bodyLarge(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.md),
           BeatPrimaryButton(
@@ -614,9 +614,9 @@ class _NoSessionHero extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
+        color: AppColors.bgSecondary,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -648,7 +648,7 @@ class _NoSessionHero extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(
             "Pick the type, set intervals, share the code — and you're live.",
-            style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+            style: AppTheme.bodyLarge(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.md),
           BeatPrimaryButton(

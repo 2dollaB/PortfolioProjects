@@ -42,6 +42,20 @@ service cloud.firestore {
         && !(request.auth.uid in current.memberUids);
     }
 
+    // The mirror of isSelfJoin: an athlete may remove ONLY themselves from a
+    // studio's memberUids (leave flow). incoming must be a subset of current
+    // (no additions), exactly one uid shorter, and the dropped uid is the
+    // caller — so a member can't remove anyone else.
+    function isSelfLeave() {
+      let incoming = request.resource.data;
+      let current = resource.data;
+      return incoming.diff(current).affectedKeys().hasOnly(['memberUids'])
+        && current.memberUids.hasAll(incoming.memberUids)
+        && incoming.memberUids.size() == current.memberUids.size() - 1
+        && (request.auth.uid in current.memberUids)
+        && !(request.auth.uid in incoming.memberUids);
+    }
+
     // The requester owns the studio this user's profile says they belong to.
     // Members set their own studioId at join time, so this only exposes a
     // profile to the trainer the user actually joined.
@@ -68,7 +82,9 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && request.resource.data.ownerUid == request.auth.uid;
       allow update: if isSignedIn()
-        && (resource.data.ownerUid == request.auth.uid || isSelfJoin());
+        && (resource.data.ownerUid == request.auth.uid
+            || isSelfJoin()
+            || isSelfLeave());
       allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
       // TODO(Phase D): CEO suspend/restore via suspendStudio Cloud Function only.
     }

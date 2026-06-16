@@ -167,11 +167,11 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkBgSecondary,
+        backgroundColor: AppColors.bgSecondary,
         title: Text('Remove $name?'),
         content: Text(
           "They'll be dropped from the session and can't rejoin it.",
-          style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+          style: AppTheme.bodyLarge(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -341,7 +341,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
         sorted.where((a) => a.hrMax > 0 && a.bpm / a.hrMax >= 0.8).length;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         child: _runState == 'lobby'
             ? _buildLobby(context, sorted)
@@ -360,17 +360,17 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm,
           ),
-          decoration: const BoxDecoration(
-            color: AppColors.darkBgPrimary,
-            border: Border(bottom: BorderSide(color: AppColors.darkBorder)),
+          decoration: BoxDecoration(
+            color: AppColors.bgPrimary,
+            border: Border(bottom: BorderSide(color: AppColors.border)),
           ),
           child: Row(
             children: [
               GlassPill(
                 padding: const EdgeInsets.all(8),
                 onTap: () => Navigator.of(context).pop(),
-                child: const Icon(Icons.arrow_back_rounded,
-                    color: AppColors.darkTextPrimary, size: 20),
+                child: Icon(Icons.arrow_back_rounded,
+                    color: AppColors.textPrimary, size: 20),
               ),
               const SizedBox(width: AppSpacing.xs),
               Expanded(
@@ -390,8 +390,8 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
               GlassPill(
                 padding: const EdgeInsets.all(8),
                 onTap: _showQrModal,
-                child: const Icon(Icons.qr_code_rounded,
-                    color: AppColors.darkTextPrimary, size: 20),
+                child: Icon(Icons.qr_code_rounded,
+                    color: AppColors.textPrimary, size: 20),
               ),
             ],
           ),
@@ -430,9 +430,9 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
         ),
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: const BoxDecoration(
-            color: AppColors.darkBgPrimary,
-            border: Border(top: BorderSide(color: AppColors.darkBorder)),
+          decoration: BoxDecoration(
+            color: AppColors.bgPrimary,
+            border: Border(top: BorderSide(color: AppColors.border)),
           ),
           child: BeatPrimaryButton(
             label: 'Start training',
@@ -522,11 +522,11 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkBgSecondary,
+        backgroundColor: AppColors.bgSecondary,
         title: const Text('End session?'),
         content: Text(
           'This ends the workout for everyone and shows the results.',
-          style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+          style: AppTheme.bodyLarge(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -596,10 +596,10 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.xs,
           ),
-          decoration: const BoxDecoration(
-            color: AppColors.darkBgPrimary,
+          decoration: BoxDecoration(
+            color: AppColors.bgPrimary,
             border: Border(
-              bottom: BorderSide(color: AppColors.darkBorder),
+              bottom: BorderSide(color: AppColors.border),
             ),
           ),
           child: Column(
@@ -609,9 +609,9 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
                   GlassPill(
                     padding: const EdgeInsets.all(8),
                     onTap: () => Navigator.of(context).pop(),
-                    child: const Icon(
+                    child: Icon(
                       Icons.arrow_back_rounded,
-                      color: AppColors.darkTextPrimary,
+                      color: AppColors.textPrimary,
                       size: 20,
                     ),
                   ),
@@ -627,9 +627,9 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
                   GlassPill(
                     padding: const EdgeInsets.all(8),
                     onTap: _showQrModal,
-                    child: const Icon(
+                    child: Icon(
                       Icons.qr_code_rounded,
-                      color: AppColors.darkTextPrimary,
+                      color: AppColors.textPrimary,
                       size: 20,
                     ),
                   ),
@@ -681,9 +681,9 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
         ),
         Container(
           padding: const EdgeInsets.all(AppSpacing.xs),
-          decoration: const BoxDecoration(
-            color: AppColors.darkBgPrimary,
-            border: Border(top: BorderSide(color: AppColors.darkBorder)),
+          decoration: BoxDecoration(
+            color: AppColors.bgPrimary,
+            border: Border(top: BorderSide(color: AppColors.border)),
           ),
           child: Column(
             children: [
@@ -723,9 +723,9 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
               GlassPill(
                 padding: const EdgeInsets.all(8),
                 onTap: () => Navigator.of(context).pop(),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_back_rounded,
-                  color: AppColors.darkTextPrimary,
+                  color: AppColors.textPrimary,
                   size: 22,
                 ),
               ),
@@ -783,9 +783,9 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
               GlassPill(
                 padding: const EdgeInsets.all(8),
                 onTap: _showQrModal,
-                child: const Icon(
+                child: Icon(
                   Icons.qr_code_rounded,
-                  color: AppColors.darkTextPrimary,
+                  color: AppColors.textPrimary,
                   size: 22,
                 ),
               ),
@@ -837,9 +837,9 @@ class _LobbyRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
+        color: AppColors.bgSecondary,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
@@ -872,12 +872,12 @@ class _LobbyRow extends StatelessWidget {
           Text(
             ready ? 'Ready' : '${athlete.bpm} bpm',
             style: AppTheme.caption(
-              color: ready ? AppColors.success : AppColors.darkTextSecondary,
+              color: ready ? AppColors.success : AppColors.textSecondary,
             ),
           ),
           IconButton(
             icon: const Icon(Icons.person_remove_alt_1_rounded, size: 20),
-            color: AppColors.darkTextTertiary,
+            color: AppColors.textTertiary,
             tooltip: 'Remove',
             onPressed: () => onKick(athlete.id, athlete.name),
           ),
@@ -914,7 +914,7 @@ class _SortChip extends StatelessWidget {
           style: AppTheme.caption(
             color: selected
                 ? AppColors.brandRed
-                : AppColors.darkTextSecondary,
+                : AppColors.textSecondary,
           ).copyWith(fontWeight: FontWeight.w700, fontSize: 12),
         ),
       ),

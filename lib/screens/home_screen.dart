@@ -67,7 +67,7 @@ class HomeScreen extends StatelessWidget {
   Widget _buildHome(BuildContext context, List<WorkoutSummary>? workouts) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(
@@ -211,7 +211,7 @@ class _HeroCard extends StatelessWidget {
             Color(0xFF16161A),
           ],
         ),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
             color: AppColors.brandRed.withValues(alpha: 0.12),
@@ -251,26 +251,26 @@ class _HeroCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(
             "We'll connect your HR strap and pick up where you left off.",
-            style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+            style: AppTheme.bodyLarge(color: AppColors.textSecondary),
           ),
           if (last != null) ...[
             const SizedBox(height: AppSpacing.md),
             Container(
               padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
-                color: AppColors.darkBgPrimary.withValues(alpha: 0.6),
+                color: AppColors.bgPrimary.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.darkBorder),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.history_rounded,
-                      size: 16, color: AppColors.darkTextSecondary),
+                  Icon(Icons.history_rounded,
+                      size: 16, color: AppColors.textSecondary),
                   const SizedBox(width: AppSpacing.xs),
                   Text('Last session · ', style: AppTheme.caption()),
                   Text(last.dateLabel,
                       style:
-                          AppTheme.caption(color: AppColors.darkTextPrimary)),
+                          AppTheme.caption(color: AppColors.textPrimary)),
                   const Spacer(),
                   Text('${last.avgHr} ',
                       style: AppTheme.statNumber(fontSize: 14)),
@@ -355,9 +355,9 @@ class _RecentList extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color: AppColors.darkBgSecondary,
+          color: AppColors.bgSecondary,
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.darkBorder),
+          border: Border.all(color: AppColors.border),
         ),
         child: Center(
           child: Text(
@@ -394,9 +394,9 @@ class _WorkoutRow extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: AppColors.darkBgSecondary,
+            color: AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             children: [
@@ -481,7 +481,7 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? AppColors.darkTextSecondary;
+    final c = color ?? AppColors.textSecondary;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -536,8 +536,8 @@ class _JoinStudioCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.darkTextSecondary),
+              Icon(Icons.chevron_right_rounded,
+                  color: AppColors.textSecondary),
             ],
           ),
         ),
@@ -564,9 +564,9 @@ class _JoinSessionCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: AppColors.darkBgSecondary,
+            color: AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             children: [
@@ -595,8 +595,8 @@ class _JoinSessionCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded,
-                  size: 14, color: AppColors.darkTextSecondary),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  size: 14, color: AppColors.textSecondary),
             ],
           ),
         ),

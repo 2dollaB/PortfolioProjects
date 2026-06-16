@@ -73,7 +73,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
     final uid = AuthService.currentUid;
     return MobileFrame(
       child: Scaffold(
-        backgroundColor: AppColors.darkBgPrimary,
+        backgroundColor: AppColors.bgPrimary,
         appBar: AppBar(
           title: const Text('History'),
           leading: IconButton(
@@ -106,7 +106,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                         horizontal: 6,
                         vertical: 10,
                       ),
-                      color: AppColors.darkBorder,
+                      color: AppColors.border,
                     ),
                     for (final t in _typeFilters) ...[
                       _FilterChip(
@@ -120,7 +120,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                   ],
                 ),
               ),
-              const Divider(color: AppColors.darkBorder, height: 1),
+              Divider(color: AppColors.border, height: 1),
               Expanded(
                 child: uid == null
                     ? _buildList(MockData.recentSummaries())
@@ -178,10 +178,10 @@ class _FilterChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.brandRed.withValues(alpha: 0.15)
-                : AppColors.darkBgSecondary,
+                : AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(AppRadius.pill),
             border: Border.all(
-              color: selected ? AppColors.brandRed : AppColors.darkBorder,
+              color: selected ? AppColors.brandRed : AppColors.border,
             ),
           ),
           child: Text(
@@ -189,7 +189,7 @@ class _FilterChip extends StatelessWidget {
             style: AppTheme.caption(
               color: selected
                   ? AppColors.brandRed
-                  : AppColors.darkTextSecondary,
+                  : AppColors.textSecondary,
             ).copyWith(
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               fontSize: 13,
@@ -211,9 +211,9 @@ class _HistoryRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
+        color: AppColors.bgSecondary,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

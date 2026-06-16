@@ -57,7 +57,7 @@ class _StudioCreationScreenState extends State<StudioCreationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         child: _created ? _buildSuccess() : _buildForm(),
       ),
@@ -79,7 +79,7 @@ class _StudioCreationScreenState extends State<StudioCreationScreen> {
             const SizedBox(height: AppSpacing.xs),
             Text(
               'This is where your athletes will join you.',
-              style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+              style: AppTheme.bodyLarge(color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.xl),
             _label('Studio name'),
@@ -187,9 +187,9 @@ class _StudioCreationScreenState extends State<StudioCreationScreen> {
               vertical: AppSpacing.lg,
             ),
             decoration: BoxDecoration(
-              color: AppColors.darkBgSecondary,
+              color: AppColors.bgSecondary,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.darkBorder),
+              border: Border.all(color: AppColors.border),
             ),
             child: Column(
               children: [
@@ -231,7 +231,7 @@ class _StudioCreationScreenState extends State<StudioCreationScreen> {
         padding: const EdgeInsets.only(bottom: AppSpacing.xs),
         child: Text(
           t.toUpperCase(),
-          style: AppTheme.micro(color: AppColors.darkTextSecondary)
+          style: AppTheme.micro(color: AppColors.textSecondary)
               .copyWith(letterSpacing: 1.4),
         ),
       );
@@ -262,10 +262,10 @@ class _CapacityChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.brandRed.withValues(alpha: 0.18)
-                : AppColors.darkBgSecondary,
+                : AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected ? AppColors.brandRed : AppColors.darkBorder,
+              color: selected ? AppColors.brandRed : AppColors.border,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -277,7 +277,7 @@ class _CapacityChip extends StatelessWidget {
                 style: AppTheme.caption(
                   color: selected
                       ? AppColors.brandRed
-                      : AppColors.darkTextSecondary,
+                      : AppColors.textSecondary,
                 ),
               ),
               Text(
@@ -285,7 +285,7 @@ class _CapacityChip extends StatelessWidget {
                 style: AppTheme.statNumber(
                   fontSize: 18,
                   color:
-                      selected ? AppColors.brandRed : AppColors.darkTextPrimary,
+                      selected ? AppColors.brandRed : AppColors.textPrimary,
                   weight: FontWeight.w700,
                 ).copyWith(height: 1.0),
               ),
@@ -295,7 +295,7 @@ class _CapacityChip extends StatelessWidget {
                 style: AppTheme.caption(
                   color: selected
                       ? AppColors.brandRed
-                      : AppColors.darkTextSecondary,
+                      : AppColors.textSecondary,
                 ),
               ),
             ],

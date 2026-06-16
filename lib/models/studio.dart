@@ -3,6 +3,7 @@
 class Studio {
   final String id;
   final String name;
+  final String? location;
   final String ownerUid;
   final String inviteCode;
   final List<String> memberUids;
@@ -11,6 +12,7 @@ class Studio {
   const Studio({
     required this.id,
     required this.name,
+    this.location,
     required this.ownerUid,
     required this.inviteCode,
     required this.memberUids,
@@ -25,6 +27,7 @@ class Studio {
     return Studio(
       id: id,
       name: d['name'] as String? ?? 'My Studio',
+      location: d['location'] as String?,
       ownerUid: d['ownerUid'] as String? ?? '',
       inviteCode: d['inviteCode'] as String? ?? '',
       memberUids:

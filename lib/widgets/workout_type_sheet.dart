@@ -68,7 +68,7 @@ class WorkoutTypeSheet {
   static Future<WorkoutType?> show(BuildContext context) {
     return showModalBottomSheet<WorkoutType>(
       context: context,
-      backgroundColor: AppColors.darkBgSecondary,
+      backgroundColor: AppColors.bgSecondary,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -101,7 +101,7 @@ class _WorkoutTypeSheetContent extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.darkBgTertiary,
+                  color: AppColors.bgTertiary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -143,9 +143,9 @@ class _TypeOption extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: AppColors.darkBgPrimary,
+            color: AppColors.bgPrimary,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             children: [
@@ -172,10 +172,10 @@ class _TypeOption extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 14,
-                color: AppColors.darkTextSecondary,
+                color: AppColors.textSecondary,
               ),
             ],
           ),

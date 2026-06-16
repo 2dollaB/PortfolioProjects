@@ -54,7 +54,7 @@ void main() async {
   ));
 
   ThemeMode initialThemeMode = ThemeMode.dark;
-  if (!FeatureFlags.prototypeMode && !kIsWeb) {
+  if (!FeatureFlags.prototypeMode) {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString('theme_mode');
     initialThemeMode = saved == 'light'
@@ -63,8 +63,24 @@ void main() async {
             ? ThemeMode.system
             : ThemeMode.dark;
   }
+  // Keep the color tokens in sync with the chosen mode before the first build,
+  // so screens that read AppColors' semantic getters render the right palette.
+  AppColors.brightness = brightnessForMode(initialThemeMode);
 
   runApp(BeatSyncApp(initialThemeMode: initialThemeMode));
+}
+
+/// Resolves a [ThemeMode] to the concrete [Brightness] the UI should paint with
+/// (system follows the platform). Used to keep [AppColors.brightness] current.
+Brightness brightnessForMode(ThemeMode mode) {
+  switch (mode) {
+    case ThemeMode.light:
+      return Brightness.light;
+    case ThemeMode.dark:
+      return Brightness.dark;
+    case ThemeMode.system:
+      return WidgetsBinding.instance.platformDispatcher.platformBrightness;
+  }
 }
 
 class BeatSyncApp extends StatefulWidget {
@@ -81,8 +97,19 @@ class BeatSyncApp extends StatefulWidget {
 class BeatSyncAppState extends State<BeatSyncApp> {
   late ThemeMode _themeMode = widget.initialThemeMode;
 
+  /// Current theme mode — read by the Settings appearance row.
+  ThemeMode get themeMode => _themeMode;
+
   void setThemeMode(ThemeMode mode) {
+    AppColors.brightness = brightnessForMode(mode);
     setState(() => _themeMode = mode);
+    final name = switch (mode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      ThemeMode.system => 'system',
+    };
+    SharedPreferences.getInstance()
+        .then((p) => p.setString('theme_mode', name));
   }
 
   @override
@@ -250,9 +277,9 @@ class _LoadingScaffold extends StatelessWidget {
   const _LoadingScaffold();
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-        backgroundColor: AppColors.darkBgPrimary,
-        body: Center(child: CircularProgressIndicator()),
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: AppColors.bgPrimary,
+        body: const Center(child: CircularProgressIndicator()),
       );
 }
 

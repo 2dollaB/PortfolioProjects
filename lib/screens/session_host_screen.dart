@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
@@ -107,7 +107,7 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       appBar: AppBar(
         title: const Text('Start session'),
         leading: IconButton(
@@ -149,9 +149,9 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppColors.darkBgSecondary,
+                      color: AppColors.bgSecondary,
                       borderRadius: BorderRadius.circular(AppRadius.lg),
-                      border: Border.all(color: AppColors.darkBorder),
+                      border: Border.all(color: AppColors.border),
                     ),
                     child: Column(
                       children: [
@@ -180,7 +180,7 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
                         ),
                         if (_intervals) ...[
                           const SizedBox(height: AppSpacing.md),
-                          const Divider(color: AppColors.darkBorder),
+                          Divider(color: AppColors.border),
                           const SizedBox(height: AppSpacing.md),
                           Row(
                             children: [
@@ -227,13 +227,13 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppColors.darkBgTertiary,
+                      color: AppColors.bgTertiary,
                       borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline_rounded,
-                            size: 18, color: AppColors.darkTextSecondary),
+                        Icon(Icons.info_outline_rounded,
+                            size: 18, color: AppColors.textSecondary),
                         const SizedBox(width: AppSpacing.xs),
                         Expanded(
                           child: Text(
@@ -267,7 +267,7 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
         padding: const EdgeInsets.only(bottom: AppSpacing.xs),
         child: Text(
           t.toUpperCase(),
-          style: AppTheme.micro(color: AppColors.darkTextSecondary)
+          style: AppTheme.micro(color: AppColors.textSecondary)
               .copyWith(letterSpacing: 1.4),
         ),
       );
@@ -297,16 +297,16 @@ class _TypeChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.brandRed.withValues(alpha: 0.18)
-                : AppColors.darkBgSecondary,
+                : AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(AppRadius.pill),
             border: Border.all(
-              color: selected ? AppColors.brandRed : AppColors.darkBorder,
+              color: selected ? AppColors.brandRed : AppColors.border,
             ),
           ),
           child: Text(
             label,
             style: AppTheme.bodyLarge(
-              color: selected ? AppColors.brandRed : AppColors.darkTextPrimary,
+              color: selected ? AppColors.brandRed : AppColors.textPrimary,
               weight: selected ? FontWeight.w600 : FontWeight.w400,
             ).copyWith(fontSize: 14),
           ),
@@ -386,11 +386,11 @@ class _IconBtn extends StatelessWidget {
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: AppColors.darkBgPrimary,
+            color: AppColors.bgPrimary,
             borderRadius: BorderRadius.circular(AppRadius.sm),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: AppColors.border),
           ),
-          child: Icon(icon, size: 16, color: AppColors.darkTextPrimary),
+          child: Icon(icon, size: 16, color: AppColors.textPrimary),
         ),
       ),
     );

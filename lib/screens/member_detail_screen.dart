@@ -196,7 +196,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
   }) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
@@ -250,7 +250,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                             color: AppColors.success,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: AppColors.darkBgPrimary,
+                              color: AppColors.bgPrimary,
                               width: 2,
                             ),
                           ),
@@ -274,7 +274,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                             size: 10,
                             color: active
                                 ? AppColors.success
-                                : AppColors.darkTextSecondary,
+                                : AppColors.textSecondary,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -282,7 +282,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                             style: AppTheme.caption(
                               color: active
                                   ? AppColors.success
-                                  : AppColors.darkTextSecondary,
+                                  : AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -355,9 +355,9 @@ class _AttendanceHeatmap extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: AppColors.darkBgSecondary,
+          color: AppColors.bgSecondary,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.darkBorder),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           children: [
@@ -395,7 +395,7 @@ class _Cell extends StatelessWidget {
       decoration: BoxDecoration(
         color: trained
             ? AppColors.brandRed.withValues(alpha: 0.3 + intensity * 0.5)
-            : AppColors.darkBgTertiary,
+            : AppColors.bgTertiary,
         borderRadius: BorderRadius.circular(3),
       ),
     );
@@ -412,9 +412,9 @@ class _TrimpTrend extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.darkBgSecondary,
+        color: AppColors.bgSecondary,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
       ),
       child: SizedBox(
         height: 100,

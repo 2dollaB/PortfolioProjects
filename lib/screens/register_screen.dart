@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
@@ -120,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
@@ -136,7 +136,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   'Two minutes â€” then you can train.',
-                  style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+                  style: AppTheme.bodyLarge(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 _label('Name'),
@@ -248,7 +248,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         padding: const EdgeInsets.only(bottom: AppSpacing.xs),
         child: Text(
           t.toUpperCase(),
-          style: AppTheme.micro(color: AppColors.darkTextSecondary)
+          style: AppTheme.micro(color: AppColors.textSecondary)
               .copyWith(letterSpacing: 1.4),
         ),
       );
@@ -261,14 +261,14 @@ class _OrDivider extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Divider(color: AppColors.darkBorder.withValues(alpha: 0.6)),
+          child: Divider(color: AppColors.border.withValues(alpha: 0.6)),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           child: Text('OR', style: AppTheme.micro()),
         ),
         Expanded(
-          child: Divider(color: AppColors.darkBorder.withValues(alpha: 0.6)),
+          child: Divider(color: AppColors.border.withValues(alpha: 0.6)),
         ),
       ],
     );
@@ -293,8 +293,8 @@ class _SocialButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.darkTextPrimary,
-          side: const BorderSide(color: AppColors.darkBorder),
+          foregroundColor: AppColors.textPrimary,
+          side: BorderSide(color: AppColors.border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

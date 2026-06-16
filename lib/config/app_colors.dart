@@ -2,8 +2,29 @@ import 'package:flutter/material.dart';
 
 /// BeatSync color tokens — single source of truth.
 /// Two palettes: dark (primary) and light. Semantic names — never reference hex elsewhere.
+///
+/// Screens read the **semantic getters** ([bgPrimary], [textPrimary], …) which
+/// resolve against [brightness]. The app sets [brightness] whenever the theme
+/// mode changes (see `main.dart`), so flipping light/dark relights every screen.
+/// The raw `dark*`/`light*` palettes below stay explicit for `theme.dart`.
 class AppColors {
   AppColors._();
+
+  /// Current UI brightness — flipped by `BeatSyncAppState.setThemeMode`. The
+  /// semantic getters below read this; a theme change triggers an app rebuild
+  /// so the new values are picked up.
+  static Brightness brightness = Brightness.dark;
+
+  static bool get _dark => brightness == Brightness.dark;
+
+  // ── SEMANTIC (mode-aware) ──────────────────────
+  static Color get bgPrimary    => _dark ? darkBgPrimary : lightBgPrimary;
+  static Color get bgSecondary  => _dark ? darkBgSecondary : lightBgSecondary;
+  static Color get bgTertiary   => _dark ? darkBgTertiary : lightBgTertiary;
+  static Color get border       => _dark ? darkBorder : lightBorder;
+  static Color get textPrimary  => _dark ? darkTextPrimary : lightTextPrimary;
+  static Color get textSecondary => _dark ? darkTextSecondary : lightTextSecondary;
+  static Color get textTertiary => _dark ? darkTextTertiary : lightTextTertiary;
 
   // ── DARK MODE (PRIMARY) ────────────────────────
   static const Color darkBgPrimary    = Color(0xFF0D0D0F);

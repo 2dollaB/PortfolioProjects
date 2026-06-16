@@ -150,7 +150,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-        backgroundColor: AppColors.darkBgPrimary,
+        backgroundColor: AppColors.bgPrimary,
         body: SafeArea(
           child: Column(
             children: [
@@ -204,7 +204,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
           Text(
             'Any Bluetooth chest strap works — or a sports watch in '
             'heart-rate broadcast mode.',
-            style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+            style: AppTheme.bodyLarge(color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
           if (_failed) ...[
@@ -266,7 +266,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
               ? Center(
                   child: Text(
                     'Looking for sensors nearby…',
-                    style: AppTheme.caption(color: AppColors.darkTextTertiary),
+                    style: AppTheme.caption(color: AppColors.textTertiary),
                   ),
                 )
               : ListView.separated(
@@ -315,7 +315,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
             width: double.infinity,
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.darkBgSecondary,
+              color: AppColors.bgSecondary,
               borderRadius: BorderRadius.circular(AppRadius.xl),
               border: Border.all(
                 color: AppColors.success.withValues(alpha: 0.4),
@@ -527,9 +527,9 @@ class _DeviceCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: AppColors.darkBgSecondary,
+            color: AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             children: [
@@ -571,10 +571,10 @@ class _DeviceCard extends StatelessWidget {
                   ),
                 )
               else
-                const Icon(
+                Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 14,
-                  color: AppColors.darkTextTertiary,
+                  color: AppColors.textTertiary,
                 ),
             ],
           ),
@@ -600,7 +600,7 @@ class _SignalBars extends StatelessWidget {
             width: 3,
             height: 6.0 + i * 4,
             decoration: BoxDecoration(
-              color: i < strength ? AppColors.success : AppColors.darkBorder,
+              color: i < strength ? AppColors.success : AppColors.border,
               borderRadius: BorderRadius.circular(1.5),
             ),
           ),
@@ -622,18 +622,18 @@ class _InfoPill extends StatelessWidget {
         horizontal: AppSpacing.sm, vertical: AppSpacing.micro,
       ),
       decoration: BoxDecoration(
-        color: AppColors.darkBgTertiary,
+        color: AppColors.bgTertiary,
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.darkTextSecondary),
+          Icon(icon, size: 14, color: AppColors.textSecondary),
           const SizedBox(width: 4),
           Text(
             label,
-            style: AppTheme.caption(color: AppColors.darkTextPrimary)
+            style: AppTheme.caption(color: AppColors.textPrimary)
                 .copyWith(fontWeight: FontWeight.w600),
           ),
         ],

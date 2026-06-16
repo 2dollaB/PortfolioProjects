@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
@@ -24,7 +24,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.darkBgPrimary,
+      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
@@ -38,7 +38,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 "We'll tailor the experience for how you train.",
-                style: AppTheme.bodyLarge(color: AppColors.darkTextSecondary),
+                style: AppTheme.bodyLarge(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.xl),
               _RoleCard(
@@ -102,10 +102,10 @@ class _RoleCard extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: AppColors.darkBgSecondary,
+            color: AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
-              color: selected ? AppColors.brandRed : AppColors.darkBorder,
+              color: selected ? AppColors.brandRed : AppColors.border,
               width: selected ? 1.5 : 1,
             ),
             boxShadow: selected
@@ -124,14 +124,14 @@ class _RoleCard extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: (selected ? AppColors.brandRed : AppColors.darkBgTertiary)
+                  color: (selected ? AppColors.brandRed : AppColors.bgTertiary)
                       .withValues(alpha: selected ? 0.18 : 1),
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Icon(
                   icon,
                   color:
-                      selected ? AppColors.brandRed : AppColors.darkTextSecondary,
+                      selected ? AppColors.brandRed : AppColors.textSecondary,
                   size: 26,
                 ),
               ),
@@ -150,7 +150,7 @@ class _RoleCard extends StatelessWidget {
                 selected
                     ? Icons.check_circle_rounded
                     : Icons.radio_button_unchecked_rounded,
-                color: selected ? AppColors.brandRed : AppColors.darkTextTertiary,
+                color: selected ? AppColors.brandRed : AppColors.textTertiary,
                 size: 22,
               ),
             ],

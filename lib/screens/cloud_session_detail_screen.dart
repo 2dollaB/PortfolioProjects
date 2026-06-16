@@ -115,7 +115,7 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
 
     return MobileFrame(
       child: Scaffold(
-        backgroundColor: AppColors.darkBgPrimary,
+        backgroundColor: AppColors.bgPrimary,
         appBar: AppBar(
           title: const Text('Session analytics'),
           leading: IconButton(
@@ -138,7 +138,7 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
                               ? Icons.cloud_off_rounded
                               : Icons.hourglass_empty_rounded,
                           size: 40,
-                          color: AppColors.darkTextTertiary,
+                          color: AppColors.textTertiary,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         Text(
@@ -147,7 +147,7 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
                               : 'No saved workouts yet — results appear '
                                   'once athletes end their workout.',
                           style: AppTheme.bodyLarge(
-                              color: AppColors.darkTextSecondary),
+                              color: AppColors.textSecondary),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: AppSpacing.lg),

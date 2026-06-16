@@ -22,7 +22,7 @@ class GlassPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = tint ?? AppColors.darkBgSecondary;
+    final baseColor = tint ?? AppColors.bgSecondary;
     final pill = Container(
       padding: padding,
       decoration: BoxDecoration(
@@ -84,7 +84,7 @@ class SessionTitlePill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (leadingIcon != null)
-            Icon(leadingIcon, size: 18, color: AppColors.darkTextPrimary)
+            Icon(leadingIcon, size: 18, color: AppColors.textPrimary)
           else
             const LogoHeartbeat(size: 22, showWordmark: false),
           const SizedBox(width: 10),
@@ -139,7 +139,7 @@ class PhasePill extends StatelessWidget {
       case SessionPhase.rest:
         return AppColors.success;
       case SessionPhase.idle:
-        return AppColors.darkBgTertiary;
+        return AppColors.bgTertiary;
     }
   }
 
@@ -164,7 +164,7 @@ class PhasePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final onColor =
-        phase == SessionPhase.idle ? AppColors.darkTextPrimary : Colors.white;
+        phase == SessionPhase.idle ? AppColors.textPrimary : Colors.white;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
@@ -282,7 +282,7 @@ class AthleteCountPill extends StatelessWidget {
                   '$value',
                   style: AppTheme.statNumber(
                     fontSize: 20,
-                    color: AppColors.darkTextPrimary,
+                    color: AppColors.textPrimary,
                     weight: FontWeight.w800,
                   ).copyWith(height: 1.0),
                 ),
@@ -316,12 +316,12 @@ class AthleteCountPill extends StatelessWidget {
           decoration: BoxDecoration(
             color: enabled
                 ? AppColors.brandRed.withValues(alpha: 0.2)
-                : AppColors.darkBgTertiary,
+                : AppColors.bgTertiary,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: enabled
                   ? AppColors.brandRed.withValues(alpha: 0.4)
-                  : AppColors.darkBorder,
+                  : AppColors.border,
             ),
           ),
           child: Icon(
@@ -329,7 +329,7 @@ class AthleteCountPill extends StatelessWidget {
             size: 18,
             color: enabled
                 ? AppColors.brandRed
-                : AppColors.darkTextTertiary,
+                : AppColors.textTertiary,
           ),
         ),
       ),
@@ -363,7 +363,7 @@ class GroupStatsPill extends StatelessWidget {
           _divider(),
           _stat('Z4+', '$inZ4Plus', '/$totalAthletes', AppColors.zone4),
           _divider(),
-          _stat('TIME', elapsed, '', AppColors.darkTextPrimary),
+          _stat('TIME', elapsed, '', AppColors.textPrimary),
         ],
       ),
     );
@@ -398,7 +398,7 @@ class GroupStatsPill extends StatelessWidget {
   Widget _divider() => Container(
         width: 1,
         height: 18,
-        color: AppColors.darkBorder,
+        color: AppColors.border,
         margin: const EdgeInsets.symmetric(horizontal: 12),
       );
 }

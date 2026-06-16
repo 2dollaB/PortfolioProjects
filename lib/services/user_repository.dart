@@ -58,4 +58,9 @@ class UserRepository {
   static Future<void> setStudioId(String uid, String studioId) async {
     await _users.doc(uid).set({'studioId': studioId}, SetOptions(merge: true));
   }
+
+  /// Clears the user's studioId (after leaving a studio).
+  static Future<void> clearStudioId(String uid) async {
+    await _users.doc(uid).update({'studioId': FieldValue.delete()});
+  }
 }

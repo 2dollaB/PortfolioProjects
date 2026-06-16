@@ -47,7 +47,7 @@ class _AllSessionsScreenState extends State<AllSessionsScreen> {
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-        backgroundColor: AppColors.darkBgPrimary,
+        backgroundColor: AppColors.bgPrimary,
         appBar: AppBar(
           title: const Text('All sessions'),
           leading: IconButton(
@@ -87,7 +87,7 @@ class _AllSessionsScreenState extends State<AllSessionsScreen> {
                           Container(
                             width: 1,
                             margin: const EdgeInsets.symmetric(horizontal: 6),
-                            color: AppColors.darkBorder,
+                            color: AppColors.border,
                           ),
                           for (final t in WorkoutType.values)
                             Padding(
@@ -163,10 +163,10 @@ class _FilterChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.brandRed.withValues(alpha: 0.15)
-                : AppColors.darkBgSecondary,
+                : AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected ? AppColors.brandRed : AppColors.darkBorder,
+              color: selected ? AppColors.brandRed : AppColors.border,
             ),
           ),
           child: Text(
@@ -174,7 +174,7 @@ class _FilterChip extends StatelessWidget {
             style: AppTheme.caption(
               color: selected
                   ? AppColors.brandRed
-                  : AppColors.darkTextSecondary,
+                  : AppColors.textSecondary,
             ).copyWith(
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               fontSize: 13,
@@ -206,9 +206,9 @@ class _SessionRow extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: AppColors.darkBgSecondary,
+            color: AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             children: [
@@ -248,8 +248,8 @@ class _SessionRow extends StatelessWidget {
                 ],
               ),
               const SizedBox(width: AppSpacing.xs),
-              const Icon(Icons.arrow_forward_ios_rounded,
-                  size: 12, color: AppColors.darkTextTertiary),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  size: 12, color: AppColors.textTertiary),
             ],
           ),
         ),

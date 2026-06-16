@@ -65,7 +65,7 @@ class ParticipantCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.darkBgSecondary,
+                color: AppColors.bgSecondary,
                 borderRadius: BorderRadius.circular(12),
                 // Zone color tints the border, so identity is readable even at distance
                 border: Border.all(color: color.withValues(alpha: 0.45), width: 1.2),
@@ -288,7 +288,7 @@ class _BpmBlock extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
                   'bpm',
-                  style: AppTheme.caption(color: AppColors.darkTextSecondary)
+                  style: AppTheme.caption(color: AppColors.textSecondary)
                       .copyWith(fontSize: 12),
                 ),
               ),
@@ -312,7 +312,7 @@ class _HrPctBar extends StatelessWidget {
         Container(
           height: 4,
           decoration: BoxDecoration(
-            color: AppColors.darkBgTertiary,
+            color: AppColors.bgTertiary,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
