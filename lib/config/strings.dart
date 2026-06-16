@@ -420,6 +420,35 @@ class Strings {
       "We'll tag your session so you can filter by type later.",
       'Označit ćemo trening da ga kasnije možete filtrirati po vrsti.');
 
+  // ── Trainer home ─────────────────────────────────────────────
+  static String get coach => _pick('Coach', 'Trener');
+  static String get liveNowLower => _pick('live now', 'uživo sada');
+  static String athletesCount(int n) => _pick('$n athletes', '$n sportaša');
+  static String get studioAtGlance =>
+      _pick('Studio at a glance', 'Studio na prvi pogled');
+  static String get noSessionsYet => _pick(
+      'No sessions yet — start your first.',
+      'Još nema treninga — pokrenite prvi.');
+  static String get activeToday => _pick('Active today', 'Aktivni danas');
+  static String get members => _pick('Members', 'Članovi');
+  static String get sessionsPerWk => _pick('Sessions / wk', 'Treninga / tj.');
+  static String get today => _pick('Today', 'Danas');
+  static String get yesterday => _pick('Yesterday', 'Jučer');
+  static String daysAgo(int n) => _pick('$n days ago', 'prije $n dana');
+  static String get recentSessions =>
+      _pick('Recent sessions', 'Nedavni treninzi');
+  static String get live => _pick('LIVE', 'UŽIVO');
+  static String get length => _pick('LENGTH', 'TRAJANJE');
+  static String get openSession => _pick('Open session', 'Otvori trening');
+  static String get readyToTrain =>
+      _pick('READY TO TRAIN', 'SPREMNI ZA TRENING');
+  static String get startNewSession =>
+      _pick('Start new session', 'Pokreni novi trening');
+  static String get startSessionSubtitle => _pick(
+      "Pick the type, set intervals, share the code — and you're live.",
+      'Odaberite vrstu, postavite intervale, podijelite kod — i krećete uživo.');
+  static String get createSession => _pick('Create session', 'Stvori trening');
+
   // ── Settings: sections + rows ────────────────────────────────
   static String get account => _pick('Account', 'Račun');
   static String get app => _pick('App', 'Aplikacija');

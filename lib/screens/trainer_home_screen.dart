@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/cloud_session.dart';
 import '../models/studio.dart';
@@ -34,15 +35,15 @@ class TrainerHomeScreen extends StatelessWidget {
 
   String _firstName() {
     final n = profile.name.trim();
-    if (n.isEmpty) return 'Coach';
+    if (n.isEmpty) return Strings.coach;
     return n.split(RegExp(r'\s+')).first;
   }
 
   String _greeting() {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning';
-    if (h < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 12) return Strings.goodMorning;
+    if (h < 18) return Strings.goodAfternoon;
+    return Strings.goodEvening;
   }
 
   @override
@@ -100,7 +101,7 @@ class TrainerHomeScreen extends StatelessWidget {
                   if (live != null) {
                     return _LiveSessionHero(
                       name: live.name,
-                      subtitle: '${live.typeLabel} · live now',
+                      subtitle: '${Strings.workoutTypeLabel(live.typeLabel)} · ${Strings.liveNowLower}',
                       onOpen: () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => TrainerMonitorScreen(session: live),
@@ -119,7 +120,7 @@ class TrainerHomeScreen extends StatelessWidget {
                     return _LiveSessionHero(
                       name: live.name,
                       subtitle:
-                          '${live.type.displayName} · ${live.athleteCount} athletes',
+                          '${Strings.workoutTypeLabel(live.type.displayName)} · ${Strings.athletesCount(live.athleteCount)}',
                       onOpen: () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => const TrainerMonitorScreen(),
@@ -132,7 +133,7 @@ class TrainerHomeScreen extends StatelessWidget {
               ),
 
             const SizedBox(height: AppSpacing.xl),
-            Text('Studio at a glance', style: AppTheme.h2()),
+            Text(Strings.studioAtGlance, style: AppTheme.h2()),
             const SizedBox(height: AppSpacing.sm),
             // Active today / sessions-per-week are computed from cloud
             // sessions; '–' only while the studio doc is still loading.
@@ -156,7 +157,7 @@ class TrainerHomeScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             Row(
               children: [
-                Text('Recent sessions', style: AppTheme.h2()),
+                Text(Strings.recentSessions, style: AppTheme.h2()),
                 const Spacer(),
                 // All-sessions screen still renders the demo store only.
                 if (!production)
@@ -166,7 +167,7 @@ class TrainerHomeScreen extends StatelessWidget {
                         builder: (_) => const AllSessionsScreen(),
                       ),
                     ),
-                    child: const Text('See all'),
+                    child: Text(Strings.seeAll),
                   ),
               ],
             ),
@@ -250,11 +251,11 @@ class _StudioStats extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: StatChip(label: 'Active today', value: activeToday)),
+        Expanded(child: StatChip(label: Strings.activeToday, value: activeToday)),
         const SizedBox(width: AppSpacing.xs),
-        Expanded(child: StatChip(label: 'Members', value: members)),
+        Expanded(child: StatChip(label: Strings.members, value: members)),
         const SizedBox(width: AppSpacing.xs),
-        Expanded(child: StatChip(label: 'Sessions / wk', value: sessionsPerWeek)),
+        Expanded(child: StatChip(label: Strings.sessionsPerWk, value: sessionsPerWeek)),
       ],
     );
   }
@@ -263,9 +264,9 @@ class _StudioStats extends StatelessWidget {
 String _relativeDate(DateTime d) {
   final now = DateTime.now();
   final diff = now.difference(d).inDays;
-  if (diff == 0) return 'Today';
-  if (diff == 1) return 'Yesterday';
-  if (diff < 7) return '$diff days ago';
+  if (diff == 0) return Strings.today;
+  if (diff == 1) return Strings.yesterday;
+  if (diff < 7) return Strings.daysAgo(diff);
   return '${d.day}/${d.month}';
 }
 
@@ -296,7 +297,7 @@ class _CloudRecentSessions extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                'No sessions yet — start your first.',
+                Strings.noSessionsYet,
                 style: AppTheme.caption(),
               ),
             ),
@@ -382,7 +383,7 @@ class _CloudSessionRow extends StatelessWidget {
                           .copyWith(fontSize: 15),
                     ),
                     Text(
-                      '${_relativeDate(session.startedAt)} · ${session.typeLabel}',
+                      '${_relativeDate(session.startedAt)} · ${Strings.workoutTypeLabel(session.typeLabel)}',
                       style: AppTheme.caption(),
                     ),
                   ],
@@ -402,7 +403,7 @@ class _CloudSessionRow extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'LIVE',
+                      Strings.live,
                       style: AppTheme.micro(color: AppColors.brandRed)
                           .copyWith(
                               letterSpacing: 1.5, fontWeight: FontWeight.w700),
@@ -417,7 +418,7 @@ class _CloudSessionRow extends StatelessWidget {
                       session.durationLabel,
                       style: AppTheme.statNumber(fontSize: 18),
                     ),
-                    Text('LENGTH', style: AppTheme.micro()),
+                    Text(Strings.length, style: AppTheme.micro()),
                   ],
                 ),
             ],
@@ -446,7 +447,7 @@ class _RecentSessionsList extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                'No sessions yet — start your first.',
+                Strings.noSessionsYet,
                 style: AppTheme.caption(),
               ),
             ),
@@ -499,7 +500,7 @@ class _RecentSessionsList extends StatelessWidget {
                                       .copyWith(fontSize: 15),
                                 ),
                                 Text(
-                                  '${_relativeDate(s.startedAt)} · ${s.athleteCount} athletes · ${s.durationLabel}',
+                                  '${_relativeDate(s.startedAt)} · ${Strings.athletesCount(s.athleteCount)} · ${s.durationLabel}',
                                   style: AppTheme.caption(),
                                 ),
                               ],
@@ -576,7 +577,7 @@ class _LiveSessionHero extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.xs),
               Text(
-                'LIVE NOW',
+                Strings.liveNow,
                 style: AppTheme.micro(color: AppColors.brandRed)
                     .copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w700),
               ),
@@ -594,7 +595,7 @@ class _LiveSessionHero extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           BeatPrimaryButton(
-            label: 'Open session',
+            label: Strings.openSession,
             icon: Icons.open_in_new_rounded,
             onPressed: onOpen,
           ),
@@ -637,22 +638,22 @@ class _NoSessionHero extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.xs),
               Text(
-                'READY TO TRAIN',
+                Strings.readyToTrain,
                 style: AppTheme.micro(color: AppColors.brandRed)
                     .copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w600),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('Start new session', style: AppTheme.h1().copyWith(fontSize: 28)),
+          Text(Strings.startNewSession, style: AppTheme.h1().copyWith(fontSize: 28)),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            "Pick the type, set intervals, share the code — and you're live.",
+            Strings.startSessionSubtitle,
             style: AppTheme.bodyLarge(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.md),
           BeatPrimaryButton(
-            label: 'Create session',
+            label: Strings.createSession,
             icon: Icons.add_circle_outline_rounded,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
