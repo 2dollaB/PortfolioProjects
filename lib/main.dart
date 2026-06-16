@@ -70,7 +70,7 @@ void main() async {
   // so screens that read AppColors' semantic getters render the right palette.
   AppColors.brightness = brightnessForMode(initialThemeMode);
 
-  runApp(BeatSyncApp(initialThemeMode: initialThemeMode));
+  runApp(BeatSyncApp(key: BeatSyncApp.appKey, initialThemeMode: initialThemeMode));
 }
 
 /// Resolves a [ThemeMode] to the concrete [Brightness] the UI should paint with
@@ -130,7 +130,6 @@ class BeatSyncAppState extends State<BeatSyncApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      key: BeatSyncApp.appKey,
       title: 'BeatSync',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
