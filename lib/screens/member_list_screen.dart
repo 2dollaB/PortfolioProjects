@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/studio.dart';
 import '../models/user_profile.dart';
@@ -107,11 +108,11 @@ class _MemberListScreenState extends State<MemberListScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Invite an athlete',
+            Text(Strings.inviteAthlete,
                 style: AppTheme.h2(), textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Share this code or QR — they enter it in the app.',
+              Strings.inviteShareHint,
               style: AppTheme.caption(),
               textAlign: TextAlign.center,
             ),
@@ -136,7 +137,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
             BeatPrimaryButton(
-              label: 'Share invite',
+              label: Strings.shareInviteBtn,
               icon: Icons.share_rounded,
               onPressed: () => Navigator.of(ctx).pop(),
             ),
@@ -160,7 +161,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
             count: '–',
             onInvite: null,
             body: Center(
-              child: Text('Could not load your studio.',
+              child: Text(Strings.couldNotLoadStudio,
                   style: AppTheme.caption()),
             ),
           );
@@ -180,7 +181,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
             Widget body;
             if (msnap.hasError) {
               body = Center(
-                child: Text('Could not load members.',
+                child: Text(Strings.couldNotLoadMembers,
                     style: AppTheme.caption()),
               );
             } else if (members == null) {
@@ -190,7 +191,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
                 padding: const EdgeInsets.all(AppSpacing.xl),
                 child: Center(
                   child: Text(
-                    'No members yet.\nShare your invite code — athletes join with it.',
+                    Strings.noMembersYet,
                     style: AppTheme.caption(),
                     textAlign: TextAlign.center,
                   ),
@@ -211,7 +212,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
                 itemBuilder: (context, i) => _MemberRow(
                   name: filtered[i].profile.name,
                   subtitle:
-                      '${filtered[i].sessions} sessions · ${filtered[i].lastSeenLabel}',
+                      '${Strings.nSessions(filtered[i].sessions)} · ${filtered[i].lastSeenLabel}',
                   active: filtered[i].activeToday,
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
@@ -287,7 +288,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
                 icon: const Icon(Icons.person_add_alt_rounded,
                     color: Colors.white),
                 label:
-                    const Text('Invite', style: TextStyle(color: Colors.white)),
+                    Text(Strings.invite, style: const TextStyle(color: Colors.white)),
               ),
         body: SafeArea(
           bottom: false,
@@ -299,7 +300,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
                 ),
                 child: Row(
                   children: [
-                    Text('Members', style: AppTheme.h1().copyWith(fontSize: 26)),
+                    Text(Strings.members, style: AppTheme.h1().copyWith(fontSize: 26)),
                     const Spacer(),
                     Text(count, style: AppTheme.statNumber(fontSize: 26)),
                   ],
@@ -312,9 +313,9 @@ class _MemberListScreenState extends State<MemberListScreen> {
                 child: TextField(
                   controller: _search,
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    hintText: 'Search by name',
-                    prefixIcon: Icon(Icons.search_rounded),
+                  decoration: InputDecoration(
+                    hintText: Strings.searchByName,
+                    prefixIcon: const Icon(Icons.search_rounded),
                   ),
                 ),
               ),
@@ -330,7 +331,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
                         Padding(
                           padding: const EdgeInsets.only(right: AppSpacing.xs),
                           child: _FilterChip(
-                            label: f,
+                            label: Strings.memberFilterLabel(f),
                             selected: f == _filter,
                             onTap: () => setState(() => _filter = f),
                           ),
@@ -375,10 +376,10 @@ class _MemberActivity {
 
   String get lastSeenLabel {
     final n = _daysSince;
-    if (n == null) return 'No sessions yet';
-    if (n == 0) return 'Active today';
-    if (n == 1) return 'Yesterday';
-    if (n < 7) return '$n days ago';
+    if (n == null) return Strings.noSessionsYetMember;
+    if (n == 0) return Strings.activeToday;
+    if (n == 1) return Strings.yesterday;
+    if (n < 7) return Strings.daysAgo(n);
     return '${lastWorkout!.day}/${lastWorkout!.month}';
   }
 }

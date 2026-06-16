@@ -449,6 +449,33 @@ class Strings {
       'Odaberite vrstu, postavite intervale, podijelite kod — i krećete uživo.');
   static String get createSession => _pick('Create session', 'Stvori trening');
 
+  // ── Member list ──────────────────────────────────────────────
+  static String nSessions(int n) => _pick('$n sessions', '$n treninga');
+  static String get inviteAthlete =>
+      _pick('Invite an athlete', 'Pozovi sportaša');
+  static String get inviteShareHint => _pick(
+      'Share this code or QR — they enter it in the app.',
+      'Podijelite kod ili QR — unose ga u aplikaciji.');
+  static String get shareInviteBtn =>
+      _pick('Share invite', 'Podijeli pozivnicu');
+  static String get couldNotLoadStudio => _pick(
+      'Could not load your studio.', 'Učitavanje studija nije uspjelo.');
+  static String get couldNotLoadMembers => _pick(
+      'Could not load members.', 'Učitavanje članova nije uspjelo.');
+  static String get noMembersYet => _pick(
+      'No members yet.\nShare your invite code — athletes join with it.',
+      'Još nema članova.\nPodijelite pozivni kod — sportaši se pridružuju njime.');
+  static String get searchByName => _pick('Search by name', 'Pretraži po imenu');
+  static String get invite => _pick('Invite', 'Pozovi');
+  static String get inactive => _pick('Inactive', 'Neaktivni');
+  static String get noSessionsYetMember =>
+      _pick('No sessions yet', 'Još nema treninga');
+  static String memberFilterLabel(String key) => switch (key) {
+        'Active today' => activeToday,
+        'Inactive' => inactive,
+        _ => filterAll,
+      };
+
   // ── Settings: sections + rows ────────────────────────────────
   static String get account => _pick('Account', 'Račun');
   static String get app => _pick('App', 'Aplikacija');
