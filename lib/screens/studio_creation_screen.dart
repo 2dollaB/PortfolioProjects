@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/logo_heartbeat.dart';
@@ -75,14 +76,14 @@ class _StudioCreationScreenState extends State<StudioCreationScreen> {
             const SizedBox(height: AppSpacing.lg),
             const LogoHeartbeat(size: 28, showWordmark: true),
             const SizedBox(height: AppSpacing.xl),
-            Text('Create your studio', style: AppTheme.h1()),
+            Text(Strings.createYourStudio, style: AppTheme.h1()),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'This is where your athletes will join you.',
+              Strings.studioFormSubtitle,
               style: AppTheme.bodyLarge(color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.xl),
-            _label('Studio name'),
+            _label(Strings.studioName),
             TextFormField(
               controller: _name,
               textInputAction: TextInputAction.next,
@@ -97,7 +98,7 @@ class _StudioCreationScreenState extends State<StudioCreationScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            _label('Location (optional)'),
+            _label(Strings.locationOptional),
             TextFormField(
               controller: _location,
               textInputAction: TextInputAction.done,
@@ -107,7 +108,7 @@ class _StudioCreationScreenState extends State<StudioCreationScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            _label('Maximum members'),
+            _label(Strings.maxMembers),
             const SizedBox(height: AppSpacing.xs),
             Wrap(
               spacing: AppSpacing.xs,
@@ -123,12 +124,12 @@ class _StudioCreationScreenState extends State<StudioCreationScreen> {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'You can upgrade your plan later if you outgrow this.',
+              Strings.upgradePlanLater,
               style: AppTheme.caption(),
             ),
             const SizedBox(height: AppSpacing.xl),
             BeatPrimaryButton(
-              label: 'Create studio',
+              label: Strings.createStudio,
               icon: Icons.check_rounded,
               loading: _loading,
               onPressed: _create,
@@ -170,7 +171,7 @@ class _StudioCreationScreenState extends State<StudioCreationScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Studio created!',
+            Strings.studioCreated,
             style: AppTheme.h1().copyWith(fontSize: 30),
             textAlign: TextAlign.center,
           ),
@@ -194,7 +195,7 @@ class _StudioCreationScreenState extends State<StudioCreationScreen> {
             child: Column(
               children: [
                 Text(
-                  'INVITE CODE',
+                  Strings.inviteCode,
                   style: AppTheme.micro().copyWith(letterSpacing: 1.6),
                 ),
                 const SizedBox(height: AppSpacing.xs),
@@ -208,7 +209,7 @@ class _StudioCreationScreenState extends State<StudioCreationScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Share this with your athletes to join your studio.',
+                  Strings.shareInvite,
                   textAlign: TextAlign.center,
                   style: AppTheme.caption(),
                 ),
@@ -217,7 +218,7 @@ class _StudioCreationScreenState extends State<StudioCreationScreen> {
           ),
           const Spacer(),
           BeatPrimaryButton(
-            label: 'Enter your studio',
+            label: Strings.enterYourStudio,
             icon: Icons.arrow_forward_rounded,
             onPressed: widget.onComplete,
           ),

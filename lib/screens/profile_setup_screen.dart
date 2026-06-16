@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../services/storage_service.dart';
@@ -155,27 +156,27 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       case _PageType.personal:
         final age = int.tryParse(_ageCtrl.text);
         if (age == null || age < 13 || age > 100) {
-          return 'Age must be between 13 and 100';
+          return Strings.ageRange;
         }
         final w = double.tryParse(_weightCtrl.text.replaceAll(',', '.'));
         if (w == null || w < 30 || w > 250) {
-          return 'Weight must be between 30 and 250 kg';
+          return Strings.weightRange;
         }
         final h = double.tryParse(_heightCtrl.text.replaceAll(',', '.'));
         if (h == null || h < 100 || h > 230) {
-          return 'Height must be between 100 and 230 cm';
+          return Strings.heightRange;
         }
         final rhrText = _restingHrCtrl.text.trim();
         if (rhrText.isNotEmpty) {
           final rhr = int.tryParse(rhrText);
           if (rhr == null || rhr < 30 || rhr > 120) {
-            return 'Resting HR must be between 30 and 120 bpm';
+            return Strings.restingHrRange;
           }
         }
         return null;
       case _PageType.studioForm:
         if (_studioNameCtrl.text.trim().isEmpty) {
-          return 'Studio name is required';
+          return Strings.studioNameRequired;
         }
         return null;
       default:
@@ -263,7 +264,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not finish setup: $e'),
+            content: Text(Strings.setupFailed(e)),
             backgroundColor: AppColors.danger,
             behavior: SnackBarBehavior.floating,
           ),
@@ -286,15 +287,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   String _continueLabel() {
     if (_page == _totalPages - 1) {
-      return _role == UserRole.trainer ? 'Enter your studio' : 'Start training';
+      return _role == UserRole.trainer
+          ? Strings.enterYourStudio
+          : Strings.startTraining;
     }
     switch (_currentPageType) {
       case _PageType.studioForm:
-        return 'Create studio';
+        return Strings.createStudio;
       case _PageType.strap:
-        return _strap != _StrapStatus.connected ? 'Skip for now' : 'Continue';
+        return _strap != _StrapStatus.connected
+            ? Strings.skipForNow
+            : Strings.continueLabel;
       default:
-        return 'Continue';
+        return Strings.continueLabel;
     }
   }
 
@@ -314,7 +319,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     switch (type) {
       case _PageType.personal:
         return _PersonalPage(
-          nameHint: widget.initialName ?? 'your training profile',
+          nameHint: widget.initialName ?? Strings.trainingProfileFallback,
           ageCtrl: _ageCtrl,
           weightCtrl: _weightCtrl,
           heightCtrl: _heightCtrl,
@@ -358,7 +363,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       case _PageType.studioSuccess:
         return _StudioSuccessPage(
           studioName: _studioNameCtrl.text.trim().isEmpty
-              ? 'Your studio'
+              ? Strings.yourStudioFallback
               : _studioNameCtrl.text.trim(),
           inviteCode: _inviteCode,
         );
@@ -645,9 +650,9 @@ class _PersonalPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _PageHeader(
-            overline: 'Personal profile',
-            title: "Let's build your rhythm",
-            subtitle: 'A few numbers to calibrate your zones and effort scores.',
+            overline: Strings.personalProfileOverline,
+            title: Strings.buildYourRhythm,
+            subtitle: Strings.personalSubtitle,
           ),
 
           // Age + Sex
@@ -657,7 +662,7 @@ class _PersonalPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _FieldLabel('Age'),
+                    _FieldLabel(Strings.age),
                     _NumericField(
                       controller: ageCtrl,
                       hint: '30',
@@ -671,7 +676,7 @@ class _PersonalPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _FieldLabel('Sex'),
+                    _FieldLabel(Strings.sex),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
@@ -690,7 +695,7 @@ class _PersonalPage extends StatelessWidget {
                         items: Sex.values
                             .map((s) => DropdownMenuItem(
                                   value: s,
-                                  child: Text(s.displayName),
+                                  child: Text(Strings.sexName(s)),
                                 ))
                             .toList(),
                         onChanged: (v) {
@@ -712,7 +717,7 @@ class _PersonalPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _FieldLabel('Weight'),
+                    _FieldLabel(Strings.weight),
                     _NumericField(
                       controller: weightCtrl,
                       hint: '75',
@@ -727,7 +732,7 @@ class _PersonalPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _FieldLabel('Height'),
+                    _FieldLabel(Strings.height),
                     _NumericField(
                       controller: heightCtrl,
                       hint: '178',
@@ -743,10 +748,10 @@ class _PersonalPage extends StatelessWidget {
           // Resting HR
           Row(
             children: [
-              _FieldLabel('Resting HR (optional)'),
+              _FieldLabel(Strings.restingHrOptional),
               const SizedBox(width: 6),
               Tooltip(
-                message: 'Measure lying down in the morning before getting up.',
+                message: Strings.restingHrTip,
                 child: Icon(Icons.info_outline_rounded,
                     size: 14, color: AppColors.textSecondary),
               ),
@@ -799,10 +804,9 @@ class _FitnessPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _PageHeader(
-            overline: 'Training profile',
-            title: "What's your fitness level?",
-            subtitle:
-                'Calibrates your training effect and calorie calculations.',
+            overline: Strings.trainingProfileOverline,
+            title: Strings.fitnessQuestion,
+            subtitle: Strings.fitnessSubtitle,
           ),
           for (final lvl in FitnessLevel.values) ...[
             _FitnessOption(
@@ -839,7 +843,7 @@ class _FitnessPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Estimated HR max', style: AppTheme.caption()),
+                      Text(Strings.estimatedHrMax, style: AppTheme.caption()),
                       Text(
                         '$previewHrMax bpm',
                         style: AppTheme.statNumber(
@@ -932,13 +936,13 @@ class _FitnessOption extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      level.displayName,
+                      Strings.fitnessName(level),
                       style:
                           AppTheme.bodyLarge(weight: FontWeight.w600).copyWith(
                         fontSize: 15,
                       ),
                     ),
-                    Text(level.description, style: AppTheme.caption()),
+                    Text(Strings.fitnessDesc(level), style: AppTheme.caption()),
                   ],
                 ),
               ),
@@ -978,9 +982,9 @@ class _StrapPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _PageHeader(
-            overline: 'Bluetooth',
-            title: 'Connect your strap',
-            subtitle: 'Polar · Wahoo · Garmin · generic Bluetooth straps.',
+            overline: Strings.strapOverline,
+            title: Strings.onbConnectTitle,
+            subtitle: Strings.strapSubtitle,
           ),
           Center(
             child: Container(
@@ -1029,14 +1033,14 @@ class _StrapPage extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           if (status == _StrapStatus.idle) ...[
             BeatSecondaryButton(
-              label: 'Search for straps',
+              label: Strings.searchForStraps,
               icon: Icons.search_rounded,
               onPressed: onSearch,
             ),
             const SizedBox(height: AppSpacing.sm),
             Center(
               child: Text(
-                'You can also pair from settings later.',
+                Strings.pairLater,
                 style: AppTheme.caption(),
               ),
             ),
@@ -1054,7 +1058,7 @@ class _StrapPage extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Center(
-              child: Text('Searching for nearby strapsâ€¦',
+              child: Text(Strings.searchingStraps,
                   style: AppTheme.caption(color: AppColors.brandRed)),
             ),
           ],
@@ -1078,12 +1082,12 @@ class _StrapPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Connected',
+                          Strings.connected,
                           style: AppTheme.caption(color: AppColors.success)
                               .copyWith(fontWeight: FontWeight.w700),
                         ),
                         Text(
-                          '$strapName · 92% battery',
+                          Strings.strapBattery(strapName),
                           style: AppTheme.bodyLarge(weight: FontWeight.w600)
                               .copyWith(fontSize: 15),
                         ),
@@ -1092,7 +1096,7 @@ class _StrapPage extends StatelessWidget {
                   ),
                   TextButton(
                     onPressed: onDisconnect,
-                    child: const Text('Disconnect'),
+                    child: Text(Strings.disconnect),
                   ),
                 ],
               ),
@@ -1129,11 +1133,11 @@ class _StudioFormPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _PageHeader(
-            overline: 'Your studio',
-            title: 'Build your space',
-            subtitle: 'This is where your athletes will join you.',
+            overline: Strings.yourStudioOverline,
+            title: Strings.buildYourSpace,
+            subtitle: Strings.studioFormSubtitle,
           ),
-          _FieldLabel('Studio name'),
+          _FieldLabel(Strings.studioName),
           TextField(
             controller: nameCtrl,
             textInputAction: TextInputAction.next,
@@ -1143,7 +1147,7 @@ class _StudioFormPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          _FieldLabel('Location (optional)'),
+          _FieldLabel(Strings.locationOptional),
           TextField(
             controller: locationCtrl,
             textInputAction: TextInputAction.done,
@@ -1153,7 +1157,7 @@ class _StudioFormPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          _FieldLabel('Maximum members'),
+          _FieldLabel(Strings.maxMembers),
           Wrap(
             spacing: AppSpacing.xs,
             runSpacing: AppSpacing.xs,
@@ -1168,7 +1172,7 @@ class _StudioFormPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Upgrade later if you outgrow this.',
+            Strings.upgradeLater,
             style: AppTheme.caption(),
           ),
         ],
@@ -1213,7 +1217,7 @@ class _CapacityChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Up to ',
+                Strings.upToPrefix,
                 style: AppTheme.caption(
                   color: selected
                       ? AppColors.brandRed
@@ -1232,7 +1236,7 @@ class _CapacityChip extends StatelessWidget {
               ),
               const SizedBox(width: 3),
               Text(
-                'members',
+                Strings.membersSuffix,
                 style: AppTheme.caption(
                   color: selected
                       ? AppColors.brandRed
@@ -1284,7 +1288,7 @@ class _StudioSuccessPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Studio created!',
+            Strings.studioCreated,
             style: AppTheme.h1().copyWith(fontSize: 30),
             textAlign: TextAlign.center,
           ),
@@ -1308,7 +1312,7 @@ class _StudioSuccessPage extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  'INVITE CODE',
+                  Strings.inviteCode,
                   style: AppTheme.micro().copyWith(letterSpacing: 1.6),
                 ),
                 const SizedBox(height: AppSpacing.xs),
@@ -1322,7 +1326,7 @@ class _StudioSuccessPage extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Share this with your athletes to join your studio.',
+                  Strings.shareInvite,
                   textAlign: TextAlign.center,
                   style: AppTheme.caption(),
                 ),

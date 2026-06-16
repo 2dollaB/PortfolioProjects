@@ -8,6 +8,8 @@
 /// Add new strings in the section for the screen that uses them.
 library;
 
+import '../models/user_profile.dart';
+
 enum AppLang {
   en,
   hr;
@@ -28,6 +30,26 @@ class Strings {
   static AppLang lang = AppLang.en;
 
   static String _pick(String en, String hr) => lang == AppLang.hr ? hr : en;
+
+  // ── Enum display (Sex / FitnessLevel) ────────────────────────
+  static String sexName(Sex s) => switch (s) {
+        Sex.male => _pick('Male', 'Muško'),
+        Sex.female => _pick('Female', 'Žensko'),
+        Sex.other => _pick('Other', 'Ostalo'),
+      };
+  static String fitnessName(FitnessLevel l) => switch (l) {
+        FitnessLevel.beginner => _pick('Beginner', 'Početnik'),
+        FitnessLevel.casual => _pick('Casual', 'Rekreativac'),
+        FitnessLevel.advanced => _pick('Advanced', 'Napredni'),
+      };
+  static String fitnessDesc(FitnessLevel l) => switch (l) {
+        FitnessLevel.beginner =>
+          _pick('New to regular exercise', 'Novi u redovitom vježbanju'),
+        FitnessLevel.casual =>
+          _pick('Exercise 2-3 times/week', 'Vježbam 2-3 puta tjedno'),
+        FitnessLevel.advanced =>
+          _pick('Train 5+ times/week', 'Treniram 5+ puta tjedno'),
+      };
 
   // ── Common / actions ─────────────────────────────────────────
   static String get cancel => _pick('Cancel', 'Odustani');
@@ -129,6 +151,101 @@ class Strings {
   static String get onbNotCompBody => _pick(
       'BeatSync is a heart-rate monitoring tool for trainers. Train together, see the studio in real time — no podium, no ranking pressure.',
       'BeatSync je alat za praćenje pulsa za trenere. Trenirajte zajedno i pratite studio uživo — bez postolja i pritiska rangiranja.');
+
+  // ── Profile-setup wizard ─────────────────────────────────────
+  static String get ageRange =>
+      _pick('Age must be between 13 and 100', 'Dob mora biti između 13 i 100');
+  static String get weightRange => _pick('Weight must be between 30 and 250 kg',
+      'Težina mora biti između 30 i 250 kg');
+  static String get heightRange => _pick(
+      'Height must be between 100 and 230 cm',
+      'Visina mora biti između 100 i 230 cm');
+  static String get restingHrRange => _pick(
+      'Resting HR must be between 30 and 120 bpm',
+      'Puls u mirovanju mora biti između 30 i 120 bpm');
+  static String get studioNameRequired =>
+      _pick('Studio name is required', 'Naziv studija je obavezan');
+  static String setupFailed(Object e) =>
+      _pick('Could not finish setup: $e', 'Postavljanje nije uspjelo: $e');
+
+  static String get enterYourStudio =>
+      _pick('Enter your studio', 'Uđite u svoj studio');
+  static String get startTraining =>
+      _pick('Start training', 'Započni trening');
+  static String get createStudio => _pick('Create studio', 'Stvori studio');
+  static String get skipForNow => _pick('Skip for now', 'Preskoči za sada');
+
+  static String get personalProfileOverline =>
+      _pick('Personal profile', 'Osobni profil');
+  static String get buildYourRhythm =>
+      _pick("Let's build your rhythm", 'Izgradimo vaš ritam');
+  static String get personalSubtitle => _pick(
+      'A few numbers to calibrate your zones and effort scores.',
+      'Nekoliko brojki za kalibraciju vaših zona i ocjena napora.');
+  static String get trainingProfileOverline =>
+      _pick('Training profile', 'Trening profil');
+  static String get fitnessQuestion =>
+      _pick("What's your fitness level?", 'Koja je vaša razina kondicije?');
+  static String get fitnessSubtitle => _pick(
+      'Calibrates your training effect and calorie calculations.',
+      'Kalibrira učinak treninga i izračun kalorija.');
+  static String get strapOverline => _pick('Bluetooth', 'Bluetooth');
+  static String get strapSubtitle => _pick(
+      'Polar · Wahoo · Garmin · generic Bluetooth straps.',
+      'Polar · Wahoo · Garmin · generički Bluetooth mjerači.');
+  static String get yourStudioOverline => _pick('Your studio', 'Vaš studio');
+  static String get buildYourSpace =>
+      _pick('Build your space', 'Izgradite svoj prostor');
+  static String get studioFormSubtitle => _pick(
+      'This is where your athletes will join you.',
+      'Ovdje će vam se pridružiti vaši sportaši.');
+
+  static String get age => _pick('Age', 'Dob');
+  static String get sex => _pick('Sex', 'Spol');
+  static String get weight => _pick('Weight', 'Težina');
+  static String get height => _pick('Height', 'Visina');
+  static String get restingHrOptional =>
+      _pick('Resting HR (optional)', 'Puls u mirovanju (opcionalno)');
+  static String get restingHrTip => _pick(
+      'Measure lying down in the morning before getting up.',
+      'Izmjerite ležeći ujutro prije ustajanja.');
+  static String get studioName => _pick('Studio name', 'Naziv studija');
+  static String get locationOptional =>
+      _pick('Location (optional)', 'Lokacija (opcionalno)');
+  static String get maxMembers =>
+      _pick('Maximum members', 'Najveći broj članova');
+  static String get estimatedHrMax =>
+      _pick('Estimated HR max', 'Procijenjeni maks. puls');
+  static String get trainingProfileFallback =>
+      _pick('your training profile', 'vaš trening profil');
+
+  static String get searchForStraps => _pick('Search for straps', 'Traži mjerače');
+  static String get pairLater => _pick(
+      'You can also pair from settings later.',
+      'Možete povezati i kasnije u postavkama.');
+  static String get searchingStraps =>
+      _pick('Searching for nearby straps…', 'Tražim obližnje mjerače…');
+  static String get connected => _pick('Connected', 'Povezano');
+  static String strapBattery(String name) =>
+      _pick('$name · 92% battery', '$name · 92% baterije');
+  static String get disconnect => _pick('Disconnect', 'Prekini vezu');
+
+  static String get upToPrefix => _pick('Up to ', 'Do ');
+  static String get membersSuffix => _pick('members', 'članova');
+  static String get upgradeLater => _pick(
+      'Upgrade later if you outgrow this.',
+      'Nadogradite kasnije ako prerastete ovo.');
+  static String get studioCreated => _pick('Studio created!', 'Studio stvoren!');
+  static String get inviteCode => _pick('INVITE CODE', 'POZIVNI KOD');
+  static String get shareInvite => _pick(
+      'Share this with your athletes to join your studio.',
+      'Podijelite ovo sa sportašima da se pridruže vašem studiju.');
+  static String get yourStudioFallback => _pick('Your studio', 'Vaš studio');
+  static String get createYourStudio =>
+      _pick('Create your studio', 'Stvorite svoj studio');
+  static String get upgradePlanLater => _pick(
+      'You can upgrade your plan later if you outgrow this.',
+      'Plan možete nadograditi kasnije ako prerastete ovo.');
 
   // ── Settings: sections + rows ────────────────────────────────
   static String get account => _pick('Account', 'Račun');
