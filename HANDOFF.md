@@ -1,8 +1,8 @@
-# BeatSync — Handoff (Stage 3 polish + light mode + partial Croatian i18n COMPLETE; merged to main)
+# BeatSync — Handoff (Stage 3 polish + light mode + full Croatian i18n COMPLETE; merged to main)
 
-Last updated: 2026-06-16 (Stage 3 settings polish + full light mode + studio view/leave/edit, THEN a lightweight en/hr i18n with a working language switch — **partial screen coverage**). Read this first when resuming in a fresh session.
+Last updated: 2026-06-16 (Stage 3 settings polish + full light mode + studio view/leave/edit, THEN a lightweight en/hr i18n with a working language switch — **full screen coverage**). Read this first when resuming in a fresh session.
 
-**Where we are in one line:** every mobile screen runs on real Firebase (auth, studios, workouts, trainer analytics/notes, full live-session loop incl. a pre-start **lobby** with Start/Pause/Resume + kick + an interval timer, TV board, trainer-home/member-list activity stats), BLE heart-rate is code-complete, sessions auto-end into a results screen, the **Settings screen is fully polished — working light mode app-wide, no dead rows, viewable/changeable studio**, and there's now a **working Appearance (light/dark/system) + Language (English/Hrvatski) switcher** (translation covers the auth funnel + athlete core + settings + part of the trainer side; **the rest is still English — see i18n section**); **next up is Stage 4 (Next.js admin panel)**, plus finishing the Croatian translation, the live-session + hardware test passes, and ship chores.
+**Where we are in one line:** every mobile screen runs on real Firebase (auth, studios, workouts, trainer analytics/notes, full live-session loop incl. a pre-start **lobby** with Start/Pause/Resume + kick + an interval timer, TV board, trainer-home/member-list activity stats), BLE heart-rate is code-complete, sessions auto-end into a results screen, the **Settings screen is fully polished — working light mode app-wide, no dead rows, viewable/changeable studio**, and there's a **working Appearance (light/dark/system) + Language (English/Hrvatski) switcher with the whole app translated**; **next up is Stage 4 (Next.js admin panel)**, plus the live-session + BLE-hardware test passes and ship chores.
 
 ## ✅ Stage 3 DONE (2026-06-16) — on branch `feature/profile-settings` (see "Repo & git")
 Scope agreed with the user, then built in one pass:
@@ -12,20 +12,18 @@ Scope agreed with the user, then built in one pass:
 
 **Verified:** `flutter analyze` clean + `flutter build web` OK + **live REST rule tests all pass** (self-join still allowed; self-leave allowed; athlete can't remove the owner or other members; non-member can't leave; trainer owner-edit allowed; throwaway studio + users cleaned up — Pulse Studio untouched). ⚠️ **Light/dark visuals not yet eyeballed by the user** (Flutter web is canvas-rendered; DOM preview tools can't drive it — confirm on Chrome: Settings → Appearance → Light, check a few screens, reload to confirm it persists).
 
-## ✅ i18n (Croatian) DONE-BUT-PARTIAL (2026-06-16) — was `feature/i18n-croatian`, merged to main
-User asked for English + Hrvatski. Approach (agreed): **lightweight string provider**, not flutter_localizations/ARB.
-- **Infra:** `lib/config/strings.dart` — `enum AppLang { en, hr }`, a global `Strings.lang`, and one getter per UI string resolving via `_pick(en, hr)` (en/hr side by side). Mirrors the theme system. Enum display localized via `Strings.sexName/fitnessName/fitnessDesc`. `main.dart` loads/persists `app_lang` (alongside `theme_mode`) and `BeatSyncAppState.setLang()` flips `Strings.lang` + `setState` + persists.
+## ✅ i18n (Croatian) COMPLETE (2026-06-16) — `feature/i18n-croatian` + `feature/i18n-complete`, merged to main
+User asked for English + Hrvatski, **fully**. Approach (agreed): **lightweight string provider**, not flutter_localizations/ARB.
+- **Infra:** `lib/config/strings.dart` — `enum AppLang { en, hr }`, a global `Strings.lang`, and one getter per UI string resolving via `_pick(en, hr)` (en/hr side by side). Also a public `Strings.pick(en, hr)` for long screen-specific prose (legal text, FAQ) kept inline, and enum/zone/type helpers (`sexName`, `fitnessName`, `fitnessDesc`, `zoneName`, `workoutTypeLabel/Desc`). Mirrors the theme system. `main.dart` loads/persists `app_lang` (alongside `theme_mode`); `BeatSyncAppState.setLang()` flips `Strings.lang` + `setState` + persists.
 - **Switcher:** Settings → Language sheet lists EN/HR, checks current, persists; trailing shows current. Appearance sheet = Light/Dark/System.
-- **⚠️ CRITICAL FIX (commit `cac9774`):** `BeatSyncApp.appKey` (a `GlobalKey<BeatSyncAppState>`) was attached to the inner **`MaterialApp`** instead of the `BeatSyncApp` widget, so `appKey.currentState` was always **null** — meaning **both** the theme AND language toggles were silent no-ops. The key now lives on the `BeatSyncApp` instance passed to `runApp`. **Light/dark + language now actually work** (user confirmed on web).
-- **Translated (use `Strings`, 18 files):** auth funnel (splash, onboarding, login, register, role-select), profile-setup wizard, studio-creation, settings (main screen), athlete core (home, history, workout, workout-summary, join-session, join-studio, session-lobby, workout-type sheet), trainer-home, member-list.
-- **⬜ NOT yet translated (still hardcoded English) — finish these to complete i18n:**
-  - Trainer screens: `member_detail`, `studio_analytics`, `session_host`, `trainer_monitor`, `tv_host`, `cloud_session_detail`, `all_sessions`, `session_detail`.
-  - Stage-3 sub-screens (built in English): `subscription_screen`, `legal_doc_screen` (Privacy/ToS copy — EN only, needs HR), `help_faq_screen`, `health_data_screen`, `studio_detail_screen`; also `edit_profile_screen`, `device_pairing_screen`.
-  - Shared widgets with literals: `stat_chip`, `zone_badge`, `participant_card`, `session_status_banner`, `invite_sheet`, `hrv_chart`, `activity_calendar`, `floating_pills`, `bpm_display`, `home_header`.
-  - **Pattern to continue:** for each screen, add `Strings.x => _pick('English','Hrvatski')` getters in `strings.dart` and replace the literal (drop `const` where a getter lands in a const widget — `flutter analyze` flags each). No new infra needed.
+- **⚠️ CRITICAL FIX (commit `cac9774`):** `BeatSyncApp.appKey` (a `GlobalKey<BeatSyncAppState>`) was attached to the inner **`MaterialApp`** instead of the `BeatSyncApp` widget, so `appKey.currentState` was always **null** — meaning **both** the theme AND language toggles were silent no-ops. The key now lives on the `BeatSyncApp` instance passed to `runApp`. Light/dark + language work (user-confirmed on web).
+- **Coverage: every reachable screen + widget is translated** — auth funnel, profile-setup, studio-creation, settings + all its sub-screens (health data, subscription, help/FAQ, **Privacy + ToS prose**, studio detail, edit profile, device pairing), athlete core (home/history/workout/summary/join/lobby), and the full trainer side (home, member list, member detail, analytics, all-sessions, session detail, session host, **live monitor**, **TV board**) + shared widgets (floating pills, session banner, bpm display, invite sheet, activity calendar, hrv chart).
+- **Intentionally left English:** units/acronyms (`bpm`, `TRIMP`, `RMSSD`, `SDNN`, `ms`, `Z4+`), the `BeatSync` brand, and demo placeholder values (e.g. the prototype's seeded session name / demo emails).
+- **⚠️ Pre-existing dead screens NOT translated (orphans, not referenced anywhere — left untouched per "don't touch dead code"):** `lib/screens/profile_edit_screen.dart` and `lib/screens/trends_screen.dart`. If they're ever wired up, translate them with the same `Strings`/`Strings.pick` pattern (or delete them if confirmed dead).
+- **To add a language later:** extend `AppLang` + every `_pick`/`pick` call gets a 3rd arg (or switch them to a map). For a new string: add `Strings.x => _pick('English','Hrvatski')` and use it; `flutter analyze` flags any `const` widget that now holds a getter (drop the `const`).
 
 ## ▶ NEXT TASK — Stage 4: Next.js admin panel
-Separate private repo `C:\dev\beatsync-admin`; bridge handoff already at `C:\dev\beatsync-admin\docs\HANDOFF.md` (read it first; repo not yet scaffolded). (Optional Flutter follow-up whenever: finish the Croatian translation of the screens listed in the i18n section.)
+Separate private repo `C:\dev\beatsync-admin`; bridge handoff already at `C:\dev\beatsync-admin\docs\HANDOFF.md` (read it first; repo not yet scaffolded). The mobile app is now feature-complete (light mode + full EN/HR i18n done); remaining mobile work is the live-session + BLE-hardware test passes and ship chores.
 
 ## What BeatSync is
 Flutter app for real-time heart-rate monitoring during group fitness sessions in small studios. Cheaper alternative to MyZone/OrangeTheory. Solo dev project. Full plan: `IMPLEMENTATION_PLAN.md` (mobile app → Next.js admin panel → backend → deploy).
@@ -35,7 +33,7 @@ Flutter app for real-time heart-rate monitoring during group fitness sessions in
 - **Remote:** `github.com/2dollaB/PortfolioProjects` (user `TMinarik00` has push access).
 - **⚠️ Push via the PowerShell tool, NOT bash** — the WSL/bash git credential helper fails here ("could not read Username"). PowerShell git uses the Windows credential manager and works.
 - **main** is the integration branch; work happens on `feature/*` branches, fast-forward merged to main, then pushed. Each increment = its own commit + merge.
-- Current `main` HEAD: `cac9774` — **Stage 3 + the partial Croatian i18n are merged to main and pushed.** Branches `feature/profile-settings` and `feature/i18n-croatian` are both fast-forward-merged (safe to delete). No open feature branches.
+- Current `main` HEAD: `725d2ef` + this handoff update — **Stage 3 + full Croatian i18n are merged to main and pushed.** Branches `feature/profile-settings`, `feature/i18n-croatian`, `feature/i18n-complete` are all fast-forward-merged (deleted). No open feature branches.
 
 ## Firebase backend (provisioned & deployed)
 - **Project:** `beatsync-prod` (project number `918880027506`).
