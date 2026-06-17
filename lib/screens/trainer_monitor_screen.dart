@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/cloud_session.dart';
 import '../services/mock_data.dart';
@@ -100,7 +101,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       : (_session?.rounds ?? 1);
   bool get _hasIntervals => _cfgWork > 0;
   String get _roundLabel =>
-      _phaseDone ? 'Complete' : 'Round $_round/$_cfgRounds';
+      _phaseDone ? Strings.complete : Strings.roundOf(_round, _cfgRounds);
 
   void _snack(String msg) {
     if (!mounted) return;
@@ -125,7 +126,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     try {
       await SessionRepository.beginWorkout(s.id);
     } catch (_) {
-      _snack('Could not start the workout. Try again.');
+      _snack(Strings.couldNotStartWorkout);
     }
   }
 
@@ -145,7 +146,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     try {
       await SessionRepository.pause(s.id, accumulatedMs: acc);
     } catch (_) {
-      _snack('Could not pause. Try again.');
+      _snack(Strings.couldNotPause);
     }
   }
 
@@ -159,7 +160,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     try {
       await SessionRepository.resume(s.id);
     } catch (_) {
-      _snack('Could not resume. Try again.');
+      _snack(Strings.couldNotResume);
     }
   }
 
@@ -168,19 +169,19 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgSecondary,
-        title: Text('Remove $name?'),
+        title: Text(Strings.removeAthleteTitle(name)),
         content: Text(
-          "They'll be dropped from the session and can't rejoin it.",
+          Strings.removeAthleteBody,
           style: AppTheme.bodyLarge(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(Strings.cancel)),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.brandRed),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Remove'),
+            child: Text(Strings.remove),
           ),
         ],
       ),
@@ -191,7 +192,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       try {
         await SessionRepository.kick(widget.session!.id, id);
       } catch (_) {
-        _snack('Could not remove athlete. Try again.');
+        _snack(Strings.couldNotRemoveAthlete);
       }
     }
   }
@@ -382,7 +383,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
                             .copyWith(fontSize: 16),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
-                    Text('Lobby · waiting to start', style: AppTheme.micro()),
+                    Text(Strings.lobbyWaiting, style: AppTheme.micro()),
                   ],
                 ),
               ),
@@ -402,7 +403,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
           ),
           child: Row(
             children: [
-              Text('In the room', style: AppTheme.h2()),
+              Text(Strings.inTheRoom, style: AppTheme.h2()),
               const Spacer(),
               Text('${athletes.length}', style: AppTheme.statNumber(fontSize: 22)),
             ],
@@ -412,7 +413,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
           child: athletes.isEmpty
               ? Center(
                   child: Text(
-                    'Waiting for athletes to join…\nShare the QR / invite code.',
+                    Strings.waitingForAthletes,
                     style: AppTheme.caption(),
                     textAlign: TextAlign.center,
                   ),
@@ -435,7 +436,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
             border: Border(top: BorderSide(color: AppColors.border)),
           ),
           child: BeatPrimaryButton(
-            label: 'Start training',
+            label: Strings.startTraining,
             icon: Icons.play_arrow_rounded,
             onPressed: _onStart,
           ),
@@ -453,7 +454,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
         if (_isRunning && _hasIntervals && !_phaseDone) ...[
           Expanded(
             child: BeatSecondaryButton(
-              label: 'Skip',
+              label: Strings.skip,
               icon: Icons.skip_next_rounded,
               onPressed: () => setState(() => _phaseRemainingSec = 0),
             ),
@@ -465,12 +466,12 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
           Expanded(
             child: paused
                 ? BeatPrimaryButton(
-                    label: 'Resume',
+                    label: Strings.resume,
                     icon: Icons.play_arrow_rounded,
                     onPressed: _onResume,
                   )
                 : BeatSecondaryButton(
-                    label: 'Pause',
+                    label: Strings.pause,
                     icon: Icons.pause_rounded,
                     onPressed: _onPause,
                   ),
@@ -479,7 +480,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
         ],
         Expanded(
           child: BeatPrimaryButton(
-            label: 'End',
+            label: Strings.endLabel,
             icon: Icons.stop_rounded,
             onPressed: _onEndSession,
           ),
@@ -523,20 +524,20 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgSecondary,
-        title: const Text('End session?'),
+        title: Text(Strings.endSessionTitle),
         content: Text(
-          'This ends the workout for everyone and shows the results.',
+          Strings.endSessionBody,
           style: AppTheme.bodyLarge(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(Strings.cancel),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.brandRed),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('End session'),
+            child: Text(Strings.endSession),
           ),
         ],
       ),
@@ -572,7 +573,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       _completing = false;
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not end the session. Try again.')),
+        SnackBar(content: Text(Strings.couldNotEndSession)),
       );
       return;
     }
@@ -620,7 +621,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
                     child: SessionTitlePill(
                       sessionName: _sessionName,
                       subtitle:
-                          '${sorted.length} athletes · ${_formatDuration(_elapsed)}',
+                          '${Strings.athletesCount(sorted.length)} · ${_formatDuration(_elapsed)}',
                     ),
                   ),
                   const SizedBox(width: AppSpacing.xs),
@@ -733,7 +734,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
               SessionTitlePill(
                 sessionName: _sessionName,
                 subtitle:
-                    '${sorted.length} athletes · ${_formatDuration(_elapsed)}${_runState == 'paused' ? ' · Paused' : ''}',
+                    '${Strings.athletesCount(sorted.length)} · ${_formatDuration(_elapsed)}${_runState == 'paused' ? ' · ${Strings.paused}' : ''}',
               ),
             ],
           ),
@@ -756,7 +757,7 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
                     ),
                     const SizedBox(width: 2),
                     _SortChip(
-                      label: 'Intensity',
+                      label: Strings.intensity,
                       selected: _sort == _SortMode.intensity,
                       onTap: () => setState(() => _sort = _SortMode.intensity),
                     ),
@@ -870,7 +871,7 @@ class _LobbyRow extends StatelessWidget {
             ),
           ),
           Text(
-            ready ? 'Ready' : '${athlete.bpm} bpm',
+            ready ? Strings.ready : '${athlete.bpm} bpm',
             style: AppTheme.caption(
               color: ready ? AppColors.success : AppColors.textSecondary,
             ),
@@ -878,7 +879,7 @@ class _LobbyRow extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.person_remove_alt_1_rounded, size: 20),
             color: AppColors.textTertiary,
-            tooltip: 'Remove',
+            tooltip: Strings.remove,
             onPressed: () => onKick(athlete.id, athlete.name),
           ),
         ],

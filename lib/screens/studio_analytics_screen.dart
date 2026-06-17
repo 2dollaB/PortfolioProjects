@@ -4,6 +4,7 @@ import '../widgets/mobile_frame.dart';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/studio.dart';
 import '../models/user_profile.dart';
@@ -96,9 +97,9 @@ class _StudioAnalyticsScreenState extends State<StudioAnalyticsScreen> {
   Widget _header() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Analytics', style: AppTheme.h1().copyWith(fontSize: 26)),
+          Text(Strings.analytics, style: AppTheme.h1().copyWith(fontSize: 26)),
           const SizedBox(height: AppSpacing.xs),
-          Text('Last 8 weeks',
+          Text(Strings.last8Weeks,
               style: AppTheme.bodyLarge(color: AppColors.textSecondary)),
         ],
       );
@@ -144,18 +145,18 @@ class _StudioAnalyticsScreenState extends State<StudioAnalyticsScreen> {
 
             Row(
               children: [
-                Expanded(child: StatChip(label: 'Sessions', value: a.sessions)),
+                Expanded(child: StatChip(label: Strings.sessions, value: a.sessions)),
                 const SizedBox(width: AppSpacing.xs),
-                Expanded(child: StatChip(label: 'Hours', value: a.hours)),
+                Expanded(child: StatChip(label: Strings.hours, value: a.hours)),
                 const SizedBox(width: AppSpacing.xs),
-                Expanded(child: StatChip(label: 'Athletes', value: a.athletes)),
+                Expanded(child: StatChip(label: Strings.athletes, value: a.athletes)),
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
 
             _ChartCard(
-              title: 'Attendance',
-              subtitle: 'Athletes per week',
+              title: Strings.attendanceTitle,
+              subtitle: Strings.athletesPerWeek,
               child: _BarChart(
                 values: a.attendance,
                 labels: const ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'],
@@ -165,8 +166,8 @@ class _StudioAnalyticsScreenState extends State<StudioAnalyticsScreen> {
             const SizedBox(height: AppSpacing.md),
 
             _ChartCard(
-              title: 'Group TRIMP',
-              subtitle: 'Average per session',
+              title: Strings.groupTrimp,
+              subtitle: Strings.averagePerSession,
               child: _LineChart(
                 values: a.groupTrimp,
                 color: AppColors.warning,
@@ -175,13 +176,13 @@ class _StudioAnalyticsScreenState extends State<StudioAnalyticsScreen> {
             const SizedBox(height: AppSpacing.md),
 
             _ChartCard(
-              title: 'Top athletes',
-              subtitle: 'Most active this month',
+              title: Strings.topAthletes,
+              subtitle: Strings.mostActiveMonth,
               child: a.top.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.all(AppSpacing.sm),
                       child: Text(
-                        'No workouts this month yet.',
+                        Strings.noWorkoutsMonth,
                         style: AppTheme.caption(),
                       ),
                     )
@@ -474,7 +475,7 @@ class _TopList extends StatelessWidget {
                 Expanded(child: Text(items[i].$1, style: AppTheme.bodyLarge())),
                 Text('${items[i].$2}', style: AppTheme.statNumber(fontSize: 14)),
                 const SizedBox(width: 3),
-                Text('sessions', style: AppTheme.caption()),
+                Text(Strings.sessionsLower, style: AppTheme.caption()),
               ],
             ),
           ),

@@ -476,6 +476,148 @@ class Strings {
         _ => filterAll,
       };
 
+  // ── Trainer: member detail ───────────────────────────────────
+  static String get notesSaved => _pick('Notes saved', 'Bilješke spremljene');
+  static String get notesSaveFailed =>
+      _pick('Could not save notes.', 'Spremanje bilješki nije uspjelo.');
+  static String get noWorkoutsShort =>
+      _pick('No workouts yet', 'Još nema treninga');
+  static String lastWorkout(String date) =>
+      _pick('Last workout · $date', 'Zadnji trening · $date');
+  static String get avgTrimp => _pick('Avg TRIMP', 'Pros. TRIMP');
+  static String get attendance12w =>
+      _pick('Attendance · last 12 weeks', 'Dolasci · zadnjih 12 tjedana');
+  static String get trimpTrend8w =>
+      _pick('TRIMP trend · last 8 weeks', 'TRIMP trend · zadnjih 8 tjedana');
+  static String get trainerNotes => _pick('Trainer notes', 'Bilješke trenera');
+  static String get onlyYouSee =>
+      _pick('Only you can see these.', 'Samo vi ovo vidite.');
+  static String get addAthleteNote => _pick(
+      'Add notes about this athlete…', 'Dodajte bilješke o ovom sportašu…');
+  static String get saveNotes => _pick('Save notes', 'Spremi bilješke');
+
+  // ── Trainer: studio analytics ────────────────────────────────
+  static String get analytics => _pick('Analytics', 'Analitika');
+  static String get last8Weeks => _pick('Last 8 weeks', 'Zadnjih 8 tjedana');
+  static String get hours => _pick('Hours', 'Sati');
+  static String get athletes => _pick('Athletes', 'Sportaši');
+  static String get attendanceTitle => _pick('Attendance', 'Dolasci');
+  static String get athletesPerWeek =>
+      _pick('Athletes per week', 'Sportaša tjedno');
+  static String get groupTrimp => _pick('Group TRIMP', 'Grupni TRIMP');
+  static String get averagePerSession =>
+      _pick('Average per session', 'Prosjek po treningu');
+  static String get topAthletes =>
+      _pick('Top athletes', 'Najaktivniji sportaši');
+  static String get mostActiveMonth =>
+      _pick('Most active this month', 'Najaktivniji ovaj mjesec');
+  static String get noWorkoutsMonth => _pick(
+      'No workouts this month yet.', 'Još nema treninga ovaj mjesec.');
+  static String get sessionsLower => _pick('sessions', 'treninga');
+
+  // ── Sessions (history / detail) ──────────────────────────────
+  static String get allSessions => _pick('All sessions', 'Sve sesije');
+  static String get filterThisWeek => _pick('This week', 'Ovaj tjedan');
+  static String get noSessionsMatch => _pick(
+      'No sessions match your filters.', 'Nijedna sesija ne odgovara filtrima.');
+  static String get athletesLower => _pick('athletes', 'sportaša');
+  static String get sessionAnalytics =>
+      _pick('Session analytics', 'Analitika sesije');
+  static String get dominant => _pick('Dominant', 'Dominantna');
+  static String get groupAvgAllAthletes => _pick(
+      'Group average across all athletes', 'Grupni prosjek svih sportaša');
+  static String participated(int n) =>
+      _pick('$n participated', '$n sudjelovalo');
+  static String get avgGroupHr => _pick('AVG GROUP HR', 'PROS. GRUPNI PULS');
+  static String get groupTrimpCaps => _pick('GROUP TRIMP', 'GRUPNI TRIMP');
+  static String get avgPerAthlete =>
+      _pick('avg per athlete', 'prosj. po sportašu');
+  static String avgPeak(int avg, int peak) =>
+      _pick('avg $avg · peak $peak', 'prosj. $avg · vrh $peak');
+  static String get couldNotLoadResults => _pick(
+      "Couldn't load this session's results.",
+      'Učitavanje rezultata nije uspjelo.');
+  static String get noSavedWorkoutsYet => _pick(
+      'No saved workouts yet — results appear once athletes end their workout.',
+      'Još nema spremljenih treninga — rezultati se pojavljuju kad sportaši završe trening.');
+  static String get refresh => _pick('Refresh', 'Osvježi');
+
+  // ── Trainer: start/host session ──────────────────────────────
+  static String get startSessionTitle => _pick('Start session', 'Novi trening');
+  static String get untitledSession =>
+      _pick('Untitled session', 'Bezimeni trening');
+  static String get couldNotStartSession => _pick(
+      'Could not start the session. Try again.',
+      'Pokretanje treninga nije uspjelo. Pokušajte ponovno.');
+  static String get sessionNameLabel => _pick('Session name', 'Naziv treninga');
+  static String get typeLabel => _pick('Type', 'Vrsta');
+  static String get intervalTimer =>
+      _pick('Interval timer', 'Intervalni tajmer');
+  static String get intervalTimerDesc => _pick(
+      'Auto work/rest cycles with countdown.',
+      'Automatski ciklusi rada/odmora s odbrojavanjem.');
+  static String get work => _pick('Work', 'Rad');
+  static String get rest => _pick('Rest', 'Odmor');
+  static String get rounds => _pick('Rounds', 'Runde');
+  static String get sec => _pick('sec', 'sek');
+  static String get qrJoinHint => _pick(
+      'Athletes will scan a QR code to join once you launch the session.',
+      'Sportaši skeniraju QR kod za pridruživanje nakon što pokrenete trening.');
+  static String get launchSession =>
+      _pick('Launch session', 'Pokreni trening');
+
+  // ── Trainer: live monitor ────────────────────────────────────
+  static String get complete => _pick('Complete', 'Završeno');
+  static String roundOf(int r, int total) =>
+      _pick('Round $r/$total', 'Runda $r/$total');
+  static String get couldNotStartWorkout => _pick(
+      'Could not start the workout. Try again.',
+      'Pokretanje treninga nije uspjelo. Pokušajte ponovno.');
+  static String get couldNotPause => _pick(
+      'Could not pause. Try again.', 'Pauziranje nije uspjelo. Pokušajte ponovno.');
+  static String get couldNotResume => _pick(
+      'Could not resume. Try again.', 'Nastavak nije uspio. Pokušajte ponovno.');
+  static String get couldNotRemoveAthlete => _pick(
+      'Could not remove athlete. Try again.',
+      'Uklanjanje sportaša nije uspjelo. Pokušajte ponovno.');
+  static String get couldNotEndSession => _pick(
+      'Could not end the session. Try again.',
+      'Završavanje treninga nije uspjelo. Pokušajte ponovno.');
+  static String removeAthleteTitle(String name) =>
+      _pick('Remove $name?', 'Ukloniti $name?');
+  static String get removeAthleteBody => _pick(
+      "They'll be dropped from the session and can't rejoin it.",
+      'Bit će uklonjen iz treninga i ne može se ponovno pridružiti.');
+  static String get remove => _pick('Remove', 'Ukloni');
+  static String get lobbyWaiting =>
+      _pick('Lobby · waiting to start', 'Predvorje · čeka se početak');
+  static String get inTheRoom => _pick('In the room', 'U sobi');
+  static String get waitingForAthletes => _pick(
+      'Waiting for athletes to join…\nShare the QR / invite code.',
+      'Čekanje da se sportaši pridruže…\nPodijelite QR / pozivni kod.');
+  static String get intensity => _pick('Intensity', 'Intenzitet');
+  static String get endSessionTitle =>
+      _pick('End session?', 'Završiti sesiju?');
+  static String get endSessionBody => _pick(
+      'This ends the workout for everyone and shows the results.',
+      'Ovo završava trening za sve i prikazuje rezultate.');
+  static String get endSession => _pick('End session', 'Završi sesiju');
+  static String get ready => _pick('Ready', 'Spreman');
+
+  // ── TV host board ────────────────────────────────────────────
+  static String get tvNoLiveSession => _pick(
+      'No live session right now — the board lights up when one starts.',
+      'Trenutno nema treninga uživo — ploča se pali kad trening počne.');
+  static String get pausedCaps => _pick('PAUSED', 'PAUZIRANO');
+  static String get startingSoon => _pick('STARTING SOON', 'USKORO POČINJE');
+  static String get getIntoPosition => _pick(
+      'Get into position — scan the code to join',
+      'Zauzmite mjesta — skenirajte kod za pridruživanje');
+  static String get waitingForAthletesShort =>
+      _pick('Waiting for athletes…', 'Čekanje sportaša…');
+  static String get waitingToJoin => _pick(
+      'Waiting for athletes to join…', 'Čekanje da se sportaši pridruže…');
+
   // ── Settings: sections + rows ────────────────────────────────
   static String get account => _pick('Account', 'Račun');
   static String get app => _pick('App', 'Aplikacija');

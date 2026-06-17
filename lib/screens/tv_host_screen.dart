@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/cloud_session.dart';
 import '../models/studio.dart';
@@ -220,7 +221,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'No live session right now — the board lights up when one starts.',
+                Strings.tvNoLiveSession,
                 style: AppTheme.caption(),
                 textAlign: TextAlign.center,
               ),
@@ -257,7 +258,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
     final title = live?.name ?? 'Friday HIIT 18:00';
     final studioName =
         live == null ? MockData.studioName : (_studio?.name ?? '');
-    final subtitle = '$studioName · ${list.length} athletes';
+    final subtitle = '$studioName · ${Strings.athletesCount(list.length)}';
     final elapsed = _formatDuration(_elapsedFor(live));
     final paused = _runStateFor(live) == 'paused';
 
@@ -280,7 +281,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
                       const Icon(Icons.pause_circle_filled_rounded,
                           color: AppColors.warning, size: 72),
                       const SizedBox(height: AppSpacing.md),
-                      Text('PAUSED',
+                      Text(Strings.pausedCaps,
                           style: AppTheme.h1(color: AppColors.warning)
                               .copyWith(fontSize: 40, letterSpacing: 4)),
                     ],
@@ -322,13 +323,13 @@ class _TvHostScreenState extends State<TvHostScreen> {
                         color: AppColors.brandRed, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: AppSpacing.xs),
-                  Text('STARTING SOON',
+                  Text(Strings.startingSoon,
                       style: AppTheme.micro(color: AppColors.brandRed).copyWith(
                           letterSpacing: 2, fontWeight: FontWeight.w700)),
                 ],
               ),
               const SizedBox(height: AppSpacing.xl),
-              Text('Get into position — scan the code to join',
+              Text(Strings.getIntoPosition,
                   style: AppTheme.bodyLarge(color: AppColors.textSecondary)),
               if (code != null) ...[
                 const SizedBox(height: AppSpacing.md),
@@ -354,7 +355,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
                   builder: (context, snap) {
                     final n = snap.data?.length ?? 0;
                     return Text(
-                      n == 0 ? 'Waiting for athletes…' : '$n in the room',
+                      n == 0 ? Strings.waitingForAthletesShort : Strings.nInTheRoom(n),
                       style: AppTheme.caption(color: AppColors.success),
                     );
                   },
@@ -372,7 +373,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
     if (list.isEmpty) {
       return Center(
         child: Text(
-          'Waiting for athletes to join…',
+          Strings.waitingToJoin,
           style: AppTheme.caption(),
         ),
       );
@@ -456,7 +457,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
                       child: PhasePill(
                         phase: _phase,
                         remaining: Duration(seconds: _phaseRemainingSec),
-                        roundLabel: 'Round $_round/$_totalRounds',
+                        roundLabel: Strings.roundOf(_round, _totalRounds),
                       ),
                     )
                   else
@@ -551,7 +552,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
                     ),
                     const SizedBox(width: 2),
                     _SortChip(
-                      label: 'Intensity',
+                      label: Strings.intensity,
                       selected: _sort == _SortMode.intensity,
                       onTap: () =>
                           setState(() => _sort = _SortMode.intensity),
@@ -570,7 +571,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
                 PhasePill(
                   phase: _phase,
                   remaining: Duration(seconds: _phaseRemainingSec),
-                  roundLabel: 'Round $_round/$_totalRounds',
+                  roundLabel: Strings.roundOf(_round, _totalRounds),
                 ),
               ],
               const SizedBox(width: 8),

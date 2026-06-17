@@ -3,6 +3,7 @@ import '../widgets/mobile_frame.dart';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../services/session_store.dart';
 import '../widgets/beat_button.dart';
@@ -48,7 +49,7 @@ class SessionDetailScreen extends StatelessWidget {
       child: Scaffold(
       backgroundColor: AppColors.bgPrimary,
       appBar: AppBar(
-        title: const Text('Session analytics'),
+        title: Text(Strings.sessionAnalytics),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.of(context).pop(),
@@ -66,20 +67,20 @@ class SessionDetailScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             Row(
               children: [
-                Expanded(child: StatChip(label: 'Athletes', value: '${record.athleteCount}')),
+                Expanded(child: StatChip(label: Strings.athletes, value: '${record.athleteCount}')),
                 const SizedBox(width: AppSpacing.xs),
-                Expanded(child: StatChip(label: 'Duration', value: record.durationLabel)),
+                Expanded(child: StatChip(label: Strings.duration, value: record.durationLabel)),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(child: StatChip(
-                  label: 'Dominant',
+                  label: Strings.dominant,
                   value: 'Z$hottestZone',
                   accent: AppColors.zoneColor(hottestZone == 0 ? 1 : hottestZone),
                 )),
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text('Time in zones', style: AppTheme.h2()),
-            Text('Group average across all athletes',
+            Text(Strings.timeInZones, style: AppTheme.h2()),
+            Text(Strings.groupAvgAllAthletes,
                 style: AppTheme.caption()),
             const SizedBox(height: AppSpacing.sm),
             _ZoneBar(zones: zones),
@@ -93,8 +94,8 @@ class SessionDetailScreen extends StatelessWidget {
               if (z < 5) const SizedBox(height: 6),
             ],
             const SizedBox(height: AppSpacing.lg),
-            Text('Athletes', style: AppTheme.h2()),
-            Text('${record.results.length} participated',
+            Text(Strings.athletes, style: AppTheme.h2()),
+            Text(Strings.participated(record.results.length),
                 style: AppTheme.caption()),
             const SizedBox(height: AppSpacing.sm),
             for (final r in record.results) ...[
@@ -104,7 +105,7 @@ class SessionDetailScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             // Finalize action — returns all the way to the home screen.
             BeatPrimaryButton(
-              label: 'Back to home',
+              label: Strings.backToHome,
               icon: Icons.home_rounded,
               onPressed: () =>
                   Navigator.of(context).popUntil((r) => r.isFirst),
@@ -143,7 +144,7 @@ class _Header extends StatelessWidget {
             children: [
               Text(record.name, style: AppTheme.h2()),
               Text(
-                '${record.type.displayName} · $formatted',
+                '${Strings.workoutTypeLabel(record.type.displayName)} · $formatted',
                 style: AppTheme.caption(),
               ),
             ],
@@ -172,7 +173,7 @@ class _HeroStats extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                Text('AVG GROUP HR',
+                Text(Strings.avgGroupHr,
                     style: AppTheme.micro().copyWith(letterSpacing: 1.4)),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
@@ -190,7 +191,7 @@ class _HeroStats extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                Text('GROUP TRIMP',
+                Text(Strings.groupTrimpCaps,
                     style: AppTheme.micro().copyWith(letterSpacing: 1.4)),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
@@ -200,7 +201,7 @@ class _HeroStats extends StatelessWidget {
                     color: AppColors.warning,
                   ),
                 ),
-                Text('avg per athlete', style: AppTheme.caption()),
+                Text(Strings.avgPerAthlete, style: AppTheme.caption()),
               ],
             ),
           ),
@@ -353,7 +354,7 @@ class _AthleteRow extends StatelessWidget {
                       .copyWith(fontSize: 14),
                 ),
                 Text(
-                  'avg ${result.avgBpm} · peak ${result.maxBpm}',
+                  Strings.avgPeak(result.avgBpm, result.maxBpm),
                   style: AppTheme.caption(),
                 ),
               ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../services/session_store.dart';
 import '../widgets/mobile_frame.dart';
@@ -22,11 +23,18 @@ class _AllSessionsScreenState extends State<AllSessionsScreen> {
   String _relativeDate(DateTime d) {
     final now = DateTime.now();
     final diff = now.difference(d).inDays;
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Yesterday';
-    if (diff < 7) return '$diff days ago';
+    if (diff == 0) return Strings.today;
+    if (diff == 1) return Strings.yesterday;
+    if (diff < 7) return Strings.daysAgo(diff);
     return '${d.day}/${d.month}';
   }
+
+  // Time filter uses stable internal keys; only the displayed label is localized.
+  String _timeLabel(String key) => switch (key) {
+        'This week' => Strings.filterThisWeek,
+        'This month' => Strings.filterThisMonth,
+        _ => Strings.filterAll,
+      };
 
   List<SessionRecord> _filter(List<SessionRecord> all) {
     final now = DateTime.now();
@@ -49,7 +57,7 @@ class _AllSessionsScreenState extends State<AllSessionsScreen> {
       child: Scaffold(
         backgroundColor: AppColors.bgPrimary,
         appBar: AppBar(
-          title: const Text('All sessions'),
+          title: Text(Strings.allSessions),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded),
             onPressed: () => Navigator.of(context).pop(),
@@ -79,7 +87,7 @@ class _AllSessionsScreenState extends State<AllSessionsScreen> {
                             Padding(
                               padding: const EdgeInsets.only(right: AppSpacing.xs),
                               child: _FilterChip(
-                                label: f,
+                                label: _timeLabel(f),
                                 selected: _timeFilter == f,
                                 onTap: () => setState(() => _timeFilter = f),
                               ),
@@ -93,7 +101,7 @@ class _AllSessionsScreenState extends State<AllSessionsScreen> {
                             Padding(
                               padding: const EdgeInsets.only(right: AppSpacing.xs),
                               child: _FilterChip(
-                                label: t.displayName,
+                                label: Strings.workoutTypeLabel(t.displayName),
                                 selected: _typeFilter == t,
                                 onTap: () => setState(() =>
                                     _typeFilter = _typeFilter == t ? null : t),
@@ -110,7 +118,7 @@ class _AllSessionsScreenState extends State<AllSessionsScreen> {
                             child: Padding(
                               padding: const EdgeInsets.all(AppSpacing.xl),
                               child: Text(
-                                'No sessions match your filters.',
+                                Strings.noSessionsMatch,
                                 style: AppTheme.caption(),
                                 textAlign: TextAlign.center,
                               ),
@@ -233,7 +241,7 @@ class _SessionRow extends StatelessWidget {
                           .copyWith(fontSize: 15),
                     ),
                     Text(
-                      '${formatDate(record.startedAt)} · ${record.athleteCount} athletes · ${record.durationLabel}',
+                      '${formatDate(record.startedAt)} · ${record.athleteCount} ${Strings.athletesLower} · ${record.durationLabel}',
                       style: AppTheme.caption(),
                     ),
                   ],

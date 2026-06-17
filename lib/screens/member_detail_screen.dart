@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../models/workout_summary.dart';
@@ -60,12 +61,12 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
   Future<void> _saveNotes() async {
     final p = widget.profile;
     final uid = AuthService.currentUid;
-    var message = 'Notes saved';
+    var message = Strings.notesSaved;
     if (p != null && uid != null) {
       try {
         await TrainerNotesRepository.save(uid, p.id, _notesCtrl.text.trim());
       } catch (_) {
-        message = 'Could not save notes.';
+        message = Strings.notesSaveFailed;
       }
     }
     if (!mounted) return;
@@ -167,8 +168,8 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
           lastSeen: !loaded
               ? '…'
               : all.isEmpty
-                  ? 'No workouts yet'
-                  : 'Last workout · ${all.first.dateLabel}',
+                  ? Strings.noWorkoutsShort
+                  : Strings.lastWorkout(all.first.dateLabel),
           active: false,
           sessions: loaded ? '${all.length}' : '–',
           avgTrimp: loaded && all.isNotEmpty ? '${avg((w) => w.trimp)}' : '–',
@@ -297,40 +298,40 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
             // Quick stats
             Row(
               children: [
-                Expanded(child: StatChip(label: 'Sessions', value: sessions)),
+                Expanded(child: StatChip(label: Strings.sessions, value: sessions)),
                 const SizedBox(width: AppSpacing.xs),
-                Expanded(child: StatChip(label: 'Avg TRIMP', value: avgTrimp)),
+                Expanded(child: StatChip(label: Strings.avgTrimp, value: avgTrimp)),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
-                    child: StatChip(label: 'Avg HR', value: avgHr, unit: 'bpm')),
+                    child: StatChip(label: Strings.avgHr, value: avgHr, unit: 'bpm')),
               ],
             ),
 
             const SizedBox(height: AppSpacing.lg),
-            Text('Attendance · last 12 weeks', style: AppTheme.h2()),
+            Text(Strings.attendance12w, style: AppTheme.h2()),
             const SizedBox(height: AppSpacing.sm),
             _AttendanceHeatmap(intensities: heatmap),
 
             const SizedBox(height: AppSpacing.lg),
-            Text('TRIMP trend · last 8 weeks', style: AppTheme.h2()),
+            Text(Strings.trimpTrend8w, style: AppTheme.h2()),
             const SizedBox(height: AppSpacing.sm),
             _TrimpTrend(values: trend),
 
             const SizedBox(height: AppSpacing.lg),
-            Text('Trainer notes', style: AppTheme.h2()),
-            Text('Only you can see these.', style: AppTheme.caption()),
+            Text(Strings.trainerNotes, style: AppTheme.h2()),
+            Text(Strings.onlyYouSee, style: AppTheme.caption()),
             const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _notesCtrl,
               maxLines: 4,
-              decoration: const InputDecoration(
-                hintText: 'Add notes about this athlete…',
+              decoration: InputDecoration(
+                hintText: Strings.addAthleteNote,
               ),
             ),
 
             const SizedBox(height: AppSpacing.lg),
             BeatPrimaryButton(
-              label: 'Save notes',
+              label: Strings.saveNotes,
               icon: Icons.check_rounded,
               onPressed: _saveNotes,
             ),

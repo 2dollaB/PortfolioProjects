@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/cloud_session.dart';
 import '../models/workout_summary.dart';
@@ -80,7 +81,7 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
       for (final w in workouts)
         AthleteResult(
           athleteId: w.userId ?? w.id,
-          name: names[w.userId] ?? 'Athlete',
+          name: names[w.userId] ?? Strings.athlete,
           avgBpm: w.avgHr,
           maxBpm: w.maxHr,
           trimp: w.trimp,
@@ -117,7 +118,7 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
       child: Scaffold(
         backgroundColor: AppColors.bgPrimary,
         appBar: AppBar(
-          title: const Text('Session analytics'),
+          title: Text(Strings.sessionAnalytics),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded),
             onPressed: () => Navigator.of(context).pop(),
@@ -143,22 +144,21 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
                         const SizedBox(height: AppSpacing.md),
                         Text(
                           _failed
-                              ? "Couldn't load this session's results."
-                              : 'No saved workouts yet — results appear '
-                                  'once athletes end their workout.',
+                              ? Strings.couldNotLoadResults
+                              : Strings.noSavedWorkoutsYet,
                           style: AppTheme.bodyLarge(
                               color: AppColors.textSecondary),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: AppSpacing.lg),
                         BeatSecondaryButton(
-                          label: 'Refresh',
+                          label: Strings.refresh,
                           icon: Icons.refresh_rounded,
                           onPressed: _load,
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         BeatPrimaryButton(
-                          label: 'Back to home',
+                          label: Strings.backToHome,
                           icon: Icons.home_rounded,
                           onPressed: () => Navigator.of(context)
                               .popUntil((r) => r.isFirst),

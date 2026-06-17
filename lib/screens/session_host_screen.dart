@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/cloud_session.dart';
 import '../services/auth_service.dart';
@@ -39,7 +40,7 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
 
   Future<void> _launch() async {
     final name =
-        _name.text.trim().isEmpty ? 'Untitled session' : _name.text.trim();
+        _name.text.trim().isEmpty ? Strings.untitledSession : _name.text.trim();
     final studioId = widget.studioId;
     final uid = AuthService.currentUid;
 
@@ -78,7 +79,7 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
       if (!mounted) return;
       setState(() => _launching = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not start the session. Try again.')),
+        SnackBar(content: Text(Strings.couldNotStartSession)),
       );
       return;
     }
@@ -109,7 +110,7 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
       child: Scaffold(
       backgroundColor: AppColors.bgPrimary,
       appBar: AppBar(
-        title: const Text('Start session'),
+        title: Text(Strings.startSessionTitle),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.of(context).pop(),
@@ -122,7 +123,7 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(AppSpacing.xl),
                 children: [
-                  _label('Session name'),
+                  _label(Strings.sessionNameLabel),
                   TextField(
                     controller: _name,
                     decoration: const InputDecoration(
@@ -130,14 +131,14 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  _label('Type'),
+                  _label(Strings.typeLabel),
                   Wrap(
                     spacing: AppSpacing.xs,
                     runSpacing: AppSpacing.xs,
                     children: [
                       for (final t in WorkoutType.values)
                         _TypeChip(
-                          label: t.displayName,
+                          label: Strings.workoutTypeLabel(t.displayName),
                           selected: _type == t,
                           onTap: () => setState(() => _type = t),
                         ),
@@ -161,11 +162,11 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Interval timer',
+                                  Text(Strings.intervalTimer,
                                       style: AppTheme.bodyLarge(
                                           weight: FontWeight.w600)),
                                   Text(
-                                    'Auto work/rest cycles with countdown.',
+                                    Strings.intervalTimerDesc,
                                     style: AppTheme.caption(),
                                   ),
                                 ],
@@ -186,8 +187,8 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
                             children: [
                               Expanded(
                                 child: _DurationStepper(
-                                  label: 'Work',
-                                  unit: 'sec',
+                                  label: Strings.work,
+                                  unit: Strings.sec,
                                   value: _workSec,
                                   onChanged: (v) =>
                                       setState(() => _workSec = v),
@@ -197,8 +198,8 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
                               const SizedBox(width: AppSpacing.xs),
                               Expanded(
                                 child: _DurationStepper(
-                                  label: 'Rest',
-                                  unit: 'sec',
+                                  label: Strings.rest,
+                                  unit: Strings.sec,
                                   value: _restSec,
                                   onChanged: (v) =>
                                       setState(() => _restSec = v),
@@ -208,7 +209,7 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
                               const SizedBox(width: AppSpacing.xs),
                               Expanded(
                                 child: _DurationStepper(
-                                  label: 'Rounds',
+                                  label: Strings.rounds,
                                   unit: '',
                                   value: _rounds,
                                   onChanged: (v) =>
@@ -237,7 +238,7 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
                         const SizedBox(width: AppSpacing.xs),
                         Expanded(
                           child: Text(
-                            "Athletes will scan a QR code to join once you launch the session.",
+                            Strings.qrJoinHint,
                             style: AppTheme.caption(),
                           ),
                         ),
@@ -250,7 +251,7 @@ class _SessionHostScreenState extends State<SessionHostScreen> {
             Padding(
               padding: const EdgeInsets.all(AppSpacing.xl),
               child: BeatPrimaryButton(
-                label: 'Launch session',
+                label: Strings.launchSession,
                 icon: Icons.play_arrow_rounded,
                 loading: _launching,
                 onPressed: _launch,
