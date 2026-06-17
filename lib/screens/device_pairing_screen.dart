@@ -6,6 +6,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../services/ble_hr_service.dart';
 import '../widgets/beat_button.dart';
@@ -105,8 +106,8 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
     ].request();
     final ok = statuses.values.every((s) => s.isGranted);
     if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Bluetooth permission is needed to find your sensor.'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(Strings.btPermissionNeeded),
       ));
     }
     return ok;
@@ -143,7 +144,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
     if (r.advertisementData.advName.isNotEmpty) {
       return r.advertisementData.advName;
     }
-    return 'Heart rate sensor';
+    return Strings.heartRateSensor;
   }
 
   @override
@@ -165,7 +166,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                     const SizedBox(width: AppSpacing.xs),
-                    Text('Heart rate sensor', style: AppTheme.h2()),
+                    Text(Strings.heartRateSensor, style: AppTheme.h2()),
                   ],
                 ),
               ),
@@ -199,11 +200,10 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
           const Spacer(),
           _PulseHero(animation: _pulse, active: false),
           const SizedBox(height: AppSpacing.lg),
-          Text('Pair your sensor', style: AppTheme.h1()),
+          Text(Strings.pairYourSensor, style: AppTheme.h1()),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Any Bluetooth chest strap works — or a sports watch in '
-            'heart-rate broadcast mode.',
+            Strings.pairSensorSubtitle,
             style: AppTheme.bodyLarge(color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
@@ -221,8 +221,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
                 ),
               ),
               child: Text(
-                "Couldn't connect — make sure the sensor is awake "
-                'and close by, then try again.',
+                Strings.couldNotConnectSensor,
                 style: AppTheme.caption(color: AppColors.danger),
                 textAlign: TextAlign.center,
               ),
@@ -230,7 +229,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
           ],
           const Spacer(),
           BeatPrimaryButton(
-            label: _failed ? 'Try again' : 'Start scanning',
+            label: _failed ? Strings.tryAgain : Strings.startScanning,
             icon: Icons.bluetooth_searching_rounded,
             onPressed: _startScan,
           ),
@@ -249,14 +248,12 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
         _PulseHero(animation: _pulse, active: true, size: 150),
         const SizedBox(height: AppSpacing.md),
         Text(
-          connecting ? 'Connecting to $_connectingName…' : 'Scanning…',
+          connecting ? Strings.connectingTo(_connectingName) : Strings.scanning,
           style: AppTheme.h2(),
         ),
         const SizedBox(height: AppSpacing.micro),
         Text(
-          connecting
-              ? 'Hold tight — this takes a few seconds.'
-              : 'Wear the strap so it wakes up and starts advertising.',
+          connecting ? Strings.holdTight : Strings.wearStrap,
           style: AppTheme.caption(),
           textAlign: TextAlign.center,
         ),
@@ -265,7 +262,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
           child: _results.isEmpty
               ? Center(
                   child: Text(
-                    'Looking for sensors nearby…',
+                    Strings.lookingForSensors,
                     style: AppTheme.caption(color: AppColors.textTertiary),
                   ),
                 )
@@ -293,7 +290,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
             AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, AppSpacing.lg,
           ),
           child: BeatSecondaryButton(
-            label: 'Stop',
+            label: Strings.stop,
             icon: Icons.stop_rounded,
             onPressed: connecting ? null : _stopScan,
           ),
@@ -339,14 +336,14 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
                     borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(
-                    'CONNECTED',
+                    Strings.connectedCaps,
                     style: AppTheme.micro(color: AppColors.success)
                         .copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.4),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  _ble.connectedDeviceName ?? 'Heart rate sensor',
+                  _ble.connectedDeviceName ?? Strings.heartRateSensor,
                   style: AppTheme.h2(),
                   textAlign: TextAlign.center,
                 ),
@@ -367,9 +364,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
                   ],
                 ),
                 Text(
-                  _bpm == null
-                      ? 'Waiting for the first heartbeat…'
-                      : 'Live heart rate — you’re ready to train.',
+                  _bpm == null ? Strings.waitingFirstBeat : Strings.liveHrReady,
                   style: AppTheme.caption(),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -386,12 +381,12 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
                     _InfoPill(
                       icon: Icons.network_cell_rounded,
                       label: rssi == 0
-                          ? 'Signal'
+                          ? Strings.signalLabel
                           : rssi > -60
-                              ? 'Strong'
+                              ? Strings.signalStrong
                               : rssi > -75
-                                  ? 'Good'
-                                  : 'Weak',
+                                  ? Strings.signalGood
+                                  : Strings.signalWeak,
                     ),
                   ],
                 ),
@@ -403,7 +398,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
             children: [
               Expanded(
                 child: BeatSecondaryButton(
-                  label: 'Disconnect',
+                  label: Strings.disconnect,
                   icon: Icons.bluetooth_disabled_rounded,
                   onPressed: () => _ble.disconnect(),
                 ),
@@ -411,7 +406,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: BeatPrimaryButton(
-                  label: 'Done',
+                  label: Strings.done,
                   icon: Icons.check_rounded,
                   onPressed: () => Navigator.of(context).pop(),
                 ),
@@ -556,7 +551,7 @@ class _DeviceCard extends StatelessWidget {
                       style: AppTheme.bodyLarge(weight: FontWeight.w600),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text('Heart rate sensor', style: AppTheme.caption()),
+                    Text(Strings.heartRateSensor, style: AppTheme.caption()),
                   ],
                 ),
               ),

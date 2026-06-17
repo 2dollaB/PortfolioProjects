@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/studio.dart';
 import '../services/auth_service.dart';
@@ -64,7 +65,7 @@ class _StudioDetailScreenState extends State<StudioDetailScreen> {
   Future<void> _save() async {
     if (_name.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Studio name is required.')),
+        SnackBar(content: Text(Strings.studioNameRequired)),
       );
       return;
     }
@@ -80,13 +81,13 @@ class _StudioDetailScreenState extends State<StudioDetailScreen> {
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Studio updated.')),
+        SnackBar(content: Text(Strings.pick('Studio updated.', 'Studio ažuriran.'))),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save: $e')),
+        SnackBar(content: Text(Strings.pick('Could not save: $e', 'Spremanje nije uspjelo: $e'))),
       );
     }
   }
@@ -95,19 +96,23 @@ class _StudioDetailScreenState extends State<StudioDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Leave studio?'),
+        title: Text(Strings.pick('Leave studio?', 'Napustiti studio?')),
         content: Text(
-          "You'll stop sharing workouts with ${_studio?.name ?? 'this studio'} "
-          'and need an invite code to rejoin.',
+          Strings.pick(
+            "You'll stop sharing workouts with ${_studio?.name ?? 'this studio'} "
+                'and need an invite code to rejoin.',
+            'Prestat ćete dijeliti treninge sa ${_studio?.name ?? 'ovim studijem'} '
+                'i trebat će vam pozivni kod za ponovno pridruživanje.',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(Strings.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Leave', style: TextStyle(color: AppColors.danger)),
+            child: Text(Strings.leave, style: TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -123,13 +128,13 @@ class _StudioDetailScreenState extends State<StudioDetailScreen> {
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You left the studio.')),
+        SnackBar(content: Text(Strings.pick('You left the studio.', 'Napustili ste studio.'))),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not leave: $e')),
+        SnackBar(content: Text(Strings.pick('Could not leave: $e', 'Napuštanje nije uspjelo: $e'))),
       );
     }
   }
@@ -139,13 +144,13 @@ class _StudioDetailScreenState extends State<StudioDetailScreen> {
     return MobileFrame(
       child: Scaffold(
         backgroundColor: AppColors.bgPrimary,
-        appBar: AppBar(title: const Text('My studio')),
+        appBar: AppBar(title: Text(Strings.myStudio)),
         body: SafeArea(
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : _studio == null
                   ? Center(
-                      child: Text("Couldn't load this studio.",
+                      child: Text(Strings.couldNotLoadStudio,
                           style: AppTheme.bodyLarge(
                               color: AppColors.textSecondary)),
                     )
@@ -167,19 +172,20 @@ class _StudioDetailScreenState extends State<StudioDetailScreen> {
       children: [
         _inviteCard(s),
         const SizedBox(height: AppSpacing.lg),
-        _label('Studio name'),
+        _label(Strings.studioName),
         TextField(
           controller: _name,
-          decoration: const InputDecoration(hintText: 'Studio name'),
+          decoration: InputDecoration(hintText: Strings.studioName),
         ),
         const SizedBox(height: AppSpacing.md),
-        _label('Location (optional)'),
+        _label(Strings.locationOptional),
         TextField(
           controller: _location,
-          decoration: const InputDecoration(hintText: 'City, country'),
+          decoration: InputDecoration(
+              hintText: Strings.pick('City, country', 'Grad, država')),
         ),
         const SizedBox(height: AppSpacing.lg),
-        _label('Maximum members'),
+        _label(Strings.maxMembers),
         const SizedBox(height: AppSpacing.xs),
         Wrap(
           spacing: AppSpacing.xs,
@@ -195,7 +201,7 @@ class _StudioDetailScreenState extends State<StudioDetailScreen> {
         ),
         const SizedBox(height: AppSpacing.xl),
         BeatPrimaryButton(
-          label: 'Save changes',
+          label: Strings.pick('Save changes', 'Spremi promjene'),
           icon: Icons.check_rounded,
           loading: _busy,
           onPressed: _save,
@@ -226,12 +232,12 @@ class _StudioDetailScreenState extends State<StudioDetailScreen> {
           ),
         ],
         const SizedBox(height: AppSpacing.lg),
-        _infoRow('Members', '${s.athleteUids.length}'),
+        _infoRow(Strings.members, '${s.athleteUids.length}'),
         Divider(color: AppColors.border, height: 1),
-        _infoRow('Invite code', s.inviteCode),
+        _infoRow(Strings.pick('Invite code', 'Pozivni kod'), s.inviteCode),
         const SizedBox(height: AppSpacing.xl),
         BeatSecondaryButton(
-          label: 'Leave studio',
+          label: Strings.pick('Leave studio', 'Napusti studio'),
           icon: Icons.logout_rounded,
           onPressed: _busy ? null : _leave,
         ),
@@ -249,7 +255,7 @@ class _StudioDetailScreenState extends State<StudioDetailScreen> {
       ),
       child: Column(
         children: [
-          Text('INVITE CODE',
+          Text(Strings.inviteCode,
               style: AppTheme.micro().copyWith(letterSpacing: 1.6)),
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -262,13 +268,13 @@ class _StudioDetailScreenState extends State<StudioDetailScreen> {
             onPressed: () {
               Clipboard.setData(ClipboardData(text: s.inviteCode));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Invite code copied.')),
+                SnackBar(content: Text(Strings.pick('Invite code copied.', 'Pozivni kod kopiran.'))),
               );
             },
             icon: const Icon(Icons.copy_rounded, size: 16),
-            label: const Text('Copy code'),
+            label: Text(Strings.pick('Copy code', 'Kopiraj kod')),
           ),
-          Text('${s.athleteUids.length} members',
+          Text(Strings.pick('${s.athleteUids.length} members', '${s.athleteUids.length} članova'),
               style: AppTheme.caption()),
         ],
       ),
@@ -327,7 +333,7 @@ class _CapacityChip extends StatelessWidget {
             ),
           ),
           child: Text(
-            'Up to $value',
+            '${Strings.upToPrefix}$value',
             style: AppTheme.caption(
               color: selected ? AppColors.brandRed : AppColors.textSecondary,
             ).copyWith(fontWeight: FontWeight.w600),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/workout.dart';
 
@@ -94,7 +95,7 @@ class ActivityCalendar extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text('Less ',
+            Text('${Strings.less} ',
                 style: AppTheme.mono(fontSize: 8, color: AppTheme.textMuted)),
             ...List.generate(5, (i) {
               return Container(
@@ -107,7 +108,7 @@ class ActivityCalendar extends StatelessWidget {
                 ),
               );
             }),
-            Text(' More',
+            Text(' ${Strings.more}',
                 style: AppTheme.mono(fontSize: 8, color: AppTheme.textMuted)),
           ],
         ),

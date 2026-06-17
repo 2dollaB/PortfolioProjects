@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/hr_zones.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 
 /// Massive BPM number with a circular HR% ring around it.
@@ -146,7 +147,7 @@ class _BpmDisplayState extends State<BpmDisplay>
                       child: Text(
                         bpm != null && widget.hrMax > 0
                             ? '${(pct * 100).round()}% HRmax'
-                            : 'Standby',
+                            : Strings.standby,
                         style: AppTheme.caption(color: color).copyWith(
                           fontWeight: FontWeight.w600,
                         ),

@@ -31,6 +31,10 @@ class Strings {
 
   static String _pick(String en, String hr) => lang == AppLang.hr ? hr : en;
 
+  /// Public inline picker — for screen-specific copy (legal text, FAQ) that
+  /// isn't worth a named catalogue entry. Resolves against [lang].
+  static String pick(String en, String hr) => _pick(en, hr);
+
   // ── Enum display (Sex / FitnessLevel) ────────────────────────
   static String sexName(Sex s) => switch (s) {
         Sex.male => _pick('Male', 'Muško'),
@@ -617,6 +621,80 @@ class Strings {
       _pick('Waiting for athletes…', 'Čekanje sportaša…');
   static String get waitingToJoin => _pick(
       'Waiting for athletes to join…', 'Čekanje da se sportaši pridruže…');
+
+  // ── Health data ──────────────────────────────────────────────
+  static String get restingHrLabel => _pick('Resting HR', 'Puls u mirovanju');
+  static String get fitnessLevel => _pick('Fitness level', 'Razina kondicije');
+  static String zoneName(int z) => switch (z) {
+        0 => _pick('Rest', 'Odmor'),
+        1 => _pick('Warmup', 'Zagrijavanje'),
+        2 => _pick('Fat Burn', 'Sagorijevanje masti'),
+        3 => _pick('Aerobic', 'Aerobno'),
+        4 => _pick('Anaerobic', 'Anaerobno'),
+        _ => _pick('VO2 Max', 'VO2 Maks'),
+      };
+
+  // ── Device pairing ───────────────────────────────────────────
+  static String get heartRateSensor =>
+      _pick('Heart rate sensor', 'Mjerač pulsa');
+  static String get btPermissionNeeded => _pick(
+      'Bluetooth permission is needed to find your sensor.',
+      'Za pronalazak senzora potrebno je dopuštenje za Bluetooth.');
+  static String get pairYourSensor =>
+      _pick('Pair your sensor', 'Povežite svoj senzor');
+  static String get pairSensorSubtitle => _pick(
+      'Any Bluetooth chest strap works — or a sports watch in '
+          'heart-rate broadcast mode.',
+      'Radi bilo koji Bluetooth prsni mjerač — ili sportski sat u '
+          'načinu emitiranja pulsa.');
+  static String get couldNotConnectSensor => _pick(
+      "Couldn't connect — make sure the sensor is awake "
+          'and close by, then try again.',
+      'Povezivanje nije uspjelo — provjerite je li senzor aktivan '
+          'i blizu, pa pokušajte ponovno.');
+  static String get tryAgain => _pick('Try again', 'Pokušaj ponovno');
+  static String get startScanning =>
+      _pick('Start scanning', 'Započni skeniranje');
+  static String connectingTo(String name) =>
+      _pick('Connecting to $name…', 'Povezivanje s $name…');
+  static String get holdTight => _pick(
+      'Hold tight — this takes a few seconds.',
+      'Strpljenja — ovo traje nekoliko sekundi.');
+  static String get wearStrap => _pick(
+      'Wear the strap so it wakes up and starts advertising.',
+      'Stavite mjerač da se aktivira i počne emitirati.');
+  static String get lookingForSensors =>
+      _pick('Looking for sensors nearby…', 'Tražim senzore u blizini…');
+  static String get stop => _pick('Stop', 'Zaustavi');
+  static String get connectedCaps => _pick('CONNECTED', 'POVEZANO');
+  static String get waitingFirstBeat =>
+      _pick('Waiting for the first heartbeat…', 'Čekanje prvog otkucaja…');
+  static String get liveHrReady => _pick(
+      'Live heart rate — you’re ready to train.',
+      'Puls uživo — spremni ste za trening.');
+  static String get signalLabel => _pick('Signal', 'Signal');
+  static String get signalStrong => _pick('Strong', 'Jak');
+  static String get signalGood => _pick('Good', 'Dobar');
+  static String get signalWeak => _pick('Weak', 'Slab');
+
+  // ── Live-board widgets ───────────────────────────────────────
+  static String get workCaps => _pick('WORK', 'RAD');
+  static String get restCaps => _pick('REST', 'ODMOR');
+  static String get standbyCaps => _pick('STANDBY', 'PRIPRAVNOST');
+  static String get athletesCaps => _pick('ATHLETES', 'SPORTAŠI');
+  static String get timeCaps => _pick('TIME', 'VRIJEME');
+  static String get standby => _pick('Standby', 'Pripravnost');
+  static String get athletesJoinCode =>
+      _pick('Athletes join with this code', 'Sportaši se pridružuju ovim kodom');
+  static String get less => _pick('Less', 'Manje');
+  static String get more => _pick('More', 'Više');
+  static String hrvQuality(int rmssd) {
+    if (rmssd <= 0) return _pick('N/A', 'N/D');
+    if (rmssd < 20) return _pick('Low', 'Nizak');
+    if (rmssd < 50) return _pick('Normal', 'Normalan');
+    if (rmssd < 100) return _pick('Good', 'Dobar');
+    return _pick('Excellent', 'Izvrstan');
+  }
 
   // ── Settings: sections + rows ────────────────────────────────
   static String get account => _pick('Account', 'Račun');

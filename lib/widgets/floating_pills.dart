@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import 'logo_heartbeat.dart';
 import 'session_status_banner.dart';
@@ -146,11 +147,11 @@ class PhasePill extends StatelessWidget {
   String get _label {
     switch (phase) {
       case SessionPhase.work:
-        return 'WORK';
+        return Strings.workCaps;
       case SessionPhase.rest:
-        return 'REST';
+        return Strings.restCaps;
       case SessionPhase.idle:
-        return 'STANDBY';
+        return Strings.standbyCaps;
     }
   }
 
@@ -272,7 +273,7 @@ class AthleteCountPill extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'ATHLETES',
+                  Strings.athletesCaps,
                   style: AppTheme.micro().copyWith(
                     letterSpacing: 1.4,
                     fontSize: 9,
@@ -359,11 +360,11 @@ class GroupStatsPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _stat('AVG', '$avgBpm', 'bpm', AppColors.brandRed),
+          _stat(Strings.statAvg, '$avgBpm', 'bpm', AppColors.brandRed),
           _divider(),
           _stat('Z4+', '$inZ4Plus', '/$totalAthletes', AppColors.zone4),
           _divider(),
-          _stat('TIME', elapsed, '', AppColors.textPrimary),
+          _stat(Strings.timeCaps, elapsed, '', AppColors.textPrimary),
         ],
       ),
     );

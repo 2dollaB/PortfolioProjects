@@ -3,6 +3,7 @@ import '../widgets/mobile_frame.dart';
 import 'package:flutter/services.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../services/auth_service.dart';
@@ -60,24 +61,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   String? _validate() {
-    if (_name.text.trim().isEmpty) return 'Name is required';
+    if (_name.text.trim().isEmpty) return Strings.nameRequired;
     final age = int.tryParse(_age.text);
     if (age == null || age < 13 || age > 100) {
-      return 'Age must be between 13 and 100';
+      return Strings.ageRange;
     }
     final w = double.tryParse(_weight.text.replaceAll(',', '.'));
     if (w == null || w < 30 || w > 250) {
-      return 'Weight must be between 30 and 250 kg';
+      return Strings.weightRange;
     }
     final h = double.tryParse(_height.text.replaceAll(',', '.'));
     if (h == null || h < 100 || h > 230) {
-      return 'Height must be between 100 and 230 cm';
+      return Strings.heightRange;
     }
     final rhrText = _restingHr.text.trim();
     if (rhrText.isNotEmpty) {
       final rhr = int.tryParse(rhrText);
       if (rhr == null || rhr < 30 || rhr > 120) {
-        return 'Resting HR must be between 30 and 120 bpm';
+        return Strings.restingHrRange;
       }
     }
     return null;
@@ -119,7 +120,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not save: $e'),
+            content: Text(Strings.pick('Could not save: $e', 'Spremanje nije uspjelo: $e')),
             backgroundColor: AppColors.danger,
             behavior: SnackBarBehavior.floating,
           ),
@@ -130,10 +131,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (!mounted) return;
     widget.onSaved?.call(updated);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profile updated'),
+      SnackBar(
+        content: Text(Strings.pick('Profile updated', 'Profil ažuriran')),
         behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
+        duration: const Duration(seconds: 2),
       ),
     );
     Navigator.of(context).pop();
@@ -152,7 +153,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Scaffold(
       backgroundColor: AppColors.bgPrimary,
       appBar: AppBar(
-        title: const Text('Personal info'),
+        title: Text(Strings.personalInfo),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.of(context).pop(),
@@ -164,13 +165,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl,
           ),
           children: [
-            _label('Name'),
+            _label(Strings.name),
             TextField(
               controller: _name,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                hintText: 'Your name',
-                prefixIcon: Icon(Icons.person_outline_rounded),
+              decoration: InputDecoration(
+                hintText: Strings.pick('Your name', 'Vaše ime'),
+                prefixIcon: const Icon(Icons.person_outline_rounded),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -181,7 +182,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _label('Age'),
+                      _label(Strings.age),
                       _numField(_age, hint: '30', suffix: 'yrs'),
                     ],
                   ),
@@ -191,7 +192,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _label('Sex'),
+                      _label(Strings.sex),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
@@ -210,7 +211,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           items: Sex.values
                               .map((s) => DropdownMenuItem(
                                     value: s,
-                                    child: Text(s.displayName),
+                                    child: Text(Strings.sexName(s)),
                                   ))
                               .toList(),
                           onChanged: (v) {
@@ -231,7 +232,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _label('Weight'),
+                      _label(Strings.weight),
                       _numField(_weight, hint: '75', suffix: 'kg', decimal: true),
                     ],
                   ),
@@ -241,7 +242,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _label('Height'),
+                      _label(Strings.height),
                       _numField(_height, hint: '178', suffix: 'cm'),
                     ],
                   ),
@@ -250,11 +251,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
 
-            _label('Resting HR (optional)'),
+            _label(Strings.restingHrOptional),
             _numField(_restingHr, hint: 'e.g. 62', suffix: 'bpm'),
             const SizedBox(height: AppSpacing.lg),
 
-            _label('Fitness level'),
+            _label(Strings.fitnessLevel),
             for (final lvl in FitnessLevel.values) ...[
               _fitnessChip(lvl),
               const SizedBox(height: AppSpacing.xs),
@@ -286,7 +287,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Estimated HR max', style: AppTheme.caption()),
+                        Text(Strings.estimatedHrMax, style: AppTheme.caption()),
                         Text(
                           '${_previewHrMax()} bpm',
                           style: AppTheme.statNumber(
@@ -304,7 +305,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
             const SizedBox(height: AppSpacing.xl),
             BeatPrimaryButton(
-              label: 'Save changes',
+              label: Strings.pick('Save changes', 'Spremi promjene'),
               icon: Icons.check_rounded,
               onPressed: _save,
             ),
@@ -378,11 +379,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      level.displayName,
+                      Strings.fitnessName(level),
                       style: AppTheme.bodyLarge(weight: FontWeight.w600)
                           .copyWith(fontSize: 14),
                     ),
-                    Text(level.description, style: AppTheme.caption()),
+                    Text(Strings.fitnessDesc(level), style: AppTheme.caption()),
                   ],
                 ),
               ),

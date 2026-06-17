@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 
 /// 8.4 — HRV Display widget
@@ -36,13 +37,7 @@ class HrvChart extends StatelessWidget {
     return math.sqrt(variance);
   }
 
-  String _hrvStatus(double rmssd) {
-    if (rmssd <= 0) return 'N/A';
-    if (rmssd < 20) return 'Low';
-    if (rmssd < 50) return 'Normal';
-    if (rmssd < 100) return 'Good';
-    return 'Excellent';
-  }
+  String _hrvStatus(double rmssd) => Strings.hrvQuality(rmssd.round());
 
   Color _hrvColor(double rmssd) {
     if (rmssd <= 0) return AppTheme.textMuted;

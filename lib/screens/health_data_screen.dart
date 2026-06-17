@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/hr_zones.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../widgets/mobile_frame.dart';
@@ -18,7 +19,7 @@ class HealthDataScreen extends StatelessWidget {
     return MobileFrame(
       child: Scaffold(
         backgroundColor: AppColors.bgPrimary,
-        appBar: AppBar(title: const Text('Health data')),
+        appBar: AppBar(title: Text(Strings.healthData)),
         body: SafeArea(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
@@ -27,31 +28,32 @@ class HealthDataScreen extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: _Stat(label: 'HR max', value: '$hrMax', unit: 'bpm')),
+                  Expanded(child: _Stat(label: Strings.hrMax, value: '$hrMax', unit: 'bpm')),
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
                     child: _Stat(
-                      label: 'Resting HR',
+                      label: Strings.restingHrLabel,
                       value: profile.restingHr?.toString() ?? '—',
                       unit: 'bpm',
                     ),
                   ),
                   const SizedBox(width: AppSpacing.xs),
-                  Expanded(child: _Stat(label: 'Age', value: '${profile.age}')),
+                  Expanded(child: _Stat(label: Strings.age, value: '${profile.age}')),
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
               _Group(
-                title: 'Body',
+                title: Strings.pick('Body', 'Tijelo'),
                 rows: [
-                  ('Weight', '${profile.weightKg.round()} kg'),
-                  ('Height', '${profile.heightCm.round()} cm'),
-                  ('Sex', profile.sex.displayName),
-                  ('Fitness level', profile.fitnessLevel.displayName),
+                  (Strings.weight, '${profile.weightKg.round()} kg'),
+                  (Strings.height, '${profile.heightCm.round()} cm'),
+                  (Strings.sex, Strings.sexName(profile.sex)),
+                  (Strings.fitnessLevel,
+                      Strings.fitnessName(profile.fitnessLevel)),
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text('HEART-RATE ZONES',
+              Text(Strings.pick('HEART-RATE ZONES', 'ZONE PULSA'),
                   style: AppTheme.micro().copyWith(letterSpacing: 1.4)),
               const SizedBox(height: AppSpacing.xs),
               Container(
@@ -72,8 +74,12 @@ class HealthDataScreen extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
-                'Zones are estimated from your max heart rate. Update your '
-                'details in Personal info to refine them. Not medical advice.',
+                Strings.pick(
+                  'Zones are estimated from your max heart rate. Update your '
+                      'details in Personal info to refine them. Not medical advice.',
+                  'Zone se procjenjuju iz vašeg maksimalnog pulsa. Ažurirajte '
+                      'podatke u Osobnim podacima za precizniji izračun. Nije medicinski savjet.',
+                ),
                 style: AppTheme.caption(),
               ),
             ],
@@ -181,7 +187,7 @@ class _ZoneRow extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              'Z$zone · ${HrZones.names[zone]}',
+              'Z$zone · ${Strings.zoneName(zone)}',
               style: AppTheme.bodyLarge(),
             ),
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import 'beat_button.dart';
 
@@ -19,7 +20,7 @@ class InviteSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Athletes join with this code',
+            Strings.athletesJoinCode,
             style: AppTheme.h2(),
             textAlign: TextAlign.center,
           ),
@@ -61,7 +62,7 @@ class InviteSheet extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           BeatPrimaryButton(
-            label: 'Done',
+            label: Strings.done,
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],

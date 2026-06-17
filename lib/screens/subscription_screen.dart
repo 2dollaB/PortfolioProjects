@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 import '../widgets/mobile_frame.dart';
 
@@ -13,7 +14,7 @@ class SubscriptionScreen extends StatelessWidget {
     return MobileFrame(
       child: Scaffold(
         backgroundColor: AppColors.bgPrimary,
-        appBar: AppBar(title: const Text('Subscription')),
+        appBar: AppBar(title: Text(Strings.subscription)),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -39,14 +40,19 @@ class SubscriptionScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'Subscriptions — coming soon',
+                    Strings.pick('Subscriptions — coming soon',
+                        'Pretplate — uskoro'),
                     style: AppTheme.h2(),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    "Paid plans aren't available yet. You're on the free plan — "
-                    'everything in BeatSync is unlocked while we build this out.',
+                    Strings.pick(
+                      "Paid plans aren't available yet. You're on the free plan — "
+                          'everything in BeatSync is unlocked while we build this out.',
+                      'Plaćeni planovi još nisu dostupni. Na besplatnom ste planu — '
+                          'sve u BeatSyncu je otključano dok ovo gradimo.',
+                    ),
                     style: AppTheme.bodyLarge(color: AppColors.textSecondary),
                     textAlign: TextAlign.center,
                   ),

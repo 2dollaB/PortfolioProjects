@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/strings.dart';
 import '../config/theme.dart';
 
 enum SessionPhase { work, rest, idle }
@@ -37,11 +38,11 @@ class SessionStatusBanner extends StatelessWidget {
   String get _label {
     switch (phase) {
       case SessionPhase.work:
-        return 'WORK';
+        return Strings.workCaps;
       case SessionPhase.rest:
-        return 'REST';
+        return Strings.restCaps;
       case SessionPhase.idle:
-        return 'STANDBY';
+        return Strings.standbyCaps;
     }
   }
 
