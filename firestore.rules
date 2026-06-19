@@ -19,6 +19,13 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    // CEO admin panel: a user carrying the `ceo` custom claim gets cross-studio
+    // READ access (overview/monitoring). Writes (suspend/ban/impersonate) stay
+    // out of rules — they go through Cloud Functions with the Admin SDK.
+    function isCeo() {
+      return isSignedIn() && request.auth.token.role == 'ceo';
+    }
+
     function studioData(studioId) {
       return get(/databases/$(database)/documents/studios/$(studioId)).data;
     }
@@ -70,15 +77,15 @@ service cloud.firestore {
     // A user reads/writes their own profile doc; the owner of the studio they
     // joined may read it (trainer member list).
     match /users/{uid} {
-      allow read: if isUser(uid) || isOwnerOfUsersStudio();
+      allow read: if isUser(uid) || isOwnerOfUsersStudio() || isCeo();
       allow write: if isUser(uid);
-      // TODO(Phase D): allow CEO (role claim) read-all via claims.
     }
 
     // ── studios/{studioId} ───────────────────────────────────
     match /studios/{studioId} {
       allow read: if isStudioMember(studioId)
-        || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
+        || (isSignedIn() && resource.data.ownerUid == request.auth.uid)
+        || isCeo();
       allow create: if isSignedIn()
         && request.resource.data.ownerUid == request.auth.uid;
       allow update: if isSignedIn()
@@ -117,7 +124,7 @@ service cloud.firestore {
     // ── sessions/{sessionId} ─────────────────────────────────
     // Only the studio owner hosts sessions; members read them.
     match /sessions/{sessionId} {
-      allow read: if isStudioMember(resource.data.studioId);
+      allow read: if isStudioMember(resource.data.studioId) || isCeo();
       allow create: if isSignedIn()
         && request.resource.data.trainerUid == request.auth.uid
         && studioData(request.resource.data.studioId).ownerUid == request.auth.uid;
@@ -165,7 +172,8 @@ service cloud.firestore {
       allow read: if isSignedIn()
         && (resource.data.userId == request.auth.uid
             || isTrainerOfWorkoutOwner()
-            || isHostOfWorkoutSession());
+            || isHostOfWorkoutSession()
+            || isCeo());
       allow delete: if isSignedIn()
         && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn()
