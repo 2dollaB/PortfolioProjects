@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'config/app_colors.dart';
+import 'config/app_spacing.dart';
 import 'config/feature_flags.dart';
 import 'config/strings.dart';
 import 'config/theme.dart';
@@ -340,12 +341,52 @@ class _ProfileGate extends StatelessWidget {
         }
         final profile = snap.data;
         if (profile == null) return _ProfileOnboarding(uid: uid);
+        // Admin ban: the live users/{uid} stream flips this in real time.
+        if (profile.banned) {
+          return _BannedScreen(onSignOut: () => AuthService.signOut());
+        }
         return MainNavShell(
           profile: profile,
           onSignOut: () => AuthService.signOut(),
           enableStudioJoin: true,
         );
       },
+    );
+  }
+}
+
+/// Shown when an admin has banned this account (users/{uid}.banned == true).
+/// Blocks all app access; the only action is to sign out.
+class _BannedScreen extends StatelessWidget {
+  final VoidCallback onSignOut;
+  const _BannedScreen({required this.onSignOut});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bgPrimary,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.block, color: AppColors.danger, size: 56),
+              const SizedBox(height: AppSpacing.lg),
+              Text('Account suspended', style: AppTheme.h1()),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Your account has been suspended by an administrator. '
+                'Please contact support if you think this is a mistake.',
+                textAlign: TextAlign.center,
+                style: AppTheme.body(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              OutlinedButton(onPressed: onSignOut, child: const Text('Sign out')),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -11,6 +11,7 @@ class UserProfile {
   final int? restingHr;
   final FitnessLevel fitnessLevel;
   final UserRole role;
+  final bool banned; // Set by the admin panel; read-only here (never written back)
   final int? manualHrMax; // User override
   int _dynamicHrMax; // Adjusted during workouts
 
@@ -26,6 +27,7 @@ class UserProfile {
     this.restingHr,
     this.fitnessLevel = FitnessLevel.casual,
     this.role = UserRole.athlete,
+    this.banned = false,
     this.manualHrMax,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
        _dynamicHrMax = 0 {
@@ -98,6 +100,7 @@ class UserProfile {
     int? restingHr,
     FitnessLevel? fitnessLevel,
     UserRole? role,
+    bool? banned,
     int? manualHrMax,
   }) {
     return UserProfile(
@@ -112,6 +115,7 @@ class UserProfile {
       restingHr: restingHr ?? this.restingHr,
       fitnessLevel: fitnessLevel ?? this.fitnessLevel,
       role: role ?? this.role,
+      banned: banned ?? this.banned,
       manualHrMax: manualHrMax ?? this.manualHrMax,
     );
   }
@@ -153,6 +157,7 @@ class UserProfile {
         (e) => e.name == json['role'],
         orElse: () => UserRole.athlete,
       ),
+      banned: json['banned'] as bool? ?? false,
       manualHrMax: json['manualHrMax'] as int?,
     );
     profile._dynamicHrMax = json['dynamicHrMax'] as int? ?? profile.calculatedHrMax;
