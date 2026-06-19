@@ -19,11 +19,11 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    // CEO admin panel: a user carrying the `ceo` custom claim gets cross-studio
-    // READ access (overview/monitoring). Writes (suspend/ban/impersonate) stay
-    // out of rules — they go through Cloud Functions with the Admin SDK.
-    function isCeo() {
-      return isSignedIn() && request.auth.token.role == 'ceo';
+    // Admin panel: a user carrying the `admin` custom claim gets cross-studio
+    // access — reads everywhere, plus the destructive writes (delete/edit any
+    // studio, ban users) granted on the specific collections below.
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.role == 'admin';
     }
 
     function studioData(studioId) {
@@ -77,23 +77,24 @@ service cloud.firestore {
     // A user reads/writes their own profile doc; the owner of the studio they
     // joined may read it (trainer member list).
     match /users/{uid} {
-      allow read: if isUser(uid) || isOwnerOfUsersStudio() || isCeo();
-      allow write: if isUser(uid);
+      allow read: if isUser(uid) || isOwnerOfUsersStudio() || isAdmin();
+      allow write: if isUser(uid) || isAdmin();
     }
 
     // ── studios/{studioId} ───────────────────────────────────
     match /studios/{studioId} {
       allow read: if isStudioMember(studioId)
         || (isSignedIn() && resource.data.ownerUid == request.auth.uid)
-        || isCeo();
+        || isAdmin();
       allow create: if isSignedIn()
         && request.resource.data.ownerUid == request.auth.uid;
-      allow update: if isSignedIn()
-        && (resource.data.ownerUid == request.auth.uid
-            || isSelfJoin()
-            || isSelfLeave());
-      allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
-      // TODO(Phase D): CEO suspend/restore via suspendStudio Cloud Function only.
+      allow update: if isAdmin()
+        || (isSignedIn()
+            && (resource.data.ownerUid == request.auth.uid
+                || isSelfJoin()
+                || isSelfLeave()));
+      allow delete: if isAdmin()
+        || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
     }
 
     // ── invite_codes/{code} ──────────────────────────────────
@@ -124,7 +125,7 @@ service cloud.firestore {
     // ── sessions/{sessionId} ─────────────────────────────────
     // Only the studio owner hosts sessions; members read them.
     match /sessions/{sessionId} {
-      allow read: if isStudioMember(resource.data.studioId) || isCeo();
+      allow read: if isStudioMember(resource.data.studioId) || isAdmin();
       allow create: if isSignedIn()
         && request.resource.data.trainerUid == request.auth.uid
         && studioData(request.resource.data.studioId).ownerUid == request.auth.uid;
@@ -173,7 +174,7 @@ service cloud.firestore {
         && (resource.data.userId == request.auth.uid
             || isTrainerOfWorkoutOwner()
             || isHostOfWorkoutSession()
-            || isCeo());
+            || isAdmin());
       allow delete: if isSignedIn()
         && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn()
