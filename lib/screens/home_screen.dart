@@ -268,11 +268,25 @@ class _HeroCard extends StatelessWidget {
                   Icon(Icons.history_rounded,
                       size: 16, color: AppColors.textSecondary),
                   const SizedBox(width: AppSpacing.xs),
-                  Text(Strings.lastSessionPrefix, style: AppTheme.caption()),
-                  Text(last.dateLabel,
-                      style:
-                          AppTheme.caption(color: AppColors.textPrimary)),
-                  const Spacer(),
+                  // Flexible + scaleDown: the left side yields when the row
+                  // gets tight instead of overflowing.
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(Strings.lastSessionPrefix,
+                              style: AppTheme.caption()),
+                          Text(last.dateLabel,
+                              style: AppTheme.caption(
+                                  color: AppColors.textPrimary)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
                   Text('${last.avgHr} ',
                       style: AppTheme.statNumber(fontSize: 14)),
                   Text(Strings.avgDuration(last.durationLabel),
