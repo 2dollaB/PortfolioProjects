@@ -1,8 +1,16 @@
 # BeatSync — Handoff (Stage 3 polish + light mode + full Croatian i18n COMPLETE; merged to main)
 
-Last updated: 2026-06-16 (Stage 3 settings polish + full light mode + studio view/leave/edit, THEN a lightweight en/hr i18n with a working language switch — **full screen coverage**). Read this first when resuming in a fresh session.
+Last updated: 2026-07-02 (added Stage 6 admin-claim rules + ban enforcement below; prose above this line still describes the 2026-06-16 state and hasn't been rewritten). Read this first when resuming in a fresh session.
 
-**Where we are in one line:** every mobile screen runs on real Firebase (auth, studios, workouts, trainer analytics/notes, full live-session loop incl. a pre-start **lobby** with Start/Pause/Resume + kick + an interval timer, TV board, trainer-home/member-list activity stats), BLE heart-rate is code-complete, sessions auto-end into a results screen, the **Settings screen is fully polished — working light mode app-wide, no dead rows, viewable/changeable studio**, and there's a **working Appearance (light/dark/system) + Language (English/Hrvatski) switcher with the whole app translated**; **next up is Stage 4 (Next.js admin panel)**, plus the live-session + BLE-hardware test passes and ship chores.
+**Where we are in one line:** every mobile screen runs on real Firebase (auth, studios, workouts, trainer analytics/notes, full live-session loop incl. a pre-start **lobby** with Start/Pause/Resume + kick + an interval timer, TV board, trainer-home/member-list activity stats), BLE heart-rate is code-complete, sessions auto-end into a results screen, the **Settings screen is fully polished — working light mode app-wide, no dead rows, viewable/changeable studio**, and there's a **working Appearance (light/dark/system) + Language (English/Hrvatski) switcher with the whole app translated**; the app now also **enforces admin bans and grants the admin panel cross-studio rules access** (Stage 6, see below); **next up is Stage 4 (Next.js admin panel)** — its own build-out, not this repo — plus the live-session + BLE-hardware test passes and ship chores.
+
+## ✅ Stage 6 (partial) — admin claim + ban enforcement (2026-06-2x, commits `e5a0f43`, `ab470b3`, `6415992`) — merged to main
+Groundwork for the separate `beatsync-admin` panel; **this repo (mobile) only holds the enforcement/rules side, not the admin UI**:
+1. **`isCeo()` → `isAdmin()` custom claim** (`firestore.rules`): a user carrying the `admin` custom claim (set out-of-band via Cloud Functions/Admin SDK, not in this repo) gets cross-studio **read** access (`users`, `studios`, `sessions`, `workouts`) plus **destructive writes** — delete/edit any studio, and (via the `users/{uid}` write rule) ban users. Regular per-user/per-studio rules are unchanged for non-admins.
+2. **Client-side ban enforcement** (`lib/main.dart`, `lib/models/user_profile.dart`): `UserProfile.banned` (bool, default false, read-only client-side — "Set by the admin panel; never written back"). `_ProfileGate` in `main.dart` watches the live `users/{uid}` doc; if `banned == true` it renders `_BannedScreen` (blocks all app access, sign-out only) instead of `MainNavShell` — flips in real time if an admin bans a signed-in user mid-session.
+3. **Not done yet in this repo:** no UI anywhere to *set* `banned` or the `admin` claim — that's the admin panel's job (separate repo, 0% started, see "▶ NEXT TASK"). No Cloud Functions in this repo for claim assignment.
+
+**Verified:** not explicitly noted in commit history — flutter analyze presumed clean (repo convention) but no test-pass entry was recorded for this batch; **worth a quick live check** (sign in as a normal user, flip `banned` via the Firebase console, confirm `_BannedScreen` appears) before relying on it.
 
 ## ✅ Stage 3 DONE (2026-06-16) — on branch `feature/profile-settings` (see "Repo & git")
 Scope agreed with the user, then built in one pass:
@@ -33,7 +41,8 @@ Flutter app for real-time heart-rate monitoring during group fitness sessions in
 - **Remote:** `github.com/2dollaB/PortfolioProjects` (user `TMinarik00` has push access).
 - **⚠️ Push via the PowerShell tool, NOT bash** — the WSL/bash git credential helper fails here ("could not read Username"). PowerShell git uses the Windows credential manager and works.
 - **main** is the integration branch; work happens on `feature/*` branches, fast-forward merged to main, then pushed. Each increment = its own commit + merge.
-- Current `main` HEAD: `725d2ef` + this handoff update — **Stage 3 + full Croatian i18n are merged to main and pushed.** Branches `feature/profile-settings`, `feature/i18n-croatian`, `feature/i18n-complete` are all fast-forward-merged (deleted). No open feature branches.
+- Current `main` HEAD: `6415992` + this handoff update — **Stage 3 + full Croatian i18n + Stage 6 admin-claim rules/ban enforcement are merged to main and pushed.** Branches `feature/profile-settings`, `feature/i18n-croatian`, `feature/i18n-complete` are all fast-forward-merged (deleted). No open feature branches.
+- **Also see [SCREENS_MAP.md](SCREENS_MAP.md)** (2026-07-02) — structural per-screen reference (purpose/nav/deps/dead-code) for all 35 files in `lib/screens/`, and the repo is indexed in **graphify** (`graphify-out/`, tag `beatsync`) for symbol/dependency queries. Both are structural snapshots, not status — this file (HANDOFF.md) stays the status source of truth.
 
 ## Firebase backend (provisioned & deployed)
 - **Project:** `beatsync-prod` (project number `918880027506`).

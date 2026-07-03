@@ -1,6 +1,9 @@
 # Local secrets — never commit (see HANDOFF.md "Secrets" section)
 HANDOFF.local.md
 
+# graphify code-index (local tool output, regenerate with `graphify extract`/`update`)
+/graphify-out/
+
 # Miscellaneous
 *.class
 *.log
