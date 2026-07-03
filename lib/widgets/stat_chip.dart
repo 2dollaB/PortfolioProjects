@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/theme.dart';
+import 'marquee_text.dart';
 
 /// Small stat container: label on top (caption), value below (display number).
 /// Used in rows of 3-4 on workout summary and dashboards.
@@ -45,16 +46,11 @@ class StatChip extends StatelessWidget {
                 const SizedBox(width: AppSpacing.micro),
               ],
               Expanded(
-                // scaleDown instead of ellipsis: the full label always reads
-                // left to right, just slightly smaller in narrow chips.
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    label.toUpperCase(),
-                    maxLines: 1,
-                    style: AppTheme.micro().copyWith(letterSpacing: 1.2),
-                  ),
+                // Full-size label; ticker-scrolls when it doesn't fit so the
+                // whole text stays readable (no ellipsis, no shrinking).
+                child: MarqueeText(
+                  label.toUpperCase(),
+                  style: AppTheme.micro().copyWith(letterSpacing: 1.2),
                 ),
               ),
             ],
