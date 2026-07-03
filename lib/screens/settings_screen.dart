@@ -45,14 +45,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     final uid = AuthService.currentUid;
     if (uid == null) return;
-    final sid = widget.profile?.studioId;
-    if (sid != null) {
-      StudioRepository.load(sid).then((s) {
-        if (mounted) setState(() => _studio = s);
-      }).catchError((_) {});
-    }
+    _loadStudio();
     WorkoutRepository.fetchRecent(uid, limit: 200).then((w) {
       if (mounted) setState(() => _workouts = w);
+    }).catchError((_) {});
+  }
+
+  @override
+  void didUpdateWidget(SettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Joining/leaving a studio changes studioId on the live profile —
+    // refresh the studio row instead of showing the initState-era value.
+    if (widget.profile?.studioId != oldWidget.profile?.studioId) {
+      setState(() => _studio = null);
+      _loadStudio();
+    }
+  }
+
+  void _loadStudio() {
+    final sid = widget.profile?.studioId;
+    if (sid == null) return;
+    StudioRepository.load(sid).then((s) {
+      if (mounted) setState(() => _studio = s);
     }).catchError((_) {});
   }
 

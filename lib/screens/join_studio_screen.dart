@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/strings.dart';
 import '../config/theme.dart';
+import '../models/studio.dart';
 import '../services/auth_service.dart';
 import '../services/studio_repository.dart';
 import '../services/user_repository.dart';
@@ -56,7 +58,20 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
         });
         return;
       }
-      await StudioRepository.join(uid: uid, studioId: studioId);
+      try {
+        await StudioRepository.join(uid: uid, studioId: studioId);
+      } on FirebaseException catch (e) {
+        // An earlier join that died before setStudioId leaves the account a
+        // member without a studioId; the self-join rule then denies the
+        // no-op re-join. If we can read the studio and we're in it, carry on
+        // to setStudioId instead of dead-ending on permission-denied.
+        if (e.code != 'permission-denied') rethrow;
+        Studio? s;
+        try {
+          s = await StudioRepository.load(studioId);
+        } catch (_) {}
+        if (s == null || !s.memberUids.contains(uid)) rethrow;
+      }
       await UserRepository.setStudioId(uid, studioId);
       if (!mounted) return;
       Navigator.of(context).pop();

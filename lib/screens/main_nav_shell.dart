@@ -75,31 +75,34 @@ class _MainNavShellState extends State<MainNavShell> {
     }
   }
 
-  /// Tab root screens. Re-built each frame so they reflect any prop changes.
+  /// Tab root screens, built from [profile] — read via [_ProfileScope] inside
+  /// each route so the content rebuilds when the live profile changes
+  /// (onGenerateRoute only runs once, so constructor props would go stale;
+  /// that's how bug #12's "joined but home still shows the CTA" happened).
   /// MobileFrame is applied at the individual screen level (so pushed routes
   /// outside a tab's stack also get desktop centering). TV stays full-bleed.
-  List<Widget> _tabRoots() {
+  List<Widget> _tabRoots(UserProfile profile) {
     return _isTrainer
         ? [
             TrainerHomeScreen(
-              profile: widget.profile,
+              profile: profile,
               onSignOut: widget.onSignOut,
             ),
             // Mock trainer profiles have no studioId, so the demo path holds.
-            MemberListScreen(studioId: widget.profile.studioId),
-            StudioAnalyticsScreen(studioId: widget.profile.studioId),
-            TvHostScreen(studioId: widget.profile.studioId),
+            MemberListScreen(studioId: profile.studioId),
+            StudioAnalyticsScreen(studioId: profile.studioId),
+            TvHostScreen(studioId: profile.studioId),
           ]
         : [
             HomeScreen(
-              profile: widget.profile,
+              profile: profile,
               onProfileUpdated: widget.onProfileUpdated,
               onSignOut: widget.onSignOut,
               enableStudioJoin: widget.enableStudioJoin,
             ),
             const WorkoutHistoryScreen(),
             SettingsScreen(
-              profile: widget.profile,
+              profile: profile,
               onSignOut: widget.onSignOut,
             ),
           ];
@@ -168,7 +171,6 @@ class _MainNavShellState extends State<MainNavShell> {
 
   @override
   Widget build(BuildContext context) {
-    final roots = _tabRoots();
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
@@ -177,18 +179,24 @@ class _MainNavShellState extends State<MainNavShell> {
       },
       child: Scaffold(
         backgroundColor: AppColors.bgPrimary,
-        body: IndexedStack(
-          index: _index,
-          children: [
-            for (int i = 0; i < roots.length; i++)
-              Navigator(
-                key: _navKeys[i],
-                onGenerateRoute: (settings) => MaterialPageRoute(
-                  settings: settings,
-                  builder: (_) => roots[i],
+        body: _ProfileScope(
+          profile: widget.profile,
+          child: IndexedStack(
+            index: _index,
+            children: [
+              for (int i = 0; i < _navKeys.length; i++)
+                Navigator(
+                  key: _navKeys[i],
+                  onGenerateRoute: (settings) => MaterialPageRoute(
+                    settings: settings,
+                    // Depends on the scope, not a captured widget, so the
+                    // root screen refreshes when the profile stream emits.
+                    builder: (context) =>
+                        _tabRoots(_ProfileScope.of(context))[i],
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
@@ -204,4 +212,20 @@ class _MainNavShellState extends State<MainNavShell> {
       ),
     );
   }
+}
+
+/// Hands the live profile to the tab-root routes. A route's content only
+/// rebuilds when an inherited dependency changes — shell rebuilds alone
+/// don't reach it — so this is what keeps the roots in sync with the
+/// users/{uid} stream.
+class _ProfileScope extends InheritedWidget {
+  final UserProfile profile;
+  const _ProfileScope({required this.profile, required super.child});
+
+  static UserProfile of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_ProfileScope>()!.profile;
+
+  @override
+  bool updateShouldNotify(_ProfileScope oldWidget) =>
+      oldWidget.profile != profile;
 }
