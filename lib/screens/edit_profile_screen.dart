@@ -30,25 +30,35 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  late final TextEditingController _name;
-  late final TextEditingController _age;
-  late final TextEditingController _weight;
-  late final TextEditingController _height;
-  late final TextEditingController _restingHr;
+  final _name = TextEditingController();
+  final _age = TextEditingController();
+  final _weight = TextEditingController();
+  final _height = TextEditingController();
+  final _restingHr = TextEditingController();
   late Sex _sex;
   late FitnessLevel _fitnessLevel;
 
   @override
   void initState() {
     super.initState();
-    final p = widget.profile;
-    _name = TextEditingController(text: p.name);
-    _age = TextEditingController(text: p.age.toString());
-    _weight = TextEditingController(text: p.weightKg.toStringAsFixed(0));
-    _height = TextEditingController(text: p.heightCm.toStringAsFixed(0));
-    _restingHr = TextEditingController(
-      text: p.restingHr?.toString() ?? '',
-    );
+    _seed(widget.profile);
+    // Like StudioDetailScreen: trust Firestore over the passed-in object,
+    // which can be stale when this screen is reached through an old pushed
+    // route. The local cache answers instantly, so no visible flash.
+    final uid = AuthService.currentUid;
+    if (uid != null) {
+      UserRepository.load(uid).then((fresh) {
+        if (fresh != null && mounted) setState(() => _seed(fresh));
+      }).catchError((_) {});
+    }
+  }
+
+  void _seed(UserProfile p) {
+    _name.text = p.name;
+    _age.text = p.age.toString();
+    _weight.text = p.weightKg.toStringAsFixed(0);
+    _height.text = p.heightCm.toStringAsFixed(0);
+    _restingHr.text = p.restingHr?.toString() ?? '';
     _sex = p.sex;
     _fitnessLevel = p.fitnessLevel;
   }

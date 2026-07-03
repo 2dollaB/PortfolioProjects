@@ -11,6 +11,7 @@ import '../services/auth_service.dart';
 import '../services/ble_hr_service.dart';
 import '../services/mock_data.dart';
 import '../services/studio_repository.dart';
+import '../services/user_repository.dart';
 import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/home_header.dart';
@@ -52,6 +53,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _profile = widget.profile;
     final uid = AuthService.currentUid;
     if (uid == null) return;
+    // Refresh from Firestore (instant via local cache) — the constructor
+    // profile can be stale when this screen is pushed from an old route.
+    UserRepository.load(uid).then((fresh) {
+      if (fresh != null && mounted) setState(() => _profile = fresh);
+    }).catchError((_) {});
     _loadStudio();
     WorkoutRepository.fetchRecent(uid, limit: 200).then((w) {
       if (mounted) setState(() => _workouts = w);

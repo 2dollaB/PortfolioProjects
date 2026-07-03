@@ -450,7 +450,8 @@ class Strings {
       'Još nema treninga — pokrenite prvi.');
   static String get activeToday => _pick('Active today', 'Aktivni danas');
   static String get members => _pick('Members', 'Članovi');
-  static String get sessionsPerWk => _pick('Sessions / wk', 'Treninga / tj.');
+  static String get sessionsPerWk =>
+      _pick('Sessions / week', 'Treninga / tjedan');
   static String get today => _pick('Today', 'Danas');
   static String get yesterday => _pick('Yesterday', 'Jučer');
   static String daysAgo(int n) => _pick('$n days ago', 'prije $n dana');
