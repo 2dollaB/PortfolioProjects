@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import 'package:flutter/services.dart';
@@ -112,23 +114,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       manualHrMax: widget.profile.manualHrMax,
     );
     // Persist to Firestore when signed in (production); prototype has no user.
+    // Local-first: the write lands in the local cache instantly and syncs in
+    // the background, so awaiting the server ack here left the button doing
+    // "nothing" on a flaky connection (and lost the edit if the app was
+    // killed before the ack).
     final uid = AuthService.currentUid;
     if (uid != null) {
-      try {
-        await UserRepository.update(uid, updated);
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(Strings.pick('Could not save: $e', 'Spremanje nije uspjelo: $e')),
-            backgroundColor: AppColors.danger,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
+      unawaited(UserRepository.update(uid, updated));
     }
-    if (!mounted) return;
     widget.onSaved?.call(updated);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

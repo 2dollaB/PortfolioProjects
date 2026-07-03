@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config/app_colors.dart';
@@ -69,27 +71,19 @@ class _StudioDetailScreenState extends State<StudioDetailScreen> {
       );
       return;
     }
-    setState(() => _busy = true);
-    try {
-      await StudioRepository.update(
-        studioId: widget.studioId,
-        name: _name.text.trim(),
-        location:
-            _location.text.trim().isEmpty ? null : _location.text.trim(),
-        maxMembers: _maxMembers,
-      );
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(Strings.pick('Studio updated.', 'Studio ažuriran.'))),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(Strings.pick('Could not save: $e', 'Spremanje nije uspjelo: $e'))),
-      );
-    }
+    // Local-first: the write lands in the local cache instantly and syncs in
+    // the background — awaiting the server ack here left the spinner hanging
+    // (or stopping without the pop) on a flaky connection.
+    unawaited(StudioRepository.update(
+      studioId: widget.studioId,
+      name: _name.text.trim(),
+      location: _location.text.trim().isEmpty ? null : _location.text.trim(),
+      maxMembers: _maxMembers,
+    ));
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(Strings.pick('Studio updated.', 'Studio ažuriran.'))),
+    );
   }
 
   Future<void> _leave() async {
