@@ -63,7 +63,7 @@ class AppTheme {
 
   /// H1 — screen titles.
   static TextStyle h1({Color? color}) =>
-      GoogleFonts.plusJakartaSans(
+      GoogleFonts.poppins(
         fontSize: 28,
         fontWeight: FontWeight.w600,
         color: color ?? AppColors.textPrimary,
@@ -73,7 +73,7 @@ class AppTheme {
 
   /// H2 — section headers, card titles.
   static TextStyle h2({Color? color}) =>
-      GoogleFonts.plusJakartaSans(
+      GoogleFonts.poppins(
         fontSize: 20,
         fontWeight: FontWeight.w600,
         color: color ?? AppColors.textPrimary,
@@ -86,7 +86,7 @@ class AppTheme {
     Color? color,
     FontWeight weight = FontWeight.w400,
   }) =>
-      GoogleFonts.inter(
+      GoogleFonts.poppins(
         fontSize: 16,
         fontWeight: weight,
         color: color ?? AppColors.textPrimary,
@@ -95,7 +95,7 @@ class AppTheme {
 
   /// Caption (12) — labels, metadata, timestamps.
   static TextStyle caption({Color? color}) =>
-      GoogleFonts.inter(
+      GoogleFonts.poppins(
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: color ?? AppColors.textSecondary,
@@ -104,7 +104,7 @@ class AppTheme {
 
   /// Micro (10) — zone badges, unit suffixes. Uppercase + letter-spacing applied at site.
   static TextStyle micro({Color? color}) =>
-      GoogleFonts.inter(
+      GoogleFonts.poppins(
         fontSize: 10,
         fontWeight: FontWeight.w500,
         color: color ?? AppColors.textSecondary,
@@ -137,7 +137,7 @@ class AppTheme {
     double letterSpacing = 0,
     List<Shadow>? shadows,
   }) =>
-      GoogleFonts.plusJakartaSans(
+      GoogleFonts.poppins(
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: color ?? AppColors.textPrimary,
@@ -150,7 +150,7 @@ class AppTheme {
     FontWeight fontWeight = FontWeight.w400,
     Color? color,
   }) =>
-      GoogleFonts.inter(
+      GoogleFonts.poppins(
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: color ?? AppColors.textSecondary,
@@ -272,7 +272,7 @@ class AppTheme {
         onError: Colors.white,
         outline: AppColors.darkBorder,
       ),
-      textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(
+      textTheme: GoogleFonts.poppinsTextTheme(base.textTheme).apply(
         bodyColor: AppColors.darkTextPrimary,
         displayColor: AppColors.darkTextPrimary,
       ),
@@ -281,7 +281,7 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: GoogleFonts.poppins(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.darkTextPrimary,
@@ -297,7 +297,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -311,7 +311,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -320,7 +320,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.brandRed,
-          textStyle: GoogleFonts.inter(
+          textStyle: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -349,11 +349,11 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: const BorderSide(color: AppColors.danger),
         ),
-        hintStyle: GoogleFonts.inter(
+        hintStyle: GoogleFonts.poppins(
           fontSize: 14,
           color: AppColors.darkTextTertiary,
         ),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: GoogleFonts.poppins(
           fontSize: 14,
           color: AppColors.darkTextSecondary,
         ),
@@ -375,7 +375,7 @@ class AppTheme {
         height: 64,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return GoogleFonts.inter(
+          return GoogleFonts.poppins(
             fontSize: 11,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             color: selected ? AppColors.brandRed : AppColors.darkTextSecondary,
@@ -415,7 +415,7 @@ class AppTheme {
         onError: Colors.white,
         outline: AppColors.lightBorder,
       ),
-      textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(
+      textTheme: GoogleFonts.poppinsTextTheme(base.textTheme).apply(
         bodyColor: AppColors.lightTextPrimary,
         displayColor: AppColors.lightTextPrimary,
       ),
@@ -424,7 +424,7 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: GoogleFonts.poppins(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.lightTextPrimary,
@@ -440,7 +440,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -457,7 +457,7 @@ class AppTheme {
           // Must mirror the dark theme: lerping a theme that sets textStyle
           // against one that falls back to labelLarge (inherit: false)
           // throws mid-animation and cascades into GlobalKey errors.
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -466,7 +466,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.brandRedLight,
-          textStyle: GoogleFonts.inter(
+          textStyle: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -496,11 +496,11 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.danger),
         ),
         // Mirrors the dark theme (see the outlinedButtonTheme note).
-        hintStyle: GoogleFonts.inter(
+        hintStyle: GoogleFonts.poppins(
           fontSize: 14,
           color: AppColors.lightTextTertiary,
         ),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: GoogleFonts.poppins(
           fontSize: 14,
           color: AppColors.lightTextSecondary,
         ),
@@ -520,7 +520,7 @@ class AppTheme {
         height: 64,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return GoogleFonts.inter(
+          return GoogleFonts.poppins(
             fontSize: 11,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             color: selected ? AppColors.brandRedLight : AppColors.lightTextSecondary,
