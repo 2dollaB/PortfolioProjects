@@ -349,23 +349,11 @@ class _DurationStepper extends StatelessWidget {
               },
             ),
             Expanded(
-              // value + unit on one line ("45 sec"), scaled down if tight
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      '$value',
-                      style: AppTheme.statNumber(fontSize: 22, color: color),
-                    ),
-                    if (unit.isNotEmpty) ...[
-                      const SizedBox(width: 3),
-                      Text(unit, style: AppTheme.micro()),
-                    ],
-                  ],
+                child: Text(
+                  '$value',
+                  style: AppTheme.statNumber(fontSize: 22, color: color),
                 ),
               ),
             ),
@@ -375,6 +363,10 @@ class _DurationStepper extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 2),
+        // unit in small type under the number; a blank line for unitless
+        // steppers (rounds) keeps the three columns level
+        Center(child: Text(unit.isEmpty ? ' ' : unit, style: AppTheme.micro())),
       ],
     );
   }
