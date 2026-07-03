@@ -383,7 +383,7 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.darkBgSecondary,
-        indicatorColor: AppColors.brandRed.withValues(alpha: 0.15),
+        indicatorColor: Colors.transparent,
         elevation: 0,
         height: 64,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -541,7 +541,7 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.lightBgSecondary,
-        indicatorColor: AppColors.brandRedLight.withValues(alpha: 0.12),
+        indicatorColor: Colors.transparent,
         elevation: 0,
         height: 64,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
