@@ -20,6 +20,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Android 14+ refuses to start a connectedDevice FGS unless one of its
+         prerequisite permissions is granted; Bluetooth ones are runtime-only,
+         so without this install-time one the app crashes when an athlete with
+         no paired strap starts a workout. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
 
     <!-- 6.4 — Exact alarm for scheduled notifications -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
