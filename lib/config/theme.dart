@@ -454,6 +454,22 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
+          // Must mirror the dark theme: lerping a theme that sets textStyle
+          // against one that falls back to labelLarge (inherit: false)
+          // throws mid-animation and cascades into GlobalKey errors.
+          textStyle: GoogleFonts.plusJakartaSans(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.brandRedLight,
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -474,6 +490,19 @@ class AppTheme {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: const BorderSide(color: AppColors.brandRedLight, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.danger),
+        ),
+        // Mirrors the dark theme (see the outlinedButtonTheme note).
+        hintStyle: GoogleFonts.inter(
+          fontSize: 14,
+          color: AppColors.lightTextTertiary,
+        ),
+        labelStyle: GoogleFonts.inter(
+          fontSize: 14,
+          color: AppColors.lightTextSecondary,
         ),
       ),
       sliderTheme: SliderThemeData(
