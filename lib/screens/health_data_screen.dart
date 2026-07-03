@@ -5,6 +5,7 @@ import '../config/hr_zones.dart';
 import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
+import '../widgets/hr_max_info_button.dart';
 import '../widgets/mobile_frame.dart';
 
 /// Read-only summary of the health data BeatSync derives heart-rate zones from.
@@ -19,27 +20,40 @@ class HealthDataScreen extends StatelessWidget {
     return MobileFrame(
       child: Scaffold(
         backgroundColor: AppColors.bgPrimary,
-        appBar: AppBar(title: Text(Strings.healthData)),
+        appBar: AppBar(
+          title: Text(Strings.healthData),
+          actions: const [
+            Padding(
+              padding: EdgeInsets.only(right: AppSpacing.sm),
+              child: Center(child: HrMaxInfoButton(size: 20)),
+            ),
+          ],
+        ),
         body: SafeArea(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl,
             ),
             children: [
-              Row(
-                children: [
-                  Expanded(child: _Stat(label: Strings.hrMax, value: '$hrMax', unit: 'bpm')),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: _Stat(
-                      label: Strings.restingHrLabel,
-                      value: profile.restingHr?.toString() ?? '—',
-                      unit: 'bpm',
+              // IntrinsicHeight + stretch: the Age box has no unit line, so
+              // without this the three cards render at different heights.
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: _Stat(label: Strings.hrMax, value: '$hrMax', unit: 'bpm')),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: _Stat(
+                        label: Strings.restingHrLabel,
+                        value: profile.restingHr?.toString() ?? '—',
+                        unit: 'bpm',
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(child: _Stat(label: Strings.age, value: '${profile.age}')),
-                ],
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(child: _Stat(label: Strings.age, value: '${profile.age}')),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
               _Group(
@@ -108,11 +122,12 @@ class _Stat extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(value, style: AppTheme.statNumber(fontSize: 22)),
           if (unit != null) Text(unit!, style: AppTheme.micro()),
           const SizedBox(height: 2),
-          Text(label, style: AppTheme.micro()),
+          Text(label, style: AppTheme.micro(), textAlign: TextAlign.center),
         ],
       ),
     );

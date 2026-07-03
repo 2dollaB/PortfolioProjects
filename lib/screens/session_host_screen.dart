@@ -349,15 +349,24 @@ class _DurationStepper extends StatelessWidget {
               },
             ),
             Expanded(
-              child: Column(
-                children: [
-                  Text(
-                    '$value',
-                    style: AppTheme.statNumber(fontSize: 22, color: color),
-                  ),
-                  if (unit.isNotEmpty)
-                    Text(unit, style: AppTheme.micro()),
-                ],
+              // value + unit on one line ("45 sec"), scaled down if tight
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '$value',
+                      style: AppTheme.statNumber(fontSize: 22, color: color),
+                    ),
+                    if (unit.isNotEmpty) ...[
+                      const SizedBox(width: 3),
+                      Text(unit, style: AppTheme.micro()),
+                    ],
+                  ],
+                ),
               ),
             ),
             _IconBtn(

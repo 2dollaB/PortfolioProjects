@@ -46,16 +46,21 @@ class BeatPrimaryButton extends StatelessWidget {
                   valueColor: AlwaysStoppedAnimation(Colors.white),
                 ),
               )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 18),
-                    const SizedBox(width: AppSpacing.xs),
+            // scaleDown keeps icon + label on one line when several buttons
+            // share a narrow row (e.g. the trainer monitor footer).
+            : FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: 18),
+                      const SizedBox(width: AppSpacing.xs),
+                    ],
+                    Text(label),
                   ],
-                  Text(label),
-                ],
+                ),
               ),
       ),
     );
@@ -91,16 +96,21 @@ class BeatSecondaryButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 18),
-              const SizedBox(width: AppSpacing.xs),
+        // scaleDown keeps icon + label on one line when several buttons
+        // share a narrow row (e.g. the trainer monitor footer).
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 18),
+                const SizedBox(width: AppSpacing.xs),
+              ],
+              Text(label),
             ],
-            Text(label),
-          ],
+          ),
         ),
       ),
     );

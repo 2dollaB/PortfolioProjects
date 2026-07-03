@@ -252,10 +252,15 @@ class _StudioDetailScreenState extends State<StudioDetailScreen> {
           Text(Strings.inviteCode,
               style: AppTheme.micro().copyWith(letterSpacing: 1.6)),
           const SizedBox(height: AppSpacing.xs),
-          Text(
-            s.inviteCode.split('').join(' '),
-            style: AppTheme.statNumber(fontSize: 32, color: AppColors.brandRed)
-                .copyWith(letterSpacing: 6),
+          // scaleDown keeps the spaced digits on one line on narrow phones
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              s.inviteCode.split('').join(' '),
+              maxLines: 1,
+              style: AppTheme.statNumber(fontSize: 32, color: AppColors.brandRed)
+                  .copyWith(letterSpacing: 6),
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           TextButton.icon(

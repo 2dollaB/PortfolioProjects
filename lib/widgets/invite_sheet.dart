@@ -49,12 +49,17 @@ class InviteSheet extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    code.split('').join(' '),
-                    style: AppTheme.statNumber(
-                      fontSize: 32,
-                      color: AppColors.bgPrimary,
-                    ).copyWith(letterSpacing: 6, fontWeight: FontWeight.w800),
+                  // scaleDown keeps the spaced digits on one line on narrow phones
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      code.split('').join(' '),
+                      maxLines: 1,
+                      style: AppTheme.statNumber(
+                        fontSize: 32,
+                        color: AppColors.bgPrimary,
+                      ).copyWith(letterSpacing: 6, fontWeight: FontWeight.w800),
+                    ),
                   ),
                 ],
               ),

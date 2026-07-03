@@ -220,6 +220,21 @@ class Strings {
       _pick('Maximum members', 'Najveći broj članova');
   static String get estimatedHrMax =>
       _pick('Estimated HR max', 'Procijenjeni maks. puls');
+  static String get hrMaxInfoTitle => _pick('About HR max', 'O maks. pulsu');
+  static String get hrMaxInfoBody => _pick(
+      'BeatSync estimates your maximum heart rate from your age with the '
+      'Tanaka formula: 208 − 0.7 × age. For women it uses the Gulati '
+      'formula: 206 − 0.88 × age, which reflects female heart-rate response '
+      'better. Both come from large clinical studies and are more accurate '
+      'than the classic "220 − age". Your true maximum can still differ a '
+      'little — if you exceed it during a workout, BeatSync raises it '
+      'automatically.',
+      'BeatSync procjenjuje vaš maksimalni puls iz dobi Tanaka formulom: '
+      '208 − 0,7 × dob. Za žene koristi Gulati formulu: 206 − 0,88 × dob, '
+      'koja bolje odražava ženski puls. Obje dolaze iz velikih kliničkih '
+      'studija i preciznije su od klasične "220 − dob". Stvarni maksimum '
+      'ipak može malo odstupati — ako ga premašite tijekom treninga, '
+      'BeatSync ga automatski povećava.');
   static String get trainingProfileFallback =>
       _pick('your training profile', 'vaš trening profil');
 

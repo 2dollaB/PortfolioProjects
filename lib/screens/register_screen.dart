@@ -146,9 +146,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   validator: _validateName,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    hintText: 'Jan Minarik',
-                    prefixIcon: Icon(Icons.person_outline_rounded),
+                  decoration: InputDecoration(
+                    hintText: Strings.pick('Your full name', 'Vaše ime i prezime'),
+                    prefixIcon: const Icon(Icons.person_outline_rounded),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -173,7 +173,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: _validatePassword,
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
-                    hintText: 'at least 6 characters',
+                    hintText: Strings.pick('At least 6 characters', 'Najmanje 6 znakova'),
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(_obscure
@@ -192,9 +192,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: _validateConfirm,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
-                  decoration: const InputDecoration(
-                    hintText: 'retype password',
-                    prefixIcon: Icon(Icons.lock_outline_rounded),
+                  decoration: InputDecoration(
+                    hintText: Strings.pick('Repeat your password', 'Ponovite lozinku'),
+                    prefixIcon: const Icon(Icons.lock_outline_rounded),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),

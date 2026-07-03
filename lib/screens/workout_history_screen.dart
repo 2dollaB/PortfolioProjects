@@ -90,8 +90,11 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                 height: 44,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                  // vertical: 6 keeps the pills clear of the divider below
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xl,
+                    vertical: 6,
+                  ),
                   children: [
                     for (final f in _timeFilters) ...[
                       _FilterChip(
@@ -101,11 +104,14 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                       ),
                       const SizedBox(width: AppSpacing.xs),
                     ],
+                    // right margin mirrors the trailing chip spacer so the
+                    // separator sits centered between the two filter groups
                     Container(
                       width: 1,
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 10,
+                      margin: const EdgeInsets.only(
+                        right: AppSpacing.xs,
+                        top: 6,
+                        bottom: 6,
                       ),
                       color: AppColors.border,
                     ),

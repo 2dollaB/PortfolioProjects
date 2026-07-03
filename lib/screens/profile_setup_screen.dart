@@ -9,6 +9,7 @@ import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../services/storage_service.dart';
 import '../widgets/beat_button.dart';
+import '../widgets/hr_max_info_button.dart';
 
 /// One step in the post-registration setup wizard.
 enum _PageType {
@@ -843,7 +844,14 @@ class _FitnessPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(Strings.estimatedHrMax, style: AppTheme.caption()),
+                      Row(
+                        children: [
+                          Text(Strings.estimatedHrMax,
+                              style: AppTheme.caption()),
+                          const SizedBox(width: 2),
+                          const HrMaxInfoButton(),
+                        ],
+                      ),
                       Text(
                         '$previewHrMax bpm',
                         style: AppTheme.statNumber(
@@ -1316,13 +1324,18 @@ class _StudioSuccessPage extends StatelessWidget {
                   style: AppTheme.micro().copyWith(letterSpacing: 1.6),
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(
-                  inviteCode.split('').join(' '),
-                  style: AppTheme.statNumber(
-                    fontSize: 36,
-                    color: AppColors.brandRed,
-                    weight: FontWeight.w800,
-                  ).copyWith(letterSpacing: 6),
+                // scaleDown keeps the spaced digits on one line on narrow phones
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    inviteCode.split('').join(' '),
+                    maxLines: 1,
+                    style: AppTheme.statNumber(
+                      fontSize: 36,
+                      color: AppColors.brandRed,
+                      weight: FontWeight.w800,
+                    ).copyWith(letterSpacing: 6),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(

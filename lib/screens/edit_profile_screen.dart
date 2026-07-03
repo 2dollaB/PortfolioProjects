@@ -11,6 +11,7 @@ import '../models/user_profile.dart';
 import '../services/auth_service.dart';
 import '../services/user_repository.dart';
 import '../widgets/beat_button.dart';
+import '../widgets/hr_max_info_button.dart';
 
 /// Edit personal info. Reuses the same numeric fields as the wizard.
 /// Saves on tap of Save and pops back to settings.
@@ -280,7 +281,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(Strings.estimatedHrMax, style: AppTheme.caption()),
+                        Row(
+                          children: [
+                            Text(Strings.estimatedHrMax,
+                                style: AppTheme.caption()),
+                            const SizedBox(width: 2),
+                            const HrMaxInfoButton(),
+                          ],
+                        ),
                         Text(
                           '${_previewHrMax()} bpm',
                           style: AppTheme.statNumber(
@@ -334,6 +342,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           FilteringTextInputFormatter.digitsOnly,
       ],
       textInputAction: TextInputAction.next,
+      // keeps the HR-max preview in sync while typing (age drives it)
+      onChanged: (_) => setState(() {}),
       decoration: InputDecoration(
         hintText: hint,
         suffixText: suffix,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
+import '../config/feature_flags.dart';
 import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
@@ -152,9 +153,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   textInputAction: TextInputAction.next,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   validator: _validateEmail,
-                  decoration: const InputDecoration(
-                    hintText: 'athlete@beatsync.ba',
-                    prefixIcon: Icon(Icons.mail_outline_rounded),
+                  // demo hints double as working credentials in the prototype
+                  decoration: InputDecoration(
+                    hintText: FeatureFlags.prototypeMode
+                        ? 'athlete@beatsync.ba'
+                        : 'you@studio.com',
+                    prefixIcon: const Icon(Icons.mail_outline_rounded),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -167,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator: _validatePassword,
                   onFieldSubmitted: (_) => _submit(),
                   decoration: InputDecoration(
-                    hintText: 'test123',
+                    hintText: FeatureFlags.prototypeMode ? 'test123' : '••••••••',
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(_obscure
