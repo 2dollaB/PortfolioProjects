@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
+import '../config/strings.dart';
 import '../models/user_profile.dart';
+import '../services/auth_service.dart';
+import '../services/workout_recovery_service.dart';
 import 'home_screen.dart';
 import 'workout_history_screen.dart';
 import 'settings_screen.dart';
@@ -51,6 +54,25 @@ class _MainNavShellState extends State<MainNavShell> {
     super.initState();
     final tabCount = _isTrainer ? 4 : 3;
     _navKeys = List.generate(tabCount, (_) => GlobalKey<NavigatorState>());
+    _recoverInterruptedWorkout();
+  }
+
+  /// If the process died mid-workout, save the crash snapshot to history
+  /// and tell the user (bug-fix pass #10).
+  Future<void> _recoverInterruptedWorkout() async {
+    final uid = AuthService.currentUid;
+    if (uid == null) return;
+    final recovered = await WorkoutRecoveryService.recover(uid);
+    if (recovered && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(Strings.pick(
+            'An interrupted workout was saved to your history.',
+            'Prekinuti trening spremljen je u vašu povijest.',
+          )),
+        ),
+      );
+    }
   }
 
   /// Tab root screens. Re-built each frame so they reflect any prop changes.

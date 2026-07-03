@@ -16,6 +16,7 @@ import '../services/auth_service.dart';
 import '../services/ble_hr_service.dart';
 import '../services/foreground_service.dart';
 import '../services/session_repository.dart';
+import '../services/workout_recovery_service.dart';
 import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/bpm_display.dart';
@@ -132,6 +133,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       unawaited(SessionRepository.removeHr(sessionId: session.id, uid: uid)
           .catchError((_) {}));
     }
+    // Kicked workouts aren't saved, so drop the crash-recovery snapshot too.
+    unawaited(WorkoutRecoveryService.clear());
     if (!mounted) return;
     Navigator.of(context).popUntil((r) => r.isFirst);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -171,6 +174,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       _trimp += pct * pct * widget.profile.trimpGenderFactor * 0.05;
     });
     _publishHr();
+    _maybeSnapshot();
   }
 
   int get _avgBpm => _bpmHistory.isEmpty
@@ -178,6 +182,34 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       : _bpmHistory.reduce((a, b) => a + b) ~/ _bpmHistory.length;
 
   DateTime? _lastHrPush;
+  DateTime? _lastSnapshot;
+
+  /// ~5s crash-safety snapshot so a killed process doesn't lose the workout;
+  /// WorkoutRecoveryService saves the leftover on the next launch.
+  void _maybeSnapshot() {
+    final uid = AuthService.currentUid;
+    if (uid == null) return;
+    final now = DateTime.now();
+    if (_lastSnapshot != null &&
+        now.difference(_lastSnapshot!) < const Duration(seconds: 5)) {
+      return;
+    }
+    _lastSnapshot = now;
+    final stats = _zoneStats(widget.profile.hrMax);
+    unawaited(WorkoutRecoveryService.snapshot({
+      'userId': uid,
+      'type': widget.workoutType?.name ?? 'free',
+      'startMs': now.subtract(_stopwatch.elapsed).millisecondsSinceEpoch,
+      'lastMs': now.millisecondsSinceEpoch,
+      'avgHr': _avgBpm,
+      'maxHr': _maxBpm,
+      'calories': _kcal.round(),
+      'trimp': _trimp.round(),
+      'zoneDist': stats.zoneDist,
+      'dominantZone': stats.dominantZone,
+      'sessionId': widget.session?.id,
+    }));
+  }
 
   /// ~1/sec heartbeat to the group session's live board. Failures (e.g. the
   /// trainer just ended the session) are non-fatal — the personal workout
@@ -266,6 +298,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           .catchError((_) {}));
     }
     unawaited(_persistWorkout());
+    unawaited(WorkoutRecoveryService.clear());
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
@@ -288,9 +321,29 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   Future<void> _persistWorkout() async {
     final uid = AuthService.currentUid;
     if (uid == null) return; // prototype / not signed in
-    final hrMax = widget.profile.hrMax;
-    final avg = _avgBpm;
-    // Zone distribution (% of samples per zone 0-5) + dominant training zone.
+    final stats = _zoneStats(widget.profile.hrMax);
+    final end = DateTime.now();
+    try {
+      await WorkoutRepository.save(
+        userId: uid,
+        type: widget.workoutType?.name ?? 'free',
+        startTime: end.subtract(_stopwatch.elapsed),
+        endTime: end,
+        avgHr: _avgBpm,
+        maxHr: _maxBpm,
+        calories: _kcal.round(),
+        trimp: _trimp.round(),
+        zoneDist: stats.zoneDist,
+        dominantZone: stats.dominantZone,
+        sessionId: widget.session?.id,
+      );
+    } catch (_) {
+      // Non-blocking; ignore transient write failures.
+    }
+  }
+
+  /// Zone distribution (% of samples per zone 0-5) + dominant training zone.
+  ({List<int> zoneDist, int dominantZone}) _zoneStats(int hrMax) {
     final counts = List<int>.filled(6, 0);
     for (final b in _bpmHistory) {
       counts[HrZones.fromBpm(b, hrMax).clamp(0, 5)]++;
@@ -305,24 +358,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         dominantZone = z;
       }
     }
-    final end = DateTime.now();
-    try {
-      await WorkoutRepository.save(
-        userId: uid,
-        type: widget.workoutType?.name ?? 'free',
-        startTime: end.subtract(_stopwatch.elapsed),
-        endTime: end,
-        avgHr: avg,
-        maxHr: _maxBpm,
-        calories: _kcal.round(),
-        trimp: _trimp.round(),
-        zoneDist: zoneDist,
-        dominantZone: dominantZone,
-        sessionId: widget.session?.id,
-      );
-    } catch (_) {
-      // Non-blocking; ignore transient write failures.
-    }
+    return (zoneDist: zoneDist, dominantZone: dominantZone);
   }
 
   /// Top-right sensor chip: real device name + battery when a strap is
