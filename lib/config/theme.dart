@@ -358,6 +358,19 @@ class AppTheme {
           color: AppColors.darkTextSecondary,
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: AppColors.darkBgTertiary,
+        contentTextStyle: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: AppColors.darkTextPrimary,
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          side: const BorderSide(color: AppColors.darkBorder),
+        ),
+      ),
       sliderTheme: SliderThemeData(
         activeTrackColor: AppColors.brandRed,
         inactiveTrackColor: AppColors.darkBgTertiary,
@@ -503,6 +516,19 @@ class AppTheme {
         labelStyle: GoogleFonts.poppins(
           fontSize: 14,
           color: AppColors.lightTextSecondary,
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: AppColors.lightBgTertiary,
+        contentTextStyle: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: AppColors.lightTextPrimary,
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          side: const BorderSide(color: AppColors.lightBorder),
         ),
       ),
       sliderTheme: SliderThemeData(

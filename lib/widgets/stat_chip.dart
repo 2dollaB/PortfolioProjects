@@ -45,10 +45,16 @@ class StatChip extends StatelessWidget {
                 const SizedBox(width: AppSpacing.micro),
               ],
               Expanded(
-                child: Text(
-                  label.toUpperCase(),
-                  style: AppTheme.micro().copyWith(letterSpacing: 1.2),
-                  overflow: TextOverflow.ellipsis,
+                // scaleDown instead of ellipsis: the full label always reads
+                // left to right, just slightly smaller in narrow chips.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    label.toUpperCase(),
+                    maxLines: 1,
+                    style: AppTheme.micro().copyWith(letterSpacing: 1.2),
+                  ),
                 ),
               ),
             ],

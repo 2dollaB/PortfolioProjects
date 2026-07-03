@@ -38,11 +38,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Studio? _studio;
   List<WorkoutSummary>? _workouts;
 
+  /// Live copy of the profile. Synced from the parent when this screen is a
+  /// nav-shell tab, and from EditProfileScreen's onSaved when it's a pushed
+  /// route (trainer avatar) — a pushed route never gets new constructor
+  /// props, so edits would otherwise show stale data on re-entry.
+  UserProfile? _profile;
+
   bool get _production => AuthService.currentUid != null;
 
   @override
   void initState() {
     super.initState();
+    _profile = widget.profile;
     final uid = AuthService.currentUid;
     if (uid == null) return;
     _loadStudio();
@@ -56,14 +63,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.didUpdateWidget(oldWidget);
     // Joining/leaving a studio changes studioId on the live profile —
     // refresh the studio row instead of showing the initState-era value.
-    if (widget.profile?.studioId != oldWidget.profile?.studioId) {
+    final studioChanged =
+        widget.profile?.studioId != oldWidget.profile?.studioId;
+    _profile = widget.profile;
+    if (studioChanged) {
       setState(() => _studio = null);
       _loadStudio();
     }
   }
 
   void _loadStudio() {
-    final sid = widget.profile?.studioId;
+    final sid = _profile?.studioId;
     if (sid == null) return;
     StudioRepository.load(sid).then((s) {
       if (mounted) setState(() => _studio = s);
@@ -170,7 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _reloadStudio() {
-    final sid = widget.profile?.studioId;
+    final sid = _profile?.studioId;
     if (sid == null) {
       if (mounted) setState(() => _studio = null);
       return;
@@ -182,7 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final p = widget.profile ?? MockData.athleteProfile;
+    final p = _profile ?? MockData.athleteProfile;
     final studioName = _production ? _studio?.name : MockData.studioName;
     final workouts = _workouts;
     String workoutCount, totalTime;
@@ -321,7 +331,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 label: Strings.personalInfo,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => EditProfileScreen(profile: p),
+                    builder: (_) => EditProfileScreen(
+                      profile: p,
+                      onSaved: (updated) =>
+                          setState(() => _profile = updated),
+                    ),
                   ),
                 ),
               ),
