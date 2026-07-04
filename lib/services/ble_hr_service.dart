@@ -101,6 +101,10 @@ class BleHrService {
       await device.connect(
         autoConnect: false,
         timeout: const Duration(seconds: 10),
+        // ⚠️ flutter_blue_plus v2 dual license: this declares NON-commercial
+        // use. Before charging customers, either buy the commercial license
+        // or pin to the last BSD release (1.35.x). Tracked in HANDOFF.md.
+        // ignore: deprecated_member_use
         license: License.free,
         mtu: null, // Skip MTU negotiation — fixes Garmin timeout
       );
