@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
@@ -38,6 +39,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   Studio? _studio;
   List<WorkoutSummary>? _workouts;
+  StreamSubscription? _workoutsSub;
 
   /// Live copy of the profile. Synced from the parent when this screen is a
   /// nav-shell tab, and from EditProfileScreen's onSaved when it's a pushed
@@ -59,9 +61,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (fresh != null && mounted) setState(() => _profile = fresh);
     }).catchError((_) {});
     _loadStudio();
-    WorkoutRepository.fetchRecent(uid, limit: 200).then((w) {
-      if (mounted) setState(() => _workouts = w);
-    }).catchError((_) {});
+    // Stream, not one-shot: the tab stays alive in the IndexedStack, so a
+    // fetch here would show pre-workout stats until app restart (E2E-2).
+    _workoutsSub = WorkoutRepository.watchRecent(uid, limit: 200).listen(
+      (w) {
+        if (mounted) setState(() => _workouts = w);
+      },
+      onError: (_) {},
+    );
+  }
+
+  @override
+  void dispose() {
+    _workoutsSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -318,15 +331,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
 
-            // Quick stats
-            Row(
-              children: [
-                Expanded(child: _StatBlock(label: Strings.workouts, value: workoutCount)),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(child: _StatBlock(label: Strings.totalTime, value: totalTime)),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(child: _StatBlock(label: Strings.hrMax, value: '${p.hrMax}')),
-              ],
+            // Quick stats — IntrinsicHeight keeps the three cards level even
+            // when a label ("Ukupno vrijeme") is longer than its neighbours.
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: _StatBlock(label: Strings.workouts, value: workoutCount)),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(child: _StatBlock(label: Strings.totalTime, value: totalTime)),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(child: _StatBlock(label: Strings.hrMax, value: '${p.hrMax}')),
+                ],
+              ),
             ),
 
             const SizedBox(height: AppSpacing.lg),
@@ -473,10 +490,16 @@ class _StatBlock extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(value, style: AppTheme.statNumber(fontSize: 22)),
           const SizedBox(height: 2),
-          Text(label, style: AppTheme.micro()),
+          // Single line, scaled down if needed — a wrapped label made the
+          // middle card taller than its neighbours.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(label, style: AppTheme.micro(), maxLines: 1),
+          ),
         ],
       ),
     );

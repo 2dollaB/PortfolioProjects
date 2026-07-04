@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import '../widgets/mobile_frame.dart';
@@ -10,6 +11,7 @@ import '../models/studio.dart';
 import '../models/user_profile.dart';
 import '../models/workout_summary.dart';
 import '../services/auth_service.dart';
+import '../services/session_repository.dart';
 import '../services/studio_repository.dart';
 import '../services/user_repository.dart';
 import '../services/workout_repository.dart';
@@ -27,6 +29,7 @@ class StudioAnalyticsScreen extends StatefulWidget {
 
 class _StudioAnalyticsScreenState extends State<StudioAnalyticsScreen> {
   Stream<Studio?>? _studioStream;
+  StreamSubscription? _sessionsSub;
 
   // Memoized aggregation, refreshed when the member list changes.
   Future<_Analytics>? _future;
@@ -53,7 +56,37 @@ class _StudioAnalyticsScreenState extends State<StudioAnalyticsScreen> {
     final sid = widget.studioId;
     if (AuthService.currentUid != null && sid != null) {
       _studioStream = StudioRepository.watch(sid);
+      // The tab stays alive in the IndexedStack, so the memoized aggregation
+      // outlives sessions run in the same app session (E2E-2: "SESSIONS 0"
+      // right after a workout). Any change in the studio's session list
+      // (created/ended) drops the memo so the next build refetches.
+      _sessionsSub = SessionRepository.watchRecent(sid).listen(
+        (_) {
+          if (_future == null) return;
+          _dropMemo();
+          // Athlete workout saves land a beat after the session flips to
+          // ended — invalidate once more so they're included.
+          Future.delayed(const Duration(seconds: 5), () {
+            if (mounted) _dropMemo();
+          });
+        },
+        onError: (_) {},
+      );
     }
+  }
+
+  void _dropMemo() {
+    if (!mounted) return;
+    setState(() {
+      _future = null;
+      _uids = null;
+    });
+  }
+
+  @override
+  void dispose() {
+    _sessionsSub?.cancel();
+    super.dispose();
   }
 
   Future<_Analytics> _analyticsFor(Studio studio) {
@@ -157,21 +190,27 @@ class _StudioAnalyticsScreenState extends State<StudioAnalyticsScreen> {
             _ChartCard(
               title: Strings.attendanceTitle,
               subtitle: Strings.athletesPerWeek,
-              child: _BarChart(
-                values: a.attendance,
-                labels: const ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'],
-                color: AppColors.brandRed,
-              ),
+              child: a.attendance.every((v) => v == 0)
+                  ? const _EmptyChartHint()
+                  : _BarChart(
+                      values: a.attendance,
+                      labels: const [
+                        'W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8',
+                      ],
+                      color: AppColors.brandRed,
+                    ),
             ),
             const SizedBox(height: AppSpacing.md),
 
             _ChartCard(
               title: Strings.groupTrimp,
               subtitle: Strings.averagePerSession,
-              child: _LineChart(
-                values: a.groupTrimp,
-                color: AppColors.warning,
-              ),
+              child: a.groupTrimp.every((v) => v == 0)
+                  ? const _EmptyChartHint()
+                  : _LineChart(
+                      values: a.groupTrimp,
+                      color: AppColors.warning,
+                    ),
             ),
             const SizedBox(height: AppSpacing.md),
 
@@ -298,6 +337,25 @@ class _ChartCard extends StatelessWidget {
   }
 }
 
+/// Zero-data chart body — quiet hint instead of empty axes (E2E-3/4).
+class _EmptyChartHint extends StatelessWidget {
+  const _EmptyChartHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 100,
+      child: Center(
+        child: Text(
+          Strings.noChartData,
+          style: AppTheme.caption(color: AppColors.textTertiary),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+}
+
 class _BarChart extends StatelessWidget {
   final List<int> values;
   final List<String> labels;
@@ -333,29 +391,35 @@ class _BarChart extends StatelessWidget {
                     // The bar — Expanded gives it bounded height so
                     // FractionallySizedBox heightFactor actually means something.
                     Expanded(
-                      child: Align(
-                        alignment: Alignment.bottomCenter,
-                        child: FractionallySizedBox(
-                          widthFactor: 1,
-                          heightFactor: (values[i] / maxV).clamp(0.05, 1.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: color.withValues(
-                                  alpha: 0.5 + (values[i] / maxV) * 0.5),
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(6),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: color.withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  spreadRadius: -2,
+                      // Zero weeks draw nothing at all — even a zero-height
+                      // container still smears its glow shadow across the
+                      // baseline (E2E-3).
+                      child: values[i] == 0
+                          ? const SizedBox.shrink()
+                          : Align(
+                              alignment: Alignment.bottomCenter,
+                              child: FractionallySizedBox(
+                                widthFactor: 1,
+                                heightFactor:
+                                    (values[i] / maxV).clamp(0.05, 1.0),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: color.withValues(
+                                        alpha: 0.5 + (values[i] / maxV) * 0.5),
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(6),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: color.withValues(alpha: 0.3),
+                                        blurRadius: 8,
+                                        spreadRadius: -2,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
-                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(labels[i], style: AppTheme.micro()),

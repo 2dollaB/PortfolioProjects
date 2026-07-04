@@ -204,12 +204,14 @@ class _HeroCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        gradient: const LinearGradient(
+        // Semantic surfaces, not the old hardcoded dark pair — in light mode
+        // the heading rendered dark-on-dark (E2E-8).
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1E1E24),
-            Color(0xFF16161A),
+            AppColors.bgTertiary,
+            AppColors.bgSecondary,
           ],
         ),
         border: Border.all(color: AppColors.border),
@@ -341,9 +343,9 @@ class _WeeklyStats extends StatelessWidget {
     }
     return Row(
       children: [
-        Expanded(
-            child: StatChip(
-                label: Strings.sessions, value: sessions, unit: Strings.thisWeekUnit)),
+        // No "this week" unit — the section header already says the period,
+        // so "1 ovaj tjedan" read like a typo next to the plain chips.
+        Expanded(child: StatChip(label: Strings.sessions, value: sessions)),
         const SizedBox(width: AppSpacing.xs),
         Expanded(child: StatChip(label: Strings.time, value: time)),
         const SizedBox(width: AppSpacing.xs),

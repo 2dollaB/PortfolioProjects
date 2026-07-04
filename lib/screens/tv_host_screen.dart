@@ -61,19 +61,41 @@ class _TvHostScreenState extends State<TvHostScreen> {
   @override
   void initState() {
     super.initState();
-    final sid = widget.studioId;
-    if (AuthService.currentUid != null && sid != null) {
-      _liveStream = SessionRepository.watchLive(sid);
-      StudioRepository.load(sid).then((s) {
-        if (mounted && s != null) setState(() => _studio = s);
-      }).catchError((_) {});
-    } else {
+    _initStreams();
+    if (!_production) {
       for (final p in MockData.liveSession) {
         _liveBpm[p.id] = p.bpm;
       }
     }
     _stopwatch.start();
     _tick = Timer.periodic(const Duration(milliseconds: 800), (_) => _step());
+  }
+
+  void _initStreams() {
+    final sid = widget.studioId;
+    if (AuthService.currentUid != null && sid != null) {
+      _liveStream = SessionRepository.watchLive(sid);
+      StudioRepository.load(sid).then((s) {
+        if (mounted && s != null) setState(() => _studio = s);
+      }).catchError((_) {});
+    }
+  }
+
+  /// The shell rebuilds tab roots from the live profile (see _ProfileScope in
+  /// main_nav_shell) — the State is reused, so pick up a changed studioId here
+  /// or the tab keeps streaming the old (or no) studio until app restart.
+  @override
+  void didUpdateWidget(TvHostScreen old) {
+    super.didUpdateWidget(old);
+    if (old.studioId != widget.studioId) {
+      setState(() {
+        _liveStream = null;
+        _hrStream = null;
+        _hrSessionId = null;
+        _studio = null;
+      });
+      _initStreams();
+    }
   }
 
   void _step() {
@@ -186,14 +208,28 @@ class _TvHostScreenState extends State<TvHostScreen> {
         return StreamBuilder<List<SessionHrEntry>>(
           stream: _hrFor(live.id),
           builder: (context, hrSnap) {
+            if (hrSnap.hasError) {
+              // Never leave the wall screen stuck on "waiting" — drop the
+              // memoized stream so the next frame re-subscribes.
+              _hrStream = null;
+              _hrSessionId = null;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) setState(() {});
+              });
+            }
             final entries = hrSnap.data ?? const <SessionHrEntry>[];
-            _names.ensure(entries.map((e) => e.uid), () {
-              if (mounted) setState(() {});
-            });
+            // Cache lookup is the fallback for pre-name hr docs; athletes
+            // can't read co-members' users docs, so entry.name is primary.
+            _names.ensure(
+              entries.where((e) => e.name.isEmpty).map((e) => e.uid),
+              () {
+                if (mounted) setState(() {});
+              },
+            );
             final athletes = entries
                 .map((e) => BoardAthlete(
                       id: e.uid,
-                      name: _names.nameFor(e.uid),
+                      name: e.name.isNotEmpty ? e.name : _names.nameFor(e.uid),
                       bpm: e.bpm,
                       avgBpm: e.avgBpm,
                       hrMax: e.hrMax > 0 ? e.hrMax : 190,

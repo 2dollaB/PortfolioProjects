@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../config/strings.dart';
 
 /// Read-side view of a `workouts/{id}` doc — the summary fields the history
 /// and home cards render. (The write side lives in WorkoutRepository.save.)
@@ -53,9 +54,9 @@ class WorkoutSummary {
     final d = DateTime(startTime.year, startTime.month, startTime.day);
     final today = DateTime(now.year, now.month, now.day);
     final diff = today.difference(d).inDays;
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Yesterday';
-    if (diff < 7) return '$diff days ago';
+    if (diff == 0) return Strings.today;
+    if (diff == 1) return Strings.yesterday;
+    if (diff < 7) return Strings.daysAgo(diff);
     return '${startTime.day}/${startTime.month}';
   }
 

@@ -100,7 +100,11 @@ class _MainNavShellState extends State<MainNavShell> {
               onSignOut: widget.onSignOut,
               enableStudioJoin: widget.enableStudioJoin,
             ),
-            const WorkoutHistoryScreen(),
+            // NOT const: an identical (const) instance short-circuits the
+            // rebuild that _ProfileScope triggers on theme/language flips,
+            // which left History painted in the old palette.
+            // ignore: prefer_const_constructors
+            WorkoutHistoryScreen(),
             SettingsScreen(
               profile: profile,
               onSignOut: widget.onSignOut,
@@ -108,44 +112,45 @@ class _MainNavShellState extends State<MainNavShell> {
           ];
   }
 
+  // Not const: labels re-resolve through Strings on language change (E2E-9).
   List<NavigationDestination> get _tabs => _isTrainer
-      ? const [
+      ? [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_outlined),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home_outlined),
+            label: Strings.navHome,
           ),
           NavigationDestination(
-            icon: Icon(Icons.groups_outlined),
-            selectedIcon: Icon(Icons.groups_rounded),
-            label: 'Members',
+            icon: const Icon(Icons.groups_outlined),
+            selectedIcon: const Icon(Icons.groups_rounded),
+            label: Strings.members,
           ),
           NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart_rounded),
-            label: 'Analytics',
+            icon: const Icon(Icons.bar_chart_outlined),
+            selectedIcon: const Icon(Icons.bar_chart_rounded),
+            label: Strings.analytics,
           ),
           NavigationDestination(
-            icon: Icon(Icons.tv_outlined),
-            selectedIcon: Icon(Icons.tv_rounded),
+            icon: const Icon(Icons.tv_outlined),
+            selectedIcon: const Icon(Icons.tv_rounded),
             label: 'TV',
           ),
         ]
-      : const [
+      : [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_outlined),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home_outlined),
+            label: Strings.navHome,
           ),
           NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history_rounded),
-            label: 'History',
+            icon: const Icon(Icons.history_outlined),
+            selectedIcon: const Icon(Icons.history_rounded),
+            label: Strings.history,
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
+            icon: const Icon(Icons.person_outline_rounded),
+            selectedIcon: const Icon(Icons.person_rounded),
+            label: Strings.navProfile,
           ),
         ];
 
@@ -217,15 +222,25 @@ class _MainNavShellState extends State<MainNavShell> {
 /// Hands the live profile to the tab-root routes. A route's content only
 /// rebuilds when an inherited dependency changes — shell rebuilds alone
 /// don't reach it — so this is what keeps the roots in sync with the
-/// users/{uid} stream.
+/// users/{uid} stream. It also carries the current theme + language:
+/// AppColors/Strings are static getters (not inherited), so without this
+/// an Appearance or Language flip never reached the always-alive tab
+/// roots (E2E-8: History stayed dark in light mode).
 class _ProfileScope extends InheritedWidget {
   final UserProfile profile;
-  const _ProfileScope({required this.profile, required super.child});
+  final Brightness brightness;
+  final AppLang lang;
+
+  _ProfileScope({required this.profile, required super.child})
+      : brightness = AppColors.brightness,
+        lang = Strings.lang;
 
   static UserProfile of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<_ProfileScope>()!.profile;
 
   @override
   bool updateShouldNotify(_ProfileScope oldWidget) =>
-      oldWidget.profile != profile;
+      oldWidget.profile != profile ||
+      oldWidget.brightness != brightness ||
+      oldWidget.lang != lang;
 }

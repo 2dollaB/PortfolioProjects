@@ -305,13 +305,16 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       stream: stream,
       builder: (context, snap) {
         final entries = snap.data ?? const <SessionHrEntry>[];
-        _names.ensure(entries.map((e) => e.uid), () {
-          if (mounted) setState(() {});
-        });
+        _names.ensure(
+          entries.where((e) => e.name.isEmpty).map((e) => e.uid),
+          () {
+            if (mounted) setState(() {});
+          },
+        );
         final athletes = entries
             .map((e) => BoardAthlete(
                   id: e.uid,
-                  name: _names.nameFor(e.uid),
+                  name: e.name.isNotEmpty ? e.name : _names.nameFor(e.uid),
                   bpm: e.bpm,
                   avgBpm: e.avgBpm,
                   hrMax: e.hrMax > 0 ? e.hrMax : 190,

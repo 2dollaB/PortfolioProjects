@@ -7,9 +7,12 @@ import '../config/app_spacing.dart';
 import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
+import '../services/auth_service.dart';
+import '../services/ble_hr_service.dart';
 import '../services/storage_service.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/hr_max_info_button.dart';
+import 'device_pairing_screen.dart';
 
 /// One step in the post-registration setup wizard.
 enum _PageType {
@@ -309,6 +312,46 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     return Icons.arrow_forward_rounded;
   }
 
+  /// Production: real BLE pairing via [DevicePairingScreen] (runtime
+  /// permissions + scan + connect live in one place). Prototype demo keeps
+  /// the mock connect so the wizard stays walkable without hardware.
+  Future<void> _searchStrap() async {
+    if (AuthService.currentUid != null) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const DevicePairingScreen()),
+      );
+      if (!mounted) return;
+      final ble = BleHrService.instance;
+      setState(() {
+        if (ble.isConnected) {
+          _strap = _StrapStatus.connected;
+          _strapName = ble.connectedDeviceName ?? Strings.heartRateSensor;
+        } else {
+          _strap = _StrapStatus.idle;
+          _strapName = '';
+        }
+      });
+      return;
+    }
+    setState(() => _strap = _StrapStatus.searching);
+    await Future.delayed(const Duration(milliseconds: 1400));
+    if (!mounted) return;
+    setState(() {
+      _strap = _StrapStatus.connected;
+      _strapName = 'Polar H10';
+    });
+  }
+
+  /// Connected-card label: real device + real battery when we have one,
+  /// the polished mock label in the demo.
+  String _strapLabel() {
+    if (AuthService.currentUid != null) {
+      final batt = BleHrService.instance.batteryLevel;
+      return batt >= 0 ? '$_strapName · $batt%' : _strapName;
+    }
+    return Strings.strapBattery(_strapName);
+  }
+
   int _previewHrMax() {
     final age = int.tryParse(_ageCtrl.text) ?? 30;
     return _sex == Sex.female
@@ -339,20 +382,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       case _PageType.strap:
         return _StrapPage(
           status: _strap,
-          strapName: _strapName,
-          onSearch: () async {
-            setState(() => _strap = _StrapStatus.searching);
-            await Future.delayed(const Duration(milliseconds: 1400));
-            if (!mounted) return;
+          strapLabel: _strapLabel(),
+          onSearch: _searchStrap,
+          onDisconnect: () {
+            if (AuthService.currentUid != null) {
+              BleHrService.instance.disconnect();
+            }
             setState(() {
-              _strap = _StrapStatus.connected;
-              _strapName = 'Polar H10';
+              _strap = _StrapStatus.idle;
+              _strapName = '';
             });
           },
-          onDisconnect: () => setState(() {
-            _strap = _StrapStatus.idle;
-            _strapName = '';
-          }),
         );
       case _PageType.studioForm:
         return _StudioFormPage(
@@ -972,13 +1012,13 @@ enum _StrapStatus { idle, searching, connected }
 
 class _StrapPage extends StatelessWidget {
   final _StrapStatus status;
-  final String strapName;
+  final String strapLabel;
   final VoidCallback onSearch;
   final VoidCallback onDisconnect;
 
   const _StrapPage({
     required this.status,
-    required this.strapName,
+    required this.strapLabel,
     required this.onSearch,
     required this.onDisconnect,
   });
@@ -1095,7 +1135,7 @@ class _StrapPage extends StatelessWidget {
                               .copyWith(fontWeight: FontWeight.w700),
                         ),
                         Text(
-                          Strings.strapBattery(strapName),
+                          strapLabel,
                           style: AppTheme.bodyLarge(weight: FontWeight.w600)
                               .copyWith(fontSize: 15),
                         ),

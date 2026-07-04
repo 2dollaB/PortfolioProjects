@@ -156,12 +156,16 @@ class SessionRepository {
   static Future<void> writeHr({
     required String sessionId,
     required String uid,
+    required String name,
     required int bpm,
     required int avgBpm,
     required int zone,
     required int hrMax,
   }) {
     return _sessions.doc(sessionId).collection('hr').doc(uid).set({
+      // Denormalized so co-athletes' boards can show names without users/
+      // reads (rules keep users/{uid} owner+self only).
+      'name': name,
       'bpm': bpm,
       'avgBpm': avgBpm,
       'zone': zone,
