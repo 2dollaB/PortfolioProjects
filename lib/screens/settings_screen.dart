@@ -331,15 +331,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
 
-            // Quick stats
-            Row(
-              children: [
-                Expanded(child: _StatBlock(label: Strings.workouts, value: workoutCount)),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(child: _StatBlock(label: Strings.totalTime, value: totalTime)),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(child: _StatBlock(label: Strings.hrMax, value: '${p.hrMax}')),
-              ],
+            // Quick stats — IntrinsicHeight keeps the three cards level even
+            // when a label ("Ukupno vrijeme") is longer than its neighbours.
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: _StatBlock(label: Strings.workouts, value: workoutCount)),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(child: _StatBlock(label: Strings.totalTime, value: totalTime)),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(child: _StatBlock(label: Strings.hrMax, value: '${p.hrMax}')),
+                ],
+              ),
             ),
 
             const SizedBox(height: AppSpacing.lg),
@@ -486,10 +490,16 @@ class _StatBlock extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(value, style: AppTheme.statNumber(fontSize: 22)),
           const SizedBox(height: 2),
-          Text(label, style: AppTheme.micro()),
+          // Single line, scaled down if needed — a wrapped label made the
+          // middle card taller than its neighbours.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(label, style: AppTheme.micro(), maxLines: 1),
+          ),
         ],
       ),
     );

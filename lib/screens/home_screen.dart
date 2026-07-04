@@ -343,9 +343,9 @@ class _WeeklyStats extends StatelessWidget {
     }
     return Row(
       children: [
-        Expanded(
-            child: StatChip(
-                label: Strings.sessions, value: sessions, unit: Strings.thisWeekUnit)),
+        // No "this week" unit — the section header already says the period,
+        // so "1 ovaj tjedan" read like a typo next to the plain chips.
+        Expanded(child: StatChip(label: Strings.sessions, value: sessions)),
         const SizedBox(width: AppSpacing.xs),
         Expanded(child: StatChip(label: Strings.time, value: time)),
         const SizedBox(width: AppSpacing.xs),

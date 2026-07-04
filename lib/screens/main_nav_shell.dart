@@ -100,7 +100,11 @@ class _MainNavShellState extends State<MainNavShell> {
               onSignOut: widget.onSignOut,
               enableStudioJoin: widget.enableStudioJoin,
             ),
-            const WorkoutHistoryScreen(),
+            // NOT const: an identical (const) instance short-circuits the
+            // rebuild that _ProfileScope triggers on theme/language flips,
+            // which left History painted in the old palette.
+            // ignore: prefer_const_constructors
+            WorkoutHistoryScreen(),
             SettingsScreen(
               profile: profile,
               onSignOut: widget.onSignOut,
