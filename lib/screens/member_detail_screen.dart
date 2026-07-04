@@ -419,10 +419,19 @@ class _TrimpTrend extends StatelessWidget {
       ),
       child: SizedBox(
         height: 100,
-        child: CustomPaint(
-          painter: _TrimpLinePainter(values: values),
-          size: Size.infinite,
-        ),
+        child: values.every((v) => v == 0)
+            // Zero data would paint a flat baseline with dots (E2E-4).
+            ? Center(
+                child: Text(
+                  Strings.noChartData,
+                  style: AppTheme.caption(color: AppColors.textTertiary),
+                  textAlign: TextAlign.center,
+                ),
+              )
+            : CustomPaint(
+                painter: _TrimpLinePainter(values: values),
+                size: Size.infinite,
+              ),
       ),
     );
   }

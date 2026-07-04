@@ -395,6 +395,8 @@ class Strings {
 
   // ── Workout history ──────────────────────────────────────────
   static String get history => _pick('History', 'Povijest');
+  static String get navHome => _pick('Home', 'Početna');
+  static String get navProfile => _pick('Profile', 'Profil');
   static String get filterAll => _pick('All', 'Sve');
   static String get filterThisMonth => _pick('This month', 'Ovaj mjesec');
   static String get noWorkoutsMatch => _pick(
@@ -533,6 +535,9 @@ class Strings {
       _pick('Most active this month', 'Najaktivniji ovaj mjesec');
   static String get noWorkoutsMonth => _pick(
       'No workouts this month yet.', 'Još nema treninga ovaj mjesec.');
+  static String get noChartData => _pick(
+      'No data yet — it fills in after a few sessions.',
+      'Još nema podataka — popunit će se nakon nekoliko treninga.');
   static String get sessionsLower => _pick('sessions', 'treninga');
 
   // ── Sessions (history / detail) ──────────────────────────────

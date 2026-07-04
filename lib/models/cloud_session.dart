@@ -127,6 +127,11 @@ class BoardAthlete {
 /// One athlete's row on the live HR board (`sessions/{id}/hr/{uid}`).
 class SessionHrEntry {
   final String uid;
+
+  /// Denormalized display name, written by the athlete with each hr doc.
+  /// Boards need it because athletes can't read each other's users/{uid}
+  /// (only the studio owner can), so uid→name lookups fail for them.
+  final String name;
   final int bpm;
   final int avgBpm; // athlete-computed running session average
   final int zone;
@@ -135,6 +140,7 @@ class SessionHrEntry {
 
   const SessionHrEntry({
     required this.uid,
+    this.name = '',
     required this.bpm,
     required this.avgBpm,
     required this.zone,
@@ -146,6 +152,7 @@ class SessionHrEntry {
     final bpm = (d['bpm'] as num?)?.toInt() ?? 0;
     return SessionHrEntry(
       uid: uid,
+      name: (d['name'] as String?) ?? '',
       bpm: bpm,
       avgBpm: (d['avgBpm'] as num?)?.toInt() ?? bpm,
       zone: (d['zone'] as num?)?.toInt() ?? 0,

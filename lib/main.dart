@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -48,12 +49,13 @@ void main() async {
     DeviceOrientation.landscapeRight,
   ]);
 
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: AppColors.darkBgPrimary,
-    systemNavigationBarIconBrightness: Brightness.light,
-  ));
+  // Draw behind the status bar (SafeArea keeps content clear) — without this
+  // the "transparent" statusBarColor falls back to the window's black and
+  // light screens get a black band on top (E2E-8). The workout screen
+  // already restores to edgeToEdge after immersive mode.
+  if (!kIsWeb) {
+    unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
+  }
 
   ThemeMode initialThemeMode = ThemeMode.dark;
   if (!FeatureFlags.prototypeMode) {
@@ -70,8 +72,23 @@ void main() async {
   // Keep the color tokens in sync with the chosen mode before the first build,
   // so screens that read AppColors' semantic getters render the right palette.
   AppColors.brightness = brightnessForMode(initialThemeMode);
+  applySystemOverlay(AppColors.brightness);
 
   runApp(BeatSyncApp(key: BeatSyncApp.appKey, initialThemeMode: initialThemeMode));
+}
+
+/// System bars matching the app brightness: dark status icons on light
+/// screens (they were always light — invisible in light mode, E2E-8) and a
+/// nav bar in the semantic background instead of pinned dark.
+void applySystemOverlay(Brightness b) {
+  final barIcons = b == Brightness.dark ? Brightness.light : Brightness.dark;
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: barIcons,
+    statusBarBrightness: b,
+    systemNavigationBarColor: AppColors.bgPrimary,
+    systemNavigationBarIconBrightness: barIcons,
+  ));
 }
 
 /// Resolves a [ThemeMode] to the concrete [Brightness] the UI should paint with
@@ -118,6 +135,7 @@ class BeatSyncAppState extends State<BeatSyncApp> {
 
   void setThemeMode(ThemeMode mode) {
     AppColors.brightness = brightnessForMode(mode);
+    applySystemOverlay(AppColors.brightness);
     setState(() => _themeMode = mode);
     final name = switch (mode) {
       ThemeMode.light => 'light',

@@ -228,6 +228,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     SessionRepository.writeHr(
       sessionId: session.id,
       uid: uid,
+      name: widget.profile.name,
       bpm: _bpm,
       avgBpm: _avgBpm,
       zone: HrZones.fromBpm(_bpm, hrMax).clamp(0, 5),
@@ -290,6 +291,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   Future<void> _goToSummary() async {
     if (_finishing) return;
     _finishing = true;
+    // Freeze the engine before anything else: the summary route's builder
+    // closes over this State and re-runs on theme/locale rebuilds, so a
+    // still-ticking clock made the summary drift away from the saved
+    // workout (E2E-7).
+    _tick?.cancel();
+    _sessionSub?.cancel();
+    _stopwatch.stop();
     final session = widget.session;
     final uid = AuthService.currentUid;
     if (session != null && uid != null) {
@@ -300,16 +308,24 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     unawaited(_persistWorkout());
     unawaited(WorkoutRecoveryService.clear());
     if (!mounted) return;
+    // Capture once — the builder must not read live fields.
+    final durationMin = _stopwatch.elapsed.inMinutes;
+    final avgBpm = _avgBpm;
+    final maxBpm = _maxBpm;
+    final calories = _kcal.round();
+    final trimp = _trimp.round();
+    final zoneDist = _zoneStats(widget.profile.hrMax).zoneDist;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => WorkoutSummaryScreen(
-          durationMin: _stopwatch.elapsed.inMinutes,
-          avgBpm: _avgBpm,
-          maxBpm: _maxBpm,
-          calories: _kcal.round(),
-          trimp: _trimp.round(),
+          durationMin: durationMin,
+          avgBpm: avgBpm,
+          maxBpm: maxBpm,
+          calories: calories,
+          trimp: trimp,
           profile: widget.profile,
           workoutType: widget.workoutType,
+          zoneDist: zoneDist,
         ),
       ),
     );

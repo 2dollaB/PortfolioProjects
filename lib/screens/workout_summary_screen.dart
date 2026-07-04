@@ -20,6 +20,10 @@ class WorkoutSummaryScreen extends StatelessWidget {
   final int trimp;
   final WorkoutType? workoutType;
 
+  /// Real per-zone percentages (index 0-5) from the finished workout.
+  /// Null keeps the demo constants (prototype path).
+  final List<int>? zoneDist;
+
   const WorkoutSummaryScreen({
     super.key,
     required this.profile,
@@ -29,6 +33,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
     required this.calories,
     required this.trimp,
     this.workoutType,
+    this.zoneDist,
   });
 
   String _formatDuration() {
@@ -38,8 +43,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
     return '${m}m';
   }
 
-  /// Mock zone distribution percentages — would come from real session in production.
-  List<int> get _zoneDist => const [0, 6, 18, 38, 30, 8];
+  List<int> get _zoneDist => zoneDist ?? const [0, 6, 18, 38, 30, 8];
 
   int get _dominantZone {
     int best = 1;
@@ -170,7 +174,11 @@ class WorkoutSummaryScreen extends StatelessWidget {
             _ZoneDistributionBar(distribution: _zoneDist),
             const SizedBox(height: AppSpacing.md),
             for (int z = 1; z <= 5; z++) ...[
-              _ZoneRow(zone: z, percent: _zoneDist[z], minutes: durationMin * _zoneDist[z] ~/ 100),
+              _ZoneRow(
+                zone: z,
+                percent: _zoneDist[z],
+                seconds: durationMin * 60 * _zoneDist[z] ~/ 100,
+              ),
               if (z < 5) const SizedBox(height: 6),
             ],
 
@@ -274,12 +282,17 @@ class _ZoneDistributionBar extends StatelessWidget {
 class _ZoneRow extends StatelessWidget {
   final int zone;
   final int percent;
-  final int minutes;
+  final int seconds;
   const _ZoneRow({
     required this.zone,
     required this.percent,
-    required this.minutes,
+    required this.seconds,
   });
+
+  /// "45s" under a minute, "12m" above — short workouts otherwise read
+  /// "0m" for every zone (E2E-6).
+  String get _timeLabel =>
+      seconds < 60 ? '${seconds}s' : '${seconds ~/ 60}m';
 
   @override
   Widget build(BuildContext context) {
@@ -322,11 +335,15 @@ class _ZoneRow extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.sm),
         SizedBox(
-          width: 50,
-          child: Text(
-            '$percent% · ${minutes}m',
-            style: AppTheme.caption(),
-            textAlign: TextAlign.right,
+          width: 68,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              '$percent% · $_timeLabel',
+              style: AppTheme.caption(),
+              maxLines: 1,
+            ),
           ),
         ),
       ],

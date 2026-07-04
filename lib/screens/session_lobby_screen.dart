@@ -46,6 +46,7 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
       SessionRepository.writeHr(
         sessionId: widget.session.id,
         uid: uid,
+        name: widget.profile.name,
         bpm: 0,
         avgBpm: 0,
         zone: 0,

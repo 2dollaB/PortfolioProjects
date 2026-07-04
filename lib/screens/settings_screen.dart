@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
@@ -38,6 +39,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   Studio? _studio;
   List<WorkoutSummary>? _workouts;
+  StreamSubscription? _workoutsSub;
 
   /// Live copy of the profile. Synced from the parent when this screen is a
   /// nav-shell tab, and from EditProfileScreen's onSaved when it's a pushed
@@ -59,9 +61,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (fresh != null && mounted) setState(() => _profile = fresh);
     }).catchError((_) {});
     _loadStudio();
-    WorkoutRepository.fetchRecent(uid, limit: 200).then((w) {
-      if (mounted) setState(() => _workouts = w);
-    }).catchError((_) {});
+    // Stream, not one-shot: the tab stays alive in the IndexedStack, so a
+    // fetch here would show pre-workout stats until app restart (E2E-2).
+    _workoutsSub = WorkoutRepository.watchRecent(uid, limit: 200).listen(
+      (w) {
+        if (mounted) setState(() => _workouts = w);
+      },
+      onError: (_) {},
+    );
+  }
+
+  @override
+  void dispose() {
+    _workoutsSub?.cancel();
+    super.dispose();
   }
 
   @override

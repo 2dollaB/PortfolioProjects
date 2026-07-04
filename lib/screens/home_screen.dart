@@ -204,12 +204,14 @@ class _HeroCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        gradient: const LinearGradient(
+        // Semantic surfaces, not the old hardcoded dark pair — in light mode
+        // the heading rendered dark-on-dark (E2E-8).
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1E1E24),
-            Color(0xFF16161A),
+            AppColors.bgTertiary,
+            AppColors.bgSecondary,
           ],
         ),
         border: Border.all(color: AppColors.border),
