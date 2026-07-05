@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../services/account_deletion_service.dart';
 import '../widgets/mobile_frame.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
@@ -75,6 +77,94 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void dispose() {
     _workoutsSub?.cancel();
     super.dispose();
+  }
+
+  /// Store-required account deletion: warning + password re-auth in one
+  /// dialog, then a full data wipe via [AccountDeletionService].
+  Future<void> _confirmDeleteAccount() async {
+    final passwordCtrl = TextEditingController();
+    var busy = false;
+    String? error;
+    final deleted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(Strings.deleteAccount),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(Strings.deleteAccountWarning, style: AppTheme.body()),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: passwordCtrl,
+                obscureText: true,
+                enabled: !busy,
+                decoration: InputDecoration(
+                  hintText: Strings.deleteAccountPasswordHint,
+                ),
+              ),
+              if (error != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(error!, style: AppTheme.caption(color: AppColors.danger)),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: busy ? null : () => Navigator.of(dialogContext).pop(false),
+              child: Text(Strings.cancel),
+            ),
+            TextButton(
+              onPressed: busy
+                  ? null
+                  : () async {
+                      setDialogState(() {
+                        busy = true;
+                        error = null;
+                      });
+                      try {
+                        await AccountDeletionService.deleteAccount(
+                          password: passwordCtrl.text,
+                        );
+                        if (dialogContext.mounted) {
+                          Navigator.of(dialogContext).pop(true);
+                        }
+                      } on FirebaseAuthException {
+                        setDialogState(() {
+                          busy = false;
+                          error = Strings.deleteAccountWrongPassword;
+                        });
+                      } catch (_) {
+                        setDialogState(() {
+                          busy = false;
+                          error = Strings.deleteAccountFailed;
+                        });
+                      }
+                    },
+              child: busy
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      Strings.deleteAccountConfirm,
+                      style: AppTheme.body(color: AppColors.danger)
+                          .copyWith(fontWeight: FontWeight.w600),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+    passwordCtrl.dispose();
+    if (deleted == true && mounted) {
+      // Auth user is gone — route back to login like a sign-out.
+      Navigator.of(context).popUntil((r) => r.isFirst);
+      widget.onSignOut?.call();
+    }
   }
 
   @override
@@ -458,6 +548,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 widget.onSignOut?.call();
               },
             ),
+            if (_production) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Center(
+                child: TextButton(
+                  onPressed: _confirmDeleteAccount,
+                  child: Text(
+                    Strings.deleteAccount,
+                    style: AppTheme.caption(color: AppColors.danger),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.lg),
             Center(
               child: Text(

@@ -737,6 +737,21 @@ class Strings {
   static String get termsOfService =>
       _pick('Terms of service', 'Uvjeti korištenja');
   static String get signOut => _pick('Sign out', 'Odjava');
+  static String get deleteAccount => _pick('Delete account', 'Izbriši račun');
+  static String get deleteAccountWarning => _pick(
+      'This permanently deletes your account, your workouts and your studio '
+          'data. This cannot be undone.',
+      'Ovo trajno briše vaš račun, vaše treninge i podatke studija. '
+          'Radnja se ne može poništiti.');
+  static String get deleteAccountPasswordHint =>
+      _pick('Enter your password to confirm', 'Unesite lozinku za potvrdu');
+  static String get deleteAccountConfirm =>
+      _pick('Delete forever', 'Trajno izbriši');
+  static String get deleteAccountWrongPassword =>
+      _pick('Wrong password.', 'Pogrešna lozinka.');
+  static String get deleteAccountFailed => _pick(
+      'Deletion failed. Check your connection and try again.',
+      'Brisanje nije uspjelo. Provjerite vezu i pokušajte ponovno.');
 
   // Appearance options
   static String get themeLight => _pick('Light', 'Svijetlo');
