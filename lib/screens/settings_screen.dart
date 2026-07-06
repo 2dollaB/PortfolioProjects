@@ -58,6 +58,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _profile = widget.profile;
     final uid = AuthService.currentUid;
     if (uid == null) return;
+    // Pick up an email verification the user completed in their mail app.
+    AuthService.reloadVerification().then((_) {
+      if (mounted) setState(() {});
+    }).catchError((_) {});
     // Refresh from Firestore (instant via local cache) — the constructor
     // profile can be stale when this screen is pushed from an old route.
     UserRepository.load(uid).then((fresh) {
@@ -300,6 +304,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }).catchError((_) {});
   }
 
+  Future<void> _resendVerification() async {
+    final err = await AuthService.resendVerification();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(err ?? Strings.verificationSent)),
+    );
+    await AuthService.reloadVerification();
+    if (mounted) setState(() {});
+  }
+
+  /// Icon-only verification badge next to the name: a green check when
+  /// verified, or a tappable amber mark that re-sends the email when not.
+  Widget _verifiedIcon() {
+    final verified = AuthService.isEmailVerified;
+    final icon = Icon(
+      verified ? Icons.verified_rounded : Icons.error_rounded,
+      size: 20,
+      color: verified ? AppColors.success : AppColors.danger,
+    );
+    if (verified) return icon;
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: _resendVerification,
+      child: icon,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = _profile ?? MockData.athleteProfile;
@@ -390,9 +421,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          p.name.isEmpty ? Strings.athlete : p.name,
-                          style: AppTheme.h2(),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                p.name.isEmpty ? Strings.athlete : p.name,
+                                style: AppTheme.h2(),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (_production) ...[
+                              const SizedBox(width: AppSpacing.xs),
+                              _verifiedIcon(),
+                            ],
+                          ],
                         ),
                         if (studioName != null)
                           Text(studioName, style: AppTheme.caption()),

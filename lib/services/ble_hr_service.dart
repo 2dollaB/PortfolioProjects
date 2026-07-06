@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../models/hr_data.dart';
+import 'auth_service.dart';
+import 'strap_claim_repository.dart';
 
 /// Initialize flutter_blue_plus (call once at app startup)
 Future<void> initBle() async {
@@ -58,6 +60,11 @@ class BleHrService {
   Stream<int> get rssiStream => _rssiController.stream;
   Timer? _rssiTimer;
 
+  // Cross-phone strap claim — the advertised name we've reserved in Firestore
+  // for the current connection, kept alive by [_claimTimer].
+  String? _claimedStrap;
+  Timer? _claimTimer;
+
   /// Start scanning for BLE Heart Rate devices only
   Future<void> startScan({Duration timeout = const Duration(seconds: 15)}) async {
     await stopScan();
@@ -90,8 +97,27 @@ class BleHrService {
     _scanSubscription = null;
   }
 
-  /// Connect to a specific BLE device and start reading HR data
-  Future<void> connectToDevice(BluetoothDevice device) async {
+  /// Connect to a specific BLE device and start reading HR data.
+  ///
+  /// [strapName] is the strap's advertised name — the cross-phone-stable key
+  /// used to reserve it in the global claim registry. If another live user
+  /// already holds it, the connect is refused with [BleConnectionState.occupied]
+  /// and no BLE link is opened (so we never hijack an in-use strap).
+  Future<void> connectToDevice(BluetoothDevice device, {String? strapName}) async {
+    final uid = AuthService.currentUid;
+    final canClaim = strapName != null && strapName.isNotEmpty && uid != null;
+    if (canClaim) {
+      final ok = await StrapClaimRepository.tryClaim(
+        strapName: strapName,
+        uid: uid,
+        userName: AuthService.currentUser?.displayName ?? '',
+      );
+      if (!ok) {
+        debugPrint('[BeatSync] ⛔ Strap "$strapName" is claimed by another user');
+        _connectionStateController.add(BleConnectionState.occupied);
+        return;
+      }
+    }
     try {
       debugPrint('[BeatSync] Connecting to ${device.platformName} (${device.remoteId})...');
       _connectionStateController.add(BleConnectionState.connecting);
@@ -116,6 +142,7 @@ class BleHrService {
       _connectionSubscription = device.connectionState.listen((state) {
         if (state == BluetoothConnectionState.disconnected) {
           debugPrint('[BeatSync] Device disconnected');
+          _releaseClaim();
           _connectionStateController.add(BleConnectionState.disconnected);
           _connectedDevice = null;
         }
@@ -127,6 +154,14 @@ class BleHrService {
       if (found) {
         debugPrint('[BeatSync] ✅ HR data streaming!');
         _connectionStateController.add(BleConnectionState.connected);
+
+        // Hold the cross-phone claim for as long as we stay connected.
+        if (canClaim) {
+          _claimedStrap = strapName;
+          _claimTimer?.cancel();
+          _claimTimer = Timer.periodic(const Duration(seconds: 15),
+              (_) => StrapClaimRepository.heartbeat(strapName));
+        }
 
         // 10.1 — Read battery level
         _readBatteryLevel(device);
@@ -147,12 +182,14 @@ class BleHrService {
         } catch (_) {}
       } else {
         debugPrint('[BeatSync] ❌ HR Service not found');
+        if (canClaim) await StrapClaimRepository.release(strapName);
         await device.disconnect();
         _connectedDevice = null;
         _connectionStateController.add(BleConnectionState.error);
       }
     } catch (e) {
       debugPrint('[BeatSync] ❌ Connection error: $e');
+      if (canClaim) await StrapClaimRepository.release(strapName);
       _connectionStateController.add(BleConnectionState.error);
       _connectedDevice = null;
       try { await device.disconnect(); } catch (_) {}
@@ -245,8 +282,18 @@ class BleHrService {
     return HrData(bpm: bpm, rrIntervals: rrIntervals);
   }
 
+  /// Cancels the heartbeat and frees our cross-phone strap claim. Idempotent.
+  void _releaseClaim() {
+    _claimTimer?.cancel();
+    _claimTimer = null;
+    final strap = _claimedStrap;
+    _claimedStrap = null;
+    if (strap != null) StrapClaimRepository.release(strap);
+  }
+
   /// Disconnect from current device
   Future<void> disconnect() async {
+    _releaseClaim();
     _rssiTimer?.cancel();
     _rssiTimer = null;
     await _hrSubscription?.cancel();
@@ -279,4 +326,5 @@ enum BleConnectionState {
   connecting,
   connected,
   error,
+  occupied,
 }

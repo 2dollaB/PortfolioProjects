@@ -33,6 +33,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
   String _connectingName = '';
   int? _bpm;
   bool _failed = false;
+  bool _occupied = false;
 
   StreamSubscription? _stateSub;
   StreamSubscription? _resultsSub;
@@ -62,7 +63,8 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
         return;
       }
       setState(() {
-        _failed = s == BleConnectionState.error;
+        _occupied = s == BleConnectionState.occupied;
+        _failed = s == BleConnectionState.error || _occupied;
         _state = s;
         if (s != BleConnectionState.connecting) _connectingId = null;
         if (s != BleConnectionState.connected) _bpm = null;
@@ -118,6 +120,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
     setState(() {
       _results = const [];
       _failed = false;
+      _occupied = false;
     });
     try {
       await _ble.startScan();
@@ -136,7 +139,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
       _connectingId = r.device.remoteId.str;
       _connectingName = _nameOf(r);
     });
-    await _ble.connectToDevice(r.device);
+    await _ble.connectToDevice(r.device, strapName: _strapKeyOf(r));
   }
 
   static String _nameOf(ScanResult r) {
@@ -145,6 +148,13 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
       return r.advertisementData.advName;
     }
     return Strings.heartRateSensor;
+  }
+
+  /// The strap's advertised name — the cross-phone-stable key for the claim
+  /// registry. Empty when the strap advertises no name (can't be coordinated).
+  static String _strapKeyOf(ScanResult r) {
+    if (r.device.platformName.isNotEmpty) return r.device.platformName;
+    return r.advertisementData.advName;
   }
 
   @override
@@ -187,6 +197,7 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
         return _searchView();
       case BleConnectionState.disconnected:
       case BleConnectionState.error:
+      case BleConnectionState.occupied:
         return _idleView();
     }
   }
@@ -221,7 +232,9 @@ class _DevicePairingScreenState extends State<DevicePairingScreen>
                 ),
               ),
               child: Text(
-                Strings.couldNotConnectSensor,
+                _occupied
+                    ? Strings.deviceOccupied
+                    : Strings.couldNotConnectSensor,
                 style: AppTheme.caption(color: AppColors.danger),
                 textAlign: TextAlign.center,
               ),

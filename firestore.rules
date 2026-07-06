@@ -111,6 +111,27 @@ service cloud.firestore {
             .data.ownerUid == request.auth.uid;
     }
 
+    // ── strap_claims/{strapKey} ──────────────────────────────
+    // Global one-user-per-strap registry, keyed by the strap's advertised
+    // name. A client may take a strap only when it's free, already theirs, or
+    // the holder's heartbeat has gone stale (crash recovery). The 45s window
+    // must match StrapClaimRepository.staleAfter.
+    match /strap_claims/{strapKey} {
+      function claimStale() {
+        return !('heartbeat' in resource.data)
+          || request.time.toMillis() - resource.data.heartbeat.toMillis() > 45000;
+      }
+      function claimingSelf() {
+        return isSignedIn() && request.resource.data.uid == request.auth.uid;
+      }
+      allow read: if isSignedIn();
+      allow create: if claimingSelf();
+      allow update: if claimingSelf()
+        && (resource.data.uid == request.auth.uid || claimStale());
+      allow delete: if isSignedIn()
+        && (resource.data.uid == request.auth.uid || claimStale());
+    }
+
     // An athlete may feed the live HR board only for themselves, only while
     // the session is live, only if they belong to the session's studio, and
     // only if the trainer hasn't kicked them.

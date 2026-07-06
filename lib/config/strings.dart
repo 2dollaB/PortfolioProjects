@@ -74,6 +74,20 @@ class Strings {
   static String get password => _pick('Password', 'Lozinka');
   static String get forgotPassword =>
       _pick('Forgot password?', 'Zaboravljena lozinka?');
+  static String get verificationSent => _pick(
+      'Verification email sent — check your inbox.',
+      'Verifikacijski mail poslan — provjeri inbox.');
+  static String get resetPasswordTitle =>
+      _pick('Reset password', 'Zaboravljena lozinka');
+  static String get resetPasswordSubtitle => _pick(
+      "Enter your email and we'll send you a link to set a new password.",
+      'Unesi e-poštu i poslat ćemo ti link za postavljanje nove lozinke.');
+  static String get sendResetLink => _pick('Send reset link', 'Pošalji link');
+  static String get resetLinkSent => _pick(
+      'If an account exists for that email, a reset link is on its way.',
+      'Ako račun s tom e-poštom postoji, link za reset je na putu.');
+  static String get backToSignIn =>
+      _pick('Back to sign in', 'Natrag na prijavu');
   static String get signIn => _pick('Sign in', 'Prijava');
   static String get continueWithGoogle =>
       _pick('Continue with Google', 'Nastavi s Googleom');
@@ -732,6 +746,9 @@ class Strings {
           'and close by, then try again.',
       'Povezivanje nije uspjelo — provjerite je li senzor aktivan '
           'i blizu, pa pokušajte ponovno.');
+  static String get deviceOccupied => _pick(
+      'This sensor is already connected to another user.',
+      'Uređaj je već spojen na drugog korisnika.');
   static String get tryAgain => _pick('Try again', 'Pokušaj ponovno');
   static String get startScanning =>
       _pick('Start scanning', 'Započni skeniranje');
