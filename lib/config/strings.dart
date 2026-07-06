@@ -237,6 +237,44 @@ class Strings {
       'BeatSync ga automatski povećava.');
   static String get trainingProfileFallback =>
       _pick('your training profile', 'vaš trening profil');
+  static String get zonesInfoTitle =>
+      _pick('About HR zones', 'O zonama pulsa');
+  static String get zonesInfoBody => _pick(
+      'Zones are percentages of your personal HR max (estimated from age '
+      'with the Tanaka formula — tap the info icon on your profile for '
+      'details):\n\n'
+      'Z1 Warmup · 50–59%\nZ2 Fat Burn · 60–69%\nZ3 Aerobic · 70–79%\n'
+      'Z4 Anaerobic · 80–89%\nZ5 VO2 Max · 90–100%\n\n'
+      'Below 50% counts as rest. Because zones are relative to YOUR '
+      'maximum, two people at the same BPM can be in different zones.',
+      'Zone su postoci vašeg osobnog maks. pulsa (procijenjenog iz dobi '
+      'Tanaka formulom — detalji na info ikoni u profilu):\n\n'
+      'Z1 Zagrijavanje · 50–59%\nZ2 Sagorijevanje masti · 60–69%\n'
+      'Z3 Aerobna · 70–79%\nZ4 Anaerobna · 80–89%\nZ5 VO2 Max · 90–100%\n\n'
+      'Ispod 50% računa se kao odmor. Budući da su zone relativne u odnosu '
+      'na VAŠ maksimum, dvoje ljudi s istim pulsom može biti u različitim '
+      'zonama.');
+  static String get calcInfoTitle =>
+      _pick('How these numbers are calculated', 'Kako računamo ove brojke');
+  static String get calcInfoBody => _pick(
+      'Calories use the Keytel formula (2005): estimated from your average '
+      'heart rate, weight, age, sex and duration — published research, not '
+      'a guess.\n\n'
+      'TRIMP (Training Impulse) is the Bannister model: every second of the '
+      'workout is weighted by how close your heart rate was to your '
+      'maximum, so hard minutes count exponentially more than easy ones. '
+      '~50–80 is a typical moderate 30-min session; 150+ is a hard hour.\n\n'
+      'HR max is estimated from your age (Tanaka: 208 − 0.7 × age; Gulati '
+      'for women) and raises automatically if you exceed it.',
+      'Kalorije koriste Keytel formulu (2005.): procjena iz prosječnog '
+      'pulsa, težine, dobi, spola i trajanja — objavljeno istraživanje, ne '
+      'nagađanje.\n\n'
+      'TRIMP (Training Impulse) je Bannisterov model: svaka sekunda '
+      'treninga ponderira se prema tome koliko je puls bio blizu maksimuma, '
+      'pa teške minute vrijede eksponencijalno više od laganih. ~50–80 je '
+      'tipičan umjeren 30-minutni trening; 150+ je naporan sat.\n\n'
+      'Maks. puls procjenjuje se iz dobi (Tanaka: 208 − 0,7 × dob; Gulati '
+      'za žene) i automatski se povećava ako ga premašite.');
 
   static String get searchForStraps => _pick('Search for straps', 'Traži mjerače');
   static String get pairLater => _pick(

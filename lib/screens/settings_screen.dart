@@ -431,7 +431,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(child: _StatBlock(label: Strings.totalTime, value: totalTime)),
                   const SizedBox(width: AppSpacing.xs),
-                  Expanded(child: _StatBlock(label: Strings.hrMax, value: '${p.hrMax}')),
+                  Expanded(
+                    child: _StatBlock(
+                      label: Strings.hrMax,
+                      value: '${p.hrMax}',
+                      infoTitle: Strings.hrMaxInfoTitle,
+                      infoBody: Strings.hrMaxInfoBody,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -578,11 +585,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class _StatBlock extends StatelessWidget {
   final String label;
   final String value;
-  const _StatBlock({required this.label, required this.value});
+  /// When set, the block is tappable and opens an info dialog (e.g. how
+  /// HR max is estimated). A small info icon appears next to the label.
+  final String? infoTitle;
+  final String? infoBody;
+  const _StatBlock({
+    required this.label,
+    required this.value,
+    this.infoTitle,
+    this.infoBody,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final block = Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm, vertical: AppSpacing.sm,
       ),
@@ -600,10 +616,39 @@ class _StatBlock extends StatelessWidget {
           // middle card taller than its neighbours.
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(label, style: AppTheme.micro(), maxLines: 1),
+            child: Row(
+              children: [
+                Text(label, style: AppTheme.micro(), maxLines: 1),
+                if (infoTitle != null) ...[
+                  const SizedBox(width: 3),
+                  Icon(Icons.info_outline_rounded,
+                      size: 12, color: AppColors.textSecondary),
+                ],
+              ],
+            ),
           ),
         ],
       ),
+    );
+    if (infoTitle == null) return block;
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      onTap: () => showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(infoTitle!),
+          content: SingleChildScrollView(
+            child: Text(infoBody ?? '', style: AppTheme.bodyLarge()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(Strings.done),
+            ),
+          ],
+        ),
+      ),
+      child: block,
     );
   }
 }
