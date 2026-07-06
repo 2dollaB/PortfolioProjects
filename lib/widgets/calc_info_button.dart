@@ -232,6 +232,7 @@ class _StepView extends StatelessWidget {
           ],
           const SizedBox(height: AppSpacing.md),
           Text(step.body,
+              textAlign: TextAlign.justify,
               style: AppTheme.bodyLarge(color: AppColors.textSecondary)),
         ],
       ),

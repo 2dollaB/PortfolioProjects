@@ -239,24 +239,26 @@ class Strings {
       _pick('your training profile', 'vaš trening profil');
   // ── Stepped calc explainers (title + formula + body per step) ──
   static String get zonesInfoTitle =>
-      _pick('Heart-rate zones', 'Zone pulsa');
+      _pick('Heart rate zones', 'Zone pulsa');
   static String get zonesStep1Title =>
       _pick('What a zone is', 'Što je zona');
   static String get zonesStep1Formula =>
       _pick('zone % = current HR ÷ your HR max',
             'zona % = trenutni puls ÷ vaš maks. puls');
   static String get zonesStep1Body => _pick(
-      'Zones are shares of your personal HR max — so two people at the same '
+      'Zones are shares of your personal HR max, so two people at the same '
       'BPM can be in different zones. Below 50% counts as rest.',
-      'Zone su udjeli vašeg osobnog maks. pulsa — pa dvoje ljudi s istim '
+      'Zone su udjeli vašeg osobnog maks. pulsa, pa dvoje ljudi s istim '
       'pulsom može biti u različitim zonama. Ispod 50% računa se kao odmor.');
   static String get zonesStep2Title =>
       _pick('The five zones', 'Pet zona');
   static String get zonesStep2Formula => _pick(
-      'Z1  50–59%   Warmup\nZ2  60–69%   Fat burn\nZ3  70–79%   Aerobic\n'
-      'Z4  80–89%   Anaerobic\nZ5  90–100%  VO₂ max',
-      'Z1  50–59%   Zagrijavanje\nZ2  60–69%   Masti\nZ3  70–79%   Aerobna\n'
-      'Z4  80–89%   Anaerobna\nZ5  90–100%  VO₂ max');
+      'Z1  50 to 59%   Warmup\nZ2  60 to 69%   Fat burn\n'
+      'Z3  70 to 79%   Aerobic\nZ4  80 to 89%   Anaerobic\n'
+      'Z5  90 to 100%  VO₂ max',
+      'Z1  50 do 59%   Zagrijavanje\nZ2  60 do 69%   Masti\n'
+      'Z3  70 do 79%   Aerobna\nZ4  80 do 89%   Anaerobna\n'
+      'Z5  90 do 100%  VO₂ max');
   static String get zonesStep2Body => _pick(
       'Higher zones are harder to hold and drive most of your training load.',
       'Više zone teže je održati i nose najveći dio opterećenja treninga.');
@@ -268,31 +270,31 @@ class Strings {
       'Keytel (2005)\nfrom avg HR · weight · age · sex · time',
       'Keytel (2005.)\niz prosj. pulsa · težine · dobi · spola · vremena');
   static String get calcCaloriesBody => _pick(
-      'A published regression model — not a flat guess. It reads your actual '
+      'A published regression model, not a flat guess. It reads your actual '
       'average heart rate, so a harder session burns more.',
-      'Objavljeni regresijski model — ne paušalna procjena. Uzima vaš stvarni '
+      'Objavljeni regresijski model, ne paušalna procjena. Uzima vaš stvarni '
       'prosječni puls, pa napornija sesija troši više.');
   static String get calcTrimpTitle => _pick('TRIMP', 'TRIMP');
   static String get calcTrimpFormula => _pick(
-      'Σ  t · ΔHR · 0.64 · e^(k · ΔHR)\nΔHR = (HR − rest) ÷ (max − rest)',
-      'Σ  t · ΔHR · 0,64 · e^(k · ΔHR)\nΔHR = (puls − mir) ÷ (maks − mir)');
+      'Σ  t · ΔHR · 0.64 · e^(k · ΔHR)\nΔHR = (HR - rest) ÷ (max - rest)',
+      'Σ  t · ΔHR · 0,64 · e^(k · ΔHR)\nΔHR = (puls - mir) ÷ (maks - mir)');
   static String get calcTrimpBody => _pick(
       'Training Impulse (Bannister). Each second is weighted by how close you '
-      'were to your max, so hard minutes count exponentially more. ~50–80 is '
-      'a moderate 30-min session; 150+ is a hard hour.',
+      'were to your max, so hard minutes count exponentially more. Around 50 '
+      'to 80 is a moderate 30 minute session; 150 plus is a hard hour.',
       'Training Impulse (Bannister). Svaka sekunda ponderira se prema blizini '
-      'maksimuma, pa teške minute vrijede eksponencijalno više. ~50–80 je '
-      'umjeren 30-min trening; 150+ je naporan sat.');
+      'maksimuma, pa teške minute vrijede eksponencijalno više. Oko 50 do 80 '
+      'je umjeren 30 minutni trening; 150 plus je naporan sat.');
   static String get calcHrMaxTitle => _pick('HR max', 'Maks. puls');
   static String get calcHrMaxFormula => _pick(
-      'Tanaka:          208 − 0.7 × age\nGulati (women):  206 − 0.88 × age',
-      'Tanaka:        208 − 0,7 × dob\nGulati (žene):  206 − 0,88 × dob');
+      'Tanaka:          208 - 0.7 × age\nGulati (women):  206 - 0.88 × age',
+      'Tanaka:        208 - 0,7 × dob\nGulati (žene):  206 - 0,88 × dob');
   static String get calcHrMaxBody => _pick(
-      'Your zones and TRIMP are all relative to this. Estimated from age — '
-      'more accurate than the classic 220 − age — and raised automatically '
+      'Your zones and TRIMP are all relative to this. Estimated from age, '
+      'more accurate than the classic 220 formula, and raised automatically '
       'if you beat it in a workout.',
-      'Vaše zone i TRIMP računaju se u odnosu na ovo. Procijenjeno iz dobi — '
-      'preciznije od klasične 220 − dob — i automatski se povećava ako ga '
+      'Vaše zone i TRIMP računaju se u odnosu na ovo. Procijenjeno iz dobi, '
+      'preciznije od klasične formule 220, i automatski se povećava ako ga '
       'premašite tijekom treninga.');
 
   static String get searchForStraps => _pick('Search for straps', 'Traži mjerače');
