@@ -176,7 +176,18 @@ class WorkoutSummaryScreen extends StatelessWidget {
                 const SizedBox(width: 4),
                 CalcInfoButton(
                   title: Strings.zonesInfoTitle,
-                  body: Strings.zonesInfoBody,
+                  steps: [
+                    InfoStep(
+                      title: Strings.zonesStep1Title,
+                      formula: Strings.zonesStep1Formula,
+                      body: Strings.zonesStep1Body,
+                    ),
+                    InfoStep(
+                      title: Strings.zonesStep2Title,
+                      formula: Strings.zonesStep2Formula,
+                      body: Strings.zonesStep2Body,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -199,7 +210,23 @@ class WorkoutSummaryScreen extends StatelessWidget {
                 const SizedBox(width: 4),
                 CalcInfoButton(
                   title: Strings.calcInfoTitle,
-                  body: Strings.calcInfoBody,
+                  steps: [
+                    InfoStep(
+                      title: Strings.calcCaloriesTitle,
+                      formula: Strings.calcCaloriesFormula,
+                      body: Strings.calcCaloriesBody,
+                    ),
+                    InfoStep(
+                      title: Strings.calcTrimpTitle,
+                      formula: Strings.calcTrimpFormula,
+                      body: Strings.calcTrimpBody,
+                    ),
+                    InfoStep(
+                      title: Strings.calcHrMaxTitle,
+                      formula: Strings.calcHrMaxFormula,
+                      body: Strings.calcHrMaxBody,
+                    ),
+                  ],
                 ),
               ],
             ),
