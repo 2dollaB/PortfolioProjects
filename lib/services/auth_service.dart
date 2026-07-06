@@ -12,8 +12,44 @@ class AuthService {
   static User? get currentUser => _auth.currentUser;
   static String? get currentUid => _auth.currentUser?.uid;
 
+  /// Whether the signed-in user has confirmed their email. Cached on the User
+  /// object — call [reloadVerification] to pick up a link clicked elsewhere.
+  static bool get isEmailVerified => _auth.currentUser?.emailVerified ?? false;
+
   /// Emits on sign-in / sign-out — the AuthGate listens to this.
   static Stream<User?> authStateChanges() => _auth.authStateChanges();
+
+  /// Re-fetches the user so [isEmailVerified] reflects a verification link the
+  /// user opened in their mail app (Firebase doesn't push that change live).
+  static Future<bool> reloadVerification() async {
+    try {
+      await _auth.currentUser?.reload();
+    } catch (_) {}
+    return isEmailVerified;
+  }
+
+  /// Re-sends the verification email to the signed-in user.
+  static Future<String?> resendVerification() async {
+    try {
+      await _auth.currentUser?.sendEmailVerification();
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _message(e);
+    }
+  }
+
+  /// Sends a password-reset email. Returns null on success or a message.
+  /// A missing account is treated as success so we don't reveal which emails
+  /// are registered.
+  static Future<String?> sendPasswordReset(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') return null;
+      return _message(e);
+    }
+  }
 
   static Future<String?> signIn(String email, String password) async {
     try {
@@ -38,6 +74,7 @@ class AuthService {
         password: password,
       );
       await cred.user?.updateDisplayName(name.trim());
+      await cred.user?.sendEmailVerification();
       return null;
     } on FirebaseAuthException catch (e) {
       return _message(e);

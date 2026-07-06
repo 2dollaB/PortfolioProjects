@@ -8,6 +8,7 @@ import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/logo_heartbeat.dart';
+import 'forgot_password_screen.dart';
 
 /// Mock login for the prototype.
 ///
@@ -185,7 +186,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ForgotPasswordScreen(
+                          initialEmail: _email.text.trim(),
+                        ),
+                      ),
+                    ),
                     child: Text(Strings.forgotPassword),
                   ),
                 ),
