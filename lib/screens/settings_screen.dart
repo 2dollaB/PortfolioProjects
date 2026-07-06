@@ -17,6 +17,7 @@ import '../services/studio_repository.dart';
 import '../services/user_repository.dart';
 import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
+import '../widgets/calc_info_button.dart';
 import '../widgets/home_header.dart';
 import '../main.dart';
 import 'device_pairing_screen.dart';
@@ -435,8 +436,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: _StatBlock(
                       label: Strings.hrMax,
                       value: '${p.hrMax}',
-                      infoTitle: Strings.hrMaxInfoTitle,
-                      infoBody: Strings.hrMaxInfoBody,
+                      infoTitle: Strings.calcHrMaxTitle,
+                      infoSteps: [
+                        InfoStep(
+                          title: Strings.calcHrMaxTitle,
+                          formula: Strings.calcHrMaxFormula,
+                          body: Strings.calcHrMaxBody,
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -585,15 +592,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class _StatBlock extends StatelessWidget {
   final String label;
   final String value;
-  /// When set, the block is tappable and opens an info dialog (e.g. how
+  /// When set, the block is tappable and opens a stepped info sheet (e.g. how
   /// HR max is estimated). A small info icon appears next to the label.
   final String? infoTitle;
-  final String? infoBody;
+  final List<InfoStep>? infoSteps;
   const _StatBlock({
     required this.label,
     required this.value,
     this.infoTitle,
-    this.infoBody,
+    this.infoSteps,
   });
 
   @override
@@ -630,24 +637,10 @@ class _StatBlock extends StatelessWidget {
         ],
       ),
     );
-    if (infoTitle == null) return block;
+    if (infoTitle == null || infoSteps == null) return block;
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadius.md),
-      onTap: () => showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(infoTitle!),
-          content: SingleChildScrollView(
-            child: Text(infoBody ?? '', style: AppTheme.bodyLarge()),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(Strings.done),
-            ),
-          ],
-        ),
-      ),
+      onTap: () => showInfoSheet(context, infoTitle!, infoSteps!),
       child: block,
     );
   }
