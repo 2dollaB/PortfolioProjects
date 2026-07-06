@@ -5,6 +5,7 @@ import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
 import '../widgets/beat_button.dart';
+import '../widgets/calc_info_button.dart';
 import '../widgets/mobile_frame.dart';
 import '../widgets/stat_chip.dart';
 import '../widgets/workout_type_sheet.dart';
@@ -169,7 +170,16 @@ class WorkoutSummaryScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
 
-            Text(Strings.timeInZones, style: AppTheme.h2()),
+            Row(
+              children: [
+                Text(Strings.timeInZones, style: AppTheme.h2()),
+                const SizedBox(width: 4),
+                CalcInfoButton(
+                  title: Strings.zonesInfoTitle,
+                  body: Strings.zonesInfoBody,
+                ),
+              ],
+            ),
             const SizedBox(height: AppSpacing.sm),
             _ZoneDistributionBar(distribution: _zoneDist),
             const SizedBox(height: AppSpacing.md),
@@ -183,7 +193,16 @@ class WorkoutSummaryScreen extends StatelessWidget {
             ],
 
             const SizedBox(height: AppSpacing.xl),
-            Text(Strings.details, style: AppTheme.h2()),
+            Row(
+              children: [
+                Text(Strings.details, style: AppTheme.h2()),
+                const SizedBox(width: 4),
+                CalcInfoButton(
+                  title: Strings.calcInfoTitle,
+                  body: Strings.calcInfoBody,
+                ),
+              ],
+            ),
             const SizedBox(height: AppSpacing.sm),
             GridView.count(
               shrinkWrap: true,
