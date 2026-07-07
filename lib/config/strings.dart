@@ -391,6 +391,17 @@ class Strings {
   static String get joinedStudio =>
       _pick('You joined the studio!', 'Pridružili ste se studiju!');
   static String get joinStudioBtn => _pick('Join studio', 'Pridruži se');
+  static String get scanToJoin =>
+      _pick('Scan QR', 'Skeniraj QR');
+  static String get pointAtQr => _pick(
+      'Point your camera at the studio QR code',
+      'Usmjerite kameru na QR kod studija');
+  static String get cameraPermissionNeeded => _pick(
+      'Camera access is needed to scan the QR code.',
+      'Za skeniranje QR koda potreban je pristup kameri.');
+  static String get qrNotAStudioCode => _pick(
+      "That QR isn't a studio code.",
+      'Taj QR nije kod studija.');
 
   // ── Join / live session ──────────────────────────────────────
   static String get joinSession => _pick('Join session', 'Pridruži se treningu');
@@ -465,6 +476,12 @@ class Strings {
   static String get hrMaxPct => _pick('HR Max %', '% maks. pulsa');
   static String get saveWorkout => _pick('Save workout', 'Spremi trening');
   static String get discard => _pick('Discard', 'Odbaci');
+  static String get discardWorkoutTitle =>
+      _pick('Discard this workout?', 'Odbaciti ovaj trening?');
+  static String get discardWorkoutBody => _pick(
+      "Your heart-rate data and stats for this session won't be kept.",
+      'Podaci o pulsu i statistika ove sesije neće biti sačuvani.');
+  static String get keepWorkout => _pick('Keep', 'Zadrži');
 
   // ── Workout history ──────────────────────────────────────────
   static String get history => _pick('History', 'Povijest');

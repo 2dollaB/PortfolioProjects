@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/strings.dart';
@@ -39,6 +40,27 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
       setState(() => _error = Strings.enterCodeError);
       return;
     }
+    await _joinWithCode(code);
+  }
+
+  /// Opens the camera, extracts the 6-digit code from a scanned QR and joins.
+  Future<void> _scan() async {
+    final raw = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const _QrScanScreen()),
+    );
+    if (raw == null || !mounted) return;
+    final match = RegExp(r'\d{6}').firstMatch(raw);
+    if (match == null) {
+      setState(() => _error = Strings.qrNotAStudioCode);
+      return;
+    }
+    final code = match.group(0)!;
+    _code.text = code;
+    await _joinWithCode(code);
+  }
+
+  /// Shared join path used by both manual entry and QR scan.
+  Future<void> _joinWithCode(String code) async {
     final uid = AuthService.currentUid;
     if (uid == null) {
       setState(() => _error = Strings.notSignedIn);
@@ -146,10 +168,88 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
                   loading: _loading,
                   onPressed: _join,
                 ),
+                const SizedBox(height: AppSpacing.sm),
+                BeatSecondaryButton(
+                  label: Strings.scanToJoin,
+                  icon: Icons.qr_code_scanner_rounded,
+                  onPressed: _loading ? null : _scan,
+                ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Full-screen camera scanner. Pops with the first barcode's raw value.
+class _QrScanScreen extends StatefulWidget {
+  const _QrScanScreen();
+
+  @override
+  State<_QrScanScreen> createState() => _QrScanScreenState();
+}
+
+class _QrScanScreenState extends State<_QrScanScreen> {
+  final _controller = MobileScannerController();
+  bool _handled = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onDetect(BarcodeCapture capture) {
+    if (_handled) return;
+    final raw = capture.barcodes
+        .map((b) => b.rawValue)
+        .firstWhere((v) => v != null && v.isNotEmpty, orElse: () => null);
+    if (raw == null) return;
+    _handled = true;
+    Navigator.of(context).pop(raw);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: Text(Strings.scanToJoin),
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: Stack(
+        children: [
+          MobileScanner(
+            controller: _controller,
+            onDetect: _onDetect,
+            errorBuilder: (context, error) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: Text(
+                  Strings.cameraPermissionNeeded,
+                  textAlign: TextAlign.center,
+                  style: AppTheme.bodyLarge(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: AppSpacing.xxl,
+            child: Text(
+              Strings.pointAtQr,
+              textAlign: TextAlign.center,
+              style: AppTheme.bodyLarge(color: Colors.white),
+            ),
+          ),
+        ],
       ),
     );
   }

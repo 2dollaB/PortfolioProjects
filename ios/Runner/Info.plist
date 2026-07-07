@@ -8,6 +8,8 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>BeatSync</string>
+	<key>NSCameraUsageDescription</key>
+	<string>BeatSync uses the camera to scan the QR code that joins your studio.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>BeatSync connects to your Bluetooth heart-rate strap or watch to show your live heart rate during workouts.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>

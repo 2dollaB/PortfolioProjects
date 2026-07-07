@@ -44,6 +44,34 @@ class WorkoutSummaryScreen extends StatelessWidget {
     return '${m}m';
   }
 
+  Future<void> _confirmDiscard(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgSecondary,
+        title: Text(Strings.discardWorkoutTitle),
+        content: Text(
+          Strings.discardWorkoutBody,
+          style: AppTheme.bodyLarge(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(Strings.keepWorkout),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.brandRed),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(Strings.discard),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
   List<int> get _zoneDist => zoneDist ?? const [0, 6, 18, 38, 30, 8];
 
   int get _dominantZone {
@@ -288,7 +316,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             BeatSecondaryButton(
               label: Strings.discard,
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => _confirmDiscard(context),
             ),
           ],
         ),
