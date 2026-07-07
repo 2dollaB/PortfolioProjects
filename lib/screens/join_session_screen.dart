@@ -90,11 +90,15 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
       }
       // Refuse anyone who isn't in this session's studio (rules also block the
       // session read + hr writes, so this is a friendly pre-check, not the gate).
+      // The home CTA is hidden unless you're in a studio, so in practice this
+      // only fires when you're in studio A and try a session from studio B.
       if (widget.profile?.studioId != session.studioId) {
         if (!mounted) return;
         setState(() {
           _loading = false;
-          _error = Strings.notInThatStudio;
+          _error = widget.profile?.studioId == null
+              ? Strings.joinStudioFirst
+              : Strings.sessionOtherStudio;
         });
         return;
       }

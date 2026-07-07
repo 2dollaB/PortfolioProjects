@@ -77,6 +77,9 @@ class Strings {
   static String get verificationSent => _pick(
       'Verification email sent — check your inbox.',
       'Verifikacijski mail poslan — provjeri inbox.');
+  static String get verifyEmailBanner => _pick(
+      'Verify your email', 'Potvrdite svoj email');
+  static String get resend => _pick('Resend', 'Pošalji ponovno');
   static String get resetPasswordTitle =>
       _pick('Reset password', 'Zaboravljena lozinka');
   static String get resetPasswordSubtitle => _pick(
@@ -416,9 +419,9 @@ class Strings {
   static String get sessionNoMatch => _pick(
       "That code didn't match a live session.",
       'Taj kod ne odgovara aktivnom treningu.');
-  static String get notInThatStudio => _pick(
-      "You're not a member of that session's studio.",
-      'Niste član studija tog treninga.');
+  static String get sessionOtherStudio => _pick(
+      "You can't join — this session belongs to another studio.",
+      'Ne možete se pridružiti — ovaj trening pripada drugom studiju.');
   static String couldNotJoinSession(Object e) =>
       _pick('Could not join: $e', 'Pridruživanje nije uspjelo: $e');
   static String get removedFromSession => _pick(

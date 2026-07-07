@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
-import '../config/hr_zones.dart';
 import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/user_profile.dart';
@@ -116,15 +115,18 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
 
-            // JOIN GROUP SESSION — directly under Start so it's the second-most-prominent CTA
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, 0,
+            // JOIN GROUP SESSION — only once you're in a studio (sessions live
+            // inside one). Mutually exclusive with the Join-a-studio CTA above,
+            // so home shows exactly one join card. Demo keeps it for the walk-through.
+            if (!enableStudioJoin || profile.studioId != null)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, 0,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: _JoinSessionCard(profile: profile),
+                ),
               ),
-              sliver: SliverToBoxAdapter(
-                child: _JoinSessionCard(profile: profile),
-              ),
-            ),
 
             // STATS THIS WEEK
             SliverPadding(
@@ -517,48 +519,12 @@ class _JoinStudioCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const JoinStudioScreen()),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.brandRed.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.brandRed.withValues(alpha: 0.35)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.brandRed.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.group_add_rounded,
-                    color: AppColors.brandRed),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(Strings.joinAStudio,
-                        style: AppTheme.bodyLarge(weight: FontWeight.w700)),
-                    Text(Strings.joinStudioHint,
-                        style: AppTheme.caption()),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded,
-                  color: AppColors.textSecondary),
-            ],
-          ),
-        ),
+    return _JoinCard(
+      icon: Icons.group_add_rounded,
+      title: Strings.joinAStudio,
+      subtitle: Strings.joinStudioHint,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const JoinStudioScreen()),
       ),
     );
   }
@@ -570,15 +536,40 @@ class _JoinSessionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _JoinCard(
+      icon: Icons.qr_code_scanner_rounded,
+      title: Strings.joinGroupSession,
+      subtitle: Strings.scanQrFromTrainer,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => JoinSessionScreen(profile: profile),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shared style for the home join CTAs (studio / session). Identical surface —
+/// only the icon + text differ — so home reads as one consistent control.
+class _JoinCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  const _JoinCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => JoinSessionScreen(profile: profile),
-          ),
-        ),
+        onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
@@ -592,29 +583,25 @@ class _JoinSessionCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: HrZones.colors[2]!.withValues(alpha: 0.15),
+                  color: AppColors.brandRed.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: Icon(Icons.qr_code_scanner_rounded,
-                    color: HrZones.colors[2]),
+                child: Icon(icon, color: AppColors.brandRed),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(Strings.joinGroupSession,
-                        style: AppTheme.bodyLarge(weight: FontWeight.w600)),
+                    Text(title,
+                        style: AppTheme.bodyLarge(weight: FontWeight.w700)),
                     const SizedBox(height: 2),
-                    Text(
-                      Strings.scanQrFromTrainer,
-                      style: AppTheme.caption(),
-                    ),
+                    Text(subtitle, style: AppTheme.caption()),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded,
-                  size: 14, color: AppColors.textSecondary),
+              Icon(Icons.chevron_right_rounded,
+                  color: AppColors.textSecondary),
             ],
           ),
         ),

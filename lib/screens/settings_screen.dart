@@ -314,20 +314,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) setState(() {});
   }
 
-  /// Icon-only verification badge next to the name: a green check when
-  /// verified, or a tappable amber mark that re-sends the email when not.
-  Widget _verifiedIcon() {
-    final verified = AuthService.isEmailVerified;
-    final icon = Icon(
-      verified ? Icons.verified_rounded : Icons.error_rounded,
+  /// Verified users get a green check next to their name. Unverified users
+  /// show no badge at all — they get the compact banner atop the profile
+  /// instead (so the red mark no longer clutters the header).
+  Widget _verifiedBadge() {
+    return const Icon(
+      Icons.verified_rounded,
       size: 20,
-      color: verified ? AppColors.success : AppColors.danger,
+      color: AppColors.success,
     );
-    if (verified) return icon;
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: _resendVerification,
-      child: icon,
+  }
+
+  /// Compact "verify your email" banner shown at the top of the profile for
+  /// unverified accounts. One tap re-sends the link.
+  Widget _verifyBanner() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          onTap: _resendVerification,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md, vertical: AppSpacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.mark_email_unread_outlined,
+                    size: 16, color: AppColors.warning),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(Strings.verifyEmailBanner,
+                      style: AppTheme.caption(color: AppColors.textPrimary)),
+                ),
+                Text(Strings.resend,
+                    style: AppTheme.caption(color: AppColors.warning)
+                        .copyWith(fontWeight: FontWeight.w700)),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -389,6 +422,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+            // Unverified accounts: compact prompt instead of a header badge.
+            if (_production && !AuthService.isEmailVerified) _verifyBanner(),
             // Header card
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -430,9 +465,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (_production) ...[
+                            if (_production && AuthService.isEmailVerified) ...[
                               const SizedBox(width: AppSpacing.xs),
-                              _verifiedIcon(),
+                              _verifiedBadge(),
                             ],
                           ],
                         ),
