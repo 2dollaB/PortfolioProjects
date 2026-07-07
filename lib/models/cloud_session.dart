@@ -8,6 +8,7 @@ class CloudSession {
   final String trainerUid;
   final String name;
   final String type; // workout type enum name, e.g. 'hiit'
+  final String joinCode; // 6-digit code athletes enter/scan to join this session
   final String status; // 'live' | 'ended' — permission/joinable state
   final DateTime startedAt; // creation time (recent-list ordering)
   final DateTime? endedAt;
@@ -30,6 +31,7 @@ class CloudSession {
     required this.trainerUid,
     required this.name,
     required this.type,
+    this.joinCode = '',
     required this.status,
     required this.startedAt,
     this.endedAt,
@@ -88,6 +90,7 @@ class CloudSession {
       trainerUid: d['trainerUid'] as String? ?? '',
       name: d['name'] as String? ?? 'Group session',
       type: d['type'] as String? ?? 'free',
+      joinCode: d['joinCode'] as String? ?? '',
       status: d['status'] as String? ?? 'ended',
       startedAt: ts(d['startedAt']),
       endedAt: d['endedAt'] == null ? null : ts(d['endedAt']),

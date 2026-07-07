@@ -55,6 +55,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
   String? _hrSessionId;
   final _names = UidNameCache();
   Studio? _studio;
+  CloudSession? _live; // latest live session, cached from the board stream
 
   bool get _production => _liveStream != null;
 
@@ -167,12 +168,12 @@ class _TvHostScreenState extends State<TvHostScreen> {
   }
 
   void _showQr() {
-    if (!_production) {
-      InviteSheet.show(context);
+    // Athletes join this session by its own code now (not the studio code).
+    final code = _live?.joinCode;
+    if (code == null || code.isEmpty) {
+      InviteSheet.show(context); // demo / no live session — default sheet
       return;
     }
-    final code = _studio?.inviteCode;
-    if (code == null) return; // studio doc still loading
     InviteSheet.show(context, code: code);
   }
 
@@ -203,6 +204,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
           );
         }
         final live = snap.data;
+        _live = live; // cache latest for the imperative _showQr handler
         if (live == null) return _idle(context);
         if (live.isLobby) return _lobby(context, live);
         return StreamBuilder<List<SessionHrEntry>>(
@@ -335,7 +337,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
     final title = live?.name ?? 'Friday HIIT 18:00';
     final studioName =
         live == null ? MockData.studioName : (_studio?.name ?? '');
-    final code = _production ? _studio?.inviteCode : null;
+    final code = _production ? live?.joinCode : null;
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
       body: SafeArea(

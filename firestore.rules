@@ -111,6 +111,21 @@ service cloud.firestore {
             .data.ownerUid == request.auth.uid;
     }
 
+    // ── session_codes/{code} ─────────────────────────────────
+    // Code → sessionId lookup so an athlete can resolve which live session to
+    // join (sessions themselves stay members-only). Exposes only the mapping.
+    // The client still gets refused by the sessions/hr rules if they aren't a
+    // member of the session's studio. Created/removed by the session's trainer.
+    match /session_codes/{code} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && get(/databases/$(database)/documents/studios/$(request.resource.data.studioId))
+            .data.ownerUid == request.auth.uid;
+      allow delete: if isSignedIn()
+        && get(/databases/$(database)/documents/studios/$(resource.data.studioId))
+            .data.ownerUid == request.auth.uid;
+    }
+
     // ── strap_claims/{strapKey} ──────────────────────────────
     // Global one-user-per-strap registry, keyed by the strap's advertised
     // name. A client may take a strap only when it's free, already theirs, or

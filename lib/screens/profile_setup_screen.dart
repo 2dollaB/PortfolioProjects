@@ -886,8 +886,10 @@ class _FitnessPage extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text(Strings.estimatedHrMax,
-                              style: AppTheme.caption()),
+                          Flexible(
+                            child: Text(Strings.estimatedHrMax,
+                                style: AppTheme.caption()),
+                          ),
                           const SizedBox(width: 2),
                           const HrMaxInfoButton(),
                         ],

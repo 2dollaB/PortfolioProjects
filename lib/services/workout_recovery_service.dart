@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'workout_repository.dart';
@@ -30,14 +31,23 @@ class WorkoutRecoveryService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key);
     if (raw == null) return false;
-    await prefs.remove(_key);
     try {
       final m = jsonDecode(raw) as Map<String, dynamic>;
-      if (m['userId'] != uid) return false;
+      if (m['userId'] != uid) {
+        await prefs.remove(_key);
+        return false;
+      }
       final start = DateTime.fromMillisecondsSinceEpoch(m['startMs'] as int);
       final end = DateTime.fromMillisecondsSinceEpoch(m['lastMs'] as int);
-      if (end.difference(start) < _minDuration) return false;
-      await WorkoutRepository.save(
+      if (end.difference(start) < _minDuration) {
+        await prefs.remove(_key);
+        return false;
+      }
+      // Enqueue the write — Firestore applies it to local persistence
+      // synchronously and syncs when back online, so it survives even if this
+      // launch is offline. We don't await the server ack (it can hang on a bad
+      // connection); the doc is already durable once save() returns its future.
+      unawaited(WorkoutRepository.save(
         userId: uid,
         type: m['type'] as String,
         startTime: start,
@@ -49,7 +59,10 @@ class WorkoutRecoveryService {
         zoneDist: (m['zoneDist'] as List).cast<int>(),
         dominantZone: m['dominantZone'] as int,
         sessionId: m['sessionId'] as String?,
-      );
+      ).catchError((_) => ''));
+      // Clear only after the write is enqueued, so a crash before this point
+      // leaves the snapshot for a retry on the next launch.
+      await prefs.remove(_key);
       return true;
     } catch (_) {
       return false;

@@ -405,6 +405,22 @@ class Strings {
 
   // ── Join / live session ──────────────────────────────────────
   static String get joinSession => _pick('Join session', 'Pridruži se treningu');
+  static String get enterSessionCode =>
+      _pick('Enter the session code', 'Unesite kod treninga');
+  static String get sessionCodeSubtitle => _pick(
+      'Your trainer shares a code for each session.',
+      'Vaš trener dijeli kod za svaki trening.');
+  static String get sessionCodeError => _pick(
+      'Enter the 6-digit session code.',
+      'Unesite 6-znamenkasti kod treninga.');
+  static String get sessionNoMatch => _pick(
+      "That code didn't match a live session.",
+      'Taj kod ne odgovara aktivnom treningu.');
+  static String get notInThatStudio => _pick(
+      "You're not a member of that session's studio.",
+      'Niste član studija tog treninga.');
+  static String couldNotJoinSession(Object e) =>
+      _pick('Could not join: $e', 'Pridruživanje nije uspjelo: $e');
   static String get removedFromSession => _pick(
       'You were removed from this session.',
       'Uklonjeni ste s ovog treninga.');

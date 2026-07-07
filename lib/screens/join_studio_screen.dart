@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/strings.dart';
@@ -12,6 +11,7 @@ import '../services/user_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/logo_heartbeat.dart';
 import '../widgets/mobile_frame.dart';
+import '../widgets/qr_scan_screen.dart';
 
 /// Athlete joins a studio with the 6-digit invite code from their trainer.
 /// Production-only: resolves the code, self-joins the studio, sets studioId.
@@ -46,7 +46,9 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
   /// Opens the camera, extracts the 6-digit code from a scanned QR and joins.
   Future<void> _scan() async {
     final raw = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const _QrScanScreen()),
+      MaterialPageRoute(
+        builder: (_) => QrScanScreen(title: Strings.scanToJoin),
+      ),
     );
     if (raw == null || !mounted) return;
     final match = RegExp(r'\d{6}').firstMatch(raw);
@@ -178,78 +180,6 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Full-screen camera scanner. Pops with the first barcode's raw value.
-class _QrScanScreen extends StatefulWidget {
-  const _QrScanScreen();
-
-  @override
-  State<_QrScanScreen> createState() => _QrScanScreenState();
-}
-
-class _QrScanScreenState extends State<_QrScanScreen> {
-  final _controller = MobileScannerController();
-  bool _handled = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onDetect(BarcodeCapture capture) {
-    if (_handled) return;
-    final raw = capture.barcodes
-        .map((b) => b.rawValue)
-        .firstWhere((v) => v != null && v.isNotEmpty, orElse: () => null);
-    if (raw == null) return;
-    _handled = true;
-    Navigator.of(context).pop(raw);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Text(Strings.scanToJoin),
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: _onDetect,
-            errorBuilder: (context, error) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Text(
-                  Strings.cameraPermissionNeeded,
-                  textAlign: TextAlign.center,
-                  style: AppTheme.bodyLarge(color: Colors.white),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: AppSpacing.xxl,
-            child: Text(
-              Strings.pointAtQr,
-              textAlign: TextAlign.center,
-              style: AppTheme.bodyLarge(color: Colors.white),
-            ),
-          ),
-        ],
       ),
     );
   }

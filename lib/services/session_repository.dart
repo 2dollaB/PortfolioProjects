@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/cloud_session.dart';
 
@@ -10,8 +11,17 @@ class SessionRepository {
   static final CollectionReference<Map<String, dynamic>> _sessions =
       FirebaseFirestore.instance.collection('sessions');
 
+  static final CollectionReference<Map<String, dynamic>> _sessionCodes =
+      FirebaseFirestore.instance.collection('session_codes');
+
+  static String _generateJoinCode() {
+    final r = math.Random();
+    return List.generate(6, (_) => r.nextInt(10)).join();
+  }
+
   /// Opens a session in [studioId] in the **lobby** state — joinable (status
-  /// 'live') but the workout clock hasn't started yet. Returns the new id.
+  /// 'live') but the workout clock hasn't started yet. Athletes join by
+  /// entering/scanning the returned 6-digit [joinCode]. Returns the new id.
   static Future<String> start({
     required String studioId,
     required String trainerUid,
@@ -24,11 +34,13 @@ class SessionRepository {
     // Enforce one live session per studio: end any leftovers first (e.g. a
     // session whose monitor tab was closed without ending it).
     await _endExistingLive(studioId);
+    final joinCode = _generateJoinCode();
     final ref = await _sessions.add({
       'studioId': studioId,
       'trainerUid': trainerUid,
       'name': name,
       'type': type,
+      'joinCode': joinCode,
       'status': 'live',
       'startedAt': FieldValue.serverTimestamp(),
       'runState': 'lobby',
@@ -40,7 +52,27 @@ class SessionRepository {
       'restSec': restSec,
       'rounds': rounds,
     });
+    // Code → session lookup (rule checks the caller owns the studio, so it must
+    // run after the session write above).
+    await _sessionCodes.doc(joinCode).set({
+      'sessionId': ref.id,
+      'studioId': studioId,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
     return ref.id;
+  }
+
+  /// Resolves a 6-digit session code to its live session, or null if the code
+  /// is unknown or its session is no longer live. Membership is enforced
+  /// separately (the caller checks studio membership; rules block the rest).
+  static Future<CloudSession?> resolveByCode(String code) async {
+    final lookup = await _sessionCodes.doc(code.trim()).get();
+    final sessionId = lookup.data()?['sessionId'] as String?;
+    if (sessionId == null) return null;
+    final doc = await _sessions.doc(sessionId).get();
+    if (!doc.exists) return null;
+    final session = CloudSession.fromDoc(doc.id, doc.data()!);
+    return session.isLive ? session : null;
   }
 
   /// Ends every still-live session in the studio (used before opening a new

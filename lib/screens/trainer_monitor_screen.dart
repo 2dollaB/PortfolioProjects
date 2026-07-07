@@ -9,7 +9,6 @@ import '../models/cloud_session.dart';
 import '../services/mock_data.dart';
 import '../services/session_repository.dart';
 import '../services/session_store.dart';
-import '../services/studio_repository.dart';
 import '../services/uid_name_cache.dart';
 import '../widgets/adaptive_grid.dart';
 import '../widgets/beat_button.dart';
@@ -49,7 +48,6 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
 
   Stream<List<SessionHrEntry>>? _hrStream;
   final _names = UidNameCache();
-  String? _inviteCode;
 
   /// Live session doc (production) — drives runState/elapsed. Starts from the
   /// constructor snapshot, then tracks the Firestore stream.
@@ -71,11 +69,6 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
       _sessionSub = SessionRepository.watch(s.id).listen((sess) {
         if (mounted && sess != null) setState(() => _session = sess);
       });
-      StudioRepository.load(s.studioId).then((studio) {
-        if (mounted && studio != null) {
-          setState(() => _inviteCode = studio.inviteCode);
-        }
-      }).catchError((_) {});
     }
     _stopwatch.start();
     _tick = Timer.periodic(const Duration(milliseconds: 800), (_) => _step());
@@ -275,12 +268,12 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
   }
 
   void _showQrModal() {
-    if (widget.session == null) {
-      InviteSheet.show(context);
+    // Athletes join this session by its own code now (not the studio code).
+    final code = _session?.joinCode;
+    if (code == null || code.isEmpty) {
+      InviteSheet.show(context); // demo / doc not loaded yet — default sheet
       return;
     }
-    final code = _inviteCode;
-    if (code == null) return; // studio doc still loading
     InviteSheet.show(context, code: code);
   }
 

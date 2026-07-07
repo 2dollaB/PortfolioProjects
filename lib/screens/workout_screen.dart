@@ -53,7 +53,8 @@ class WorkoutScreen extends StatefulWidget {
   State<WorkoutScreen> createState() => _WorkoutScreenState();
 }
 
-class _WorkoutScreenState extends State<WorkoutScreen> {
+class _WorkoutScreenState extends State<WorkoutScreen>
+    with WidgetsBindingObserver {
   Timer? _tick;
   final _stopwatch = Stopwatch();
   int _bpm = 78;
@@ -79,6 +80,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _useBle = !kIsWeb && BleHrService.instance.isConnected;
     if (_useBle) {
       _bleSub = BleHrService.instance.hrDataStream.listen((d) => _lastBle = d);
@@ -187,13 +189,20 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   /// ~5s crash-safety snapshot so a killed process doesn't lose the workout;
   /// WorkoutRecoveryService saves the leftover on the next launch.
   void _maybeSnapshot() {
-    final uid = AuthService.currentUid;
-    if (uid == null) return;
     final now = DateTime.now();
     if (_lastSnapshot != null &&
         now.difference(_lastSnapshot!) < const Duration(seconds: 5)) {
       return;
     }
+    _writeSnapshot();
+  }
+
+  /// Persists the current totals immediately (no throttle). Called on the ~5s
+  /// tick and, crucially, the instant the app is backgrounded.
+  void _writeSnapshot() {
+    final uid = AuthService.currentUid;
+    if (uid == null) return;
+    final now = DateTime.now();
     _lastSnapshot = now;
     final stats = _zoneStats(widget.profile.hrMax);
     unawaited(WorkoutRecoveryService.snapshot({
@@ -236,8 +245,22 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     ).catchError((_) {});
   }
 
+  /// A backgrounded workout is the moment the OS is most likely to kill the
+  /// process (aggressive OEMs — ColorOS/MIUI — reap swiped-away apps despite
+  /// the foreground service). Snapshot right now, bypassing the 5s throttle,
+  /// so WorkoutRecoveryService has the freshest totals to restore on relaunch.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      _writeSnapshot();
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tick?.cancel();
     _bleSub?.cancel();
     _sessionSub?.cancel();
