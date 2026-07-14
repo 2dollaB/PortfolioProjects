@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
-import '../config/hr_zones.dart';
 import '../config/strings.dart';
 import '../config/theme.dart';
+import '../models/cloud_session.dart';
 import '../models/user_profile.dart';
 import '../models/workout_summary.dart';
 import '../services/auth_service.dart';
 import '../services/mock_data.dart';
+import '../services/session_repository.dart';
 import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/home_header.dart';
 import '../widgets/mobile_frame.dart';
 import '../widgets/stat_chip.dart';
-import '../widgets/workout_type_sheet.dart';
 import '../widgets/zone_badge.dart';
-import 'workout_screen.dart';
 import 'workout_history_screen.dart';
+import 'workout_summary_screen.dart';
+import 'solo_setup_screen.dart';
 import 'join_session_screen.dart';
 import 'join_studio_screen.dart';
+import 'session_lobby_screen.dart';
 import 'settings_screen.dart';
 
 /// Athlete home — greeting, hero "Start Workout" card, recent workouts strip,
@@ -68,108 +70,128 @@ class HomeScreen extends StatelessWidget {
   Widget _buildHome(BuildContext context, List<WorkoutSummary>? workouts) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      body: SafeArea(
-        bottom: false,
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl,
-                ),
-                child: HomeHeader(
-                  greeting: _greeting(),
-                  name: _firstName(),
-                  initials: HomeHeader.initialsOf(profile.name),
-                  onAvatarTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => SettingsScreen(
-                        profile: profile,
-                        onSignOut: onSignOut,
-                      ),
-                    ),
+        backgroundColor: AppColors.bgPrimary,
+        body: SafeArea(
+          bottom: false,
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.xl,
+                    AppSpacing.md,
+                    AppSpacing.xl,
+                    AppSpacing.xl,
                   ),
-                ),
-              ),
-            ),
-
-            // JOIN A STUDIO — shown only until the athlete belongs to one
-            if (enableStudioJoin && profile.studioId == null)
-              const SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.sm,
-                ),
-                sliver: SliverToBoxAdapter(child: _JoinStudioCard()),
-              ),
-
-            // HERO — Start workout card
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-              sliver: SliverToBoxAdapter(
-                child: _HeroCard(
-                  profile: profile,
-                  last: (workouts == null || workouts.isEmpty)
-                      ? null
-                      : workouts.first,
-                ),
-              ),
-            ),
-
-            // JOIN GROUP SESSION — directly under Start so it's the second-most-prominent CTA
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, 0,
-              ),
-              sliver: SliverToBoxAdapter(
-                child: _JoinSessionCard(profile: profile),
-              ),
-            ),
-
-            // STATS THIS WEEK
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xs,
-              ),
-              sliver: SliverToBoxAdapter(child: _SectionHeader(Strings.thisWeek)),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-              sliver: SliverToBoxAdapter(
-                child: _WeeklyStats(workouts: workouts),
-              ),
-            ),
-
-            // RECENT WORKOUTS
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.xs,
-              ),
-              sliver: SliverToBoxAdapter(
-                child: _SectionHeader(
-                  Strings.recentWorkouts,
-                  trailing: TextButton(
-                    onPressed: () => Navigator.of(context).push(
+                  child: HomeHeader(
+                    greeting: _greeting(),
+                    name: _firstName(),
+                    initials: HomeHeader.initialsOf(profile.name),
+                    onAvatarTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const WorkoutHistoryScreen(),
+                        builder: (_) => SettingsScreen(
+                          profile: profile,
+                          onSignOut: onSignOut,
+                        ),
                       ),
                     ),
-                    child: Text(Strings.seeAll),
                   ),
                 ),
               ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-              sliver: SliverToBoxAdapter(
-                child: _RecentList(workouts: workouts?.take(3).toList()),
-              ),
-            ),
 
-            const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
-          ],
+              // PRIMARY — group training is the app's main use case, so this is
+              // the big hero card: "Join a studio" until the athlete belongs to
+              // one, then the reactive "Available workout" card once they do.
+              // Mutually exclusive, so home shows exactly one primary card.
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                sliver: SliverToBoxAdapter(
+                  child: enableStudioJoin && profile.studioId == null
+                      ? const _JoinStudioHero()
+                      : _AvailableWorkoutHero(profile: profile),
+                ),
+              ),
+
+              // SECONDARY — solo workout, demoted below the group CTA.
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.sm,
+                  AppSpacing.xl,
+                  0,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: _JoinCard(
+                    icon: Icons.directions_run_rounded,
+                    title: Strings.startWorkout,
+                    subtitle: Strings.startWorkoutSubtitle,
+                    // Setup step first (strap + optional intervals); the
+                    // workout only starts when they press Start there.
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => SoloSetupScreen(profile: profile),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // STATS THIS WEEK
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.xl,
+                  AppSpacing.xl,
+                  AppSpacing.xs,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: _SectionHeader(Strings.thisWeek),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                sliver: SliverToBoxAdapter(
+                  child: _WeeklyStats(workouts: workouts),
+                ),
+              ),
+
+              // RECENT WORKOUTS
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                  AppSpacing.xs,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: _SectionHeader(
+                    Strings.recentWorkouts,
+                    trailing: TextButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              WorkoutHistoryScreen(profile: profile),
+                        ),
+                      ),
+                      child: Text(Strings.seeAll),
+                    ),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                sliver: SliverToBoxAdapter(
+                  child: _RecentList(
+                    workouts: workouts?.take(3).toList(),
+                    profile: profile,
+                  ),
+                ),
+              ),
+
+              const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -192,14 +214,15 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _HeroCard extends StatelessWidget {
-  final UserProfile profile;
-  final WorkoutSummary? last;
-  const _HeroCard({required this.profile, required this.last});
+/// Shared gradient/glow container for the home screen's primary CTA — used by
+/// both the "Join a studio" and "Available workout" hero cards so the
+/// prominent group-training slot always reads the same way.
+class _PrimaryCard extends StatelessWidget {
+  final Widget child;
+  const _PrimaryCard({required this.child});
 
   @override
   Widget build(BuildContext context) {
-    final last = this.last;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -209,10 +232,7 @@ class _HeroCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.bgTertiary,
-            AppColors.bgSecondary,
-          ],
+          colors: [AppColors.bgTertiary, AppColors.bgSecondary],
         ),
         border: Border.all(color: AppColors.border),
         boxShadow: [
@@ -223,6 +243,18 @@ class _HeroCard extends StatelessWidget {
           ),
         ],
       ),
+      child: child,
+    );
+  }
+}
+
+/// Primary hero CTA shown until the athlete belongs to a studio.
+class _JoinStudioHero extends StatelessWidget {
+  const _JoinStudioHero();
+
+  @override
+  Widget build(BuildContext context) {
+    return _PrimaryCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -235,87 +267,167 @@ class _HeroCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: const Icon(
-                  Icons.favorite_rounded,
+                  Icons.group_add_rounded,
                   color: AppColors.brandRed,
                   size: 16,
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
-              Text(
-                Strings.readyWhenYouAre,
-                style: AppTheme.micro(color: AppColors.brandRed)
-                    .copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w600),
+              Expanded(
+                child: Text(
+                  Strings.joinGroupSession.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.micro(
+                    color: AppColors.brandRed,
+                  ).copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w600),
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Text(Strings.startWorkout,
-              style: AppTheme.h1().copyWith(fontSize: 32, height: 1.1)),
+          Text(
+            Strings.joinAStudio,
+            style: AppTheme.h1().copyWith(fontSize: 32, height: 1.1),
+          ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            Strings.startWorkoutSubtitle,
+            Strings.joinStudioHint,
             style: AppTheme.bodyLarge(color: AppColors.textSecondary),
           ),
-          if (last != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: AppColors.bgPrimary.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.history_rounded,
-                      size: 16, color: AppColors.textSecondary),
-                  const SizedBox(width: AppSpacing.xs),
-                  // Flexible + scaleDown: the left side yields when the row
-                  // gets tight instead of overflowing.
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(Strings.lastSessionPrefix,
-                              style: AppTheme.caption()),
-                          Text(last.dateLabel,
-                              style: AppTheme.caption(
-                                  color: AppColors.textPrimary)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text('${last.avgHr} ',
-                      style: AppTheme.statNumber(fontSize: 14)),
-                  Text(Strings.avgDuration(last.durationLabel),
-                      style: AppTheme.caption()),
-                ],
-              ),
-            ),
-          ],
           const SizedBox(height: AppSpacing.md),
           BeatPrimaryButton(
-            label: Strings.startWorkout,
-            icon: Icons.play_arrow_rounded,
-            onPressed: () async {
-              final type = await WorkoutTypeSheet.show(context);
-              if (type == null || !context.mounted) return;
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => WorkoutScreen(
-                    profile: profile,
-                    workoutType: type,
-                  ),
-                ),
-              );
-            },
+            label: Strings.joinStudioBtn,
+            icon: Icons.arrow_forward_rounded,
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const JoinStudioScreen())),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Primary hero CTA once the athlete is in a studio — reactively shows the
+/// trainer's live session, or a placeholder when nothing is running.
+class _AvailableWorkoutHero extends StatelessWidget {
+  final UserProfile profile;
+  const _AvailableWorkoutHero({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    final studioId = profile.studioId;
+    if (AuthService.currentUid == null || studioId == null) {
+      // Prototype/demo — no cloud studio to watch, keep the static walk-through CTA.
+      return _PrimaryCard(child: _content(context, live: null));
+    }
+    return StreamBuilder<CloudSession?>(
+      stream: SessionRepository.watchLive(studioId),
+      builder: (context, snap) =>
+          _PrimaryCard(child: _content(context, live: snap.data)),
+    );
+  }
+
+  Widget _content(BuildContext context, {required CloudSession? live}) {
+    if (live != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: AppColors.brandRed,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                Strings.liveNow,
+                style: AppTheme.micro(
+                  color: AppColors.brandRed,
+                ).copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            live.name,
+            style: AppTheme.h1().copyWith(fontSize: 32, height: 1.1),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            Strings.groupWorkout,
+            style: AppTheme.bodyLarge(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          BeatPrimaryButton(
+            label: Strings.joinSession,
+            icon: Icons.play_arrow_rounded,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    SessionLobbyScreen(profile: profile, session: live),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              decoration: BoxDecoration(
+                color: AppColors.textTertiary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Icon(
+                Icons.event_busy_rounded,
+                color: AppColors.textSecondary,
+                size: 16,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Text(
+                Strings.joinGroupSession.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.micro(
+                  color: AppColors.textSecondary,
+                ).copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          Strings.noLiveSession,
+          style: AppTheme.h1().copyWith(fontSize: 26, height: 1.1),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          Strings.noLiveSessionHint,
+          style: AppTheme.bodyLarge(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        BeatSecondaryButton(
+          label: Strings.scanToJoin,
+          icon: Icons.qr_code_scanner_rounded,
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => JoinSessionScreen(profile: profile),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -332,8 +444,9 @@ class _WeeklyStats extends StatelessWidget {
     if (all != null) {
       final now = DateTime.now();
       // Same rolling-7-day window as the history screen's "This week" filter.
-      final week =
-          all.where((w) => now.difference(w.startTime).inDays <= 7).toList();
+      final week = all
+          .where((w) => now.difference(w.startTime).inDays <= 7)
+          .toList();
       final minutes = week.fold(0, (sum, w) => sum + w.durationMin);
       final h = minutes ~/ 60;
       final m = minutes % 60;
@@ -345,11 +458,17 @@ class _WeeklyStats extends StatelessWidget {
       children: [
         // No "this week" unit — the section header already says the period,
         // so "1 ovaj tjedan" read like a typo next to the plain chips.
-        Expanded(child: StatChip(label: Strings.sessions, value: sessions)),
+        Expanded(
+          child: StatChip(label: Strings.sessions, value: sessions),
+        ),
         const SizedBox(width: AppSpacing.xs),
-        Expanded(child: StatChip(label: Strings.time, value: time)),
+        Expanded(
+          child: StatChip(label: Strings.time, value: time),
+        ),
         const SizedBox(width: AppSpacing.xs),
-        Expanded(child: StatChip(label: 'TRIMP', value: trimp)),
+        Expanded(
+          child: StatChip(label: 'TRIMP', value: trimp),
+        ),
       ],
     );
   }
@@ -358,7 +477,8 @@ class _WeeklyStats extends StatelessWidget {
 class _RecentList extends StatelessWidget {
   /// Null while the production stream is still loading.
   final List<WorkoutSummary>? workouts;
-  const _RecentList({required this.workouts});
+  final UserProfile profile;
+  const _RecentList({required this.workouts, required this.profile});
 
   @override
   Widget build(BuildContext context) {
@@ -389,7 +509,7 @@ class _RecentList extends StatelessWidget {
     return Column(
       children: [
         for (final w in all) ...[
-          _WorkoutRow(workout: w),
+          _WorkoutRow(workout: w, profile: profile),
           const SizedBox(height: AppSpacing.xs),
         ],
       ],
@@ -399,7 +519,10 @@ class _RecentList extends StatelessWidget {
 
 class _WorkoutRow extends StatelessWidget {
   final WorkoutSummary workout;
-  const _WorkoutRow({required this.workout});
+  final UserProfile profile;
+  const _WorkoutRow({required this.workout, required this.profile});
+
+  bool get _isGroup => workout.type.toLowerCase() == 'group';
 
   @override
   Widget build(BuildContext context) {
@@ -407,7 +530,21 @@ class _WorkoutRow extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {},
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => WorkoutSummaryScreen(
+              profile: profile,
+              durationMin: workout.durationMin,
+              avgBpm: workout.avgHr,
+              maxBpm: workout.maxHr,
+              calories: workout.calories,
+              trimp: workout.trimp,
+              isGroup: _isGroup,
+              zoneDist: workout.zoneDist,
+              isHistorical: true,
+            ),
+          ),
+        ),
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -426,22 +563,26 @@ class _WorkoutRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 alignment: Alignment.center,
-                child: Icon(_iconFor(workout.type), color: zoneColor, size: 20),
+                child: Icon(
+                  _isGroup
+                      ? Icons.groups_rounded
+                      : Icons.directions_run_rounded,
+                  color: zoneColor,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Text(Strings.workoutTypeLabel(workout.typeLabel),
-                            style: AppTheme.bodyLarge(weight: FontWeight.w600)
-                                .copyWith(fontSize: 15)),
-                        const SizedBox(width: AppSpacing.xs),
-                        Text('· ${workout.dateLabel}',
-                            style: AppTheme.caption()),
-                      ],
+                    Text(
+                      Strings.groupSoloLabel(workout.typeLabel),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.bodyLarge(
+                        weight: FontWeight.w600,
+                      ).copyWith(fontSize: 15),
                     ),
                     const SizedBox(height: 2),
                     Row(
@@ -468,26 +609,6 @@ class _WorkoutRow extends StatelessWidget {
       ),
     );
   }
-
-  IconData _iconFor(String type) {
-    switch (type.toLowerCase()) {
-      case 'hiit':
-        return Icons.bolt_rounded;
-      case 'strength':
-        return Icons.fitness_center_rounded;
-      case 'cardio':
-      case 'endurance':
-        return Icons.directions_run_rounded;
-      case 'cycling':
-        return Icons.directions_bike_rounded;
-      case 'yoga':
-        return Icons.self_improvement_rounded;
-      case 'crossfit':
-        return Icons.local_fire_department_rounded;
-      default:
-        return Icons.directions_run_rounded;
-    }
-  }
 }
 
 class _Pill extends StatelessWidget {
@@ -511,62 +632,18 @@ class _Pill extends StatelessWidget {
   }
 }
 
-/// CTA shown on the athlete home until they belong to a studio.
-class _JoinStudioCard extends StatelessWidget {
-  const _JoinStudioCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const JoinStudioScreen()),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.brandRed.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.brandRed.withValues(alpha: 0.35)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.brandRed.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.group_add_rounded,
-                    color: AppColors.brandRed),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(Strings.joinAStudio,
-                        style: AppTheme.bodyLarge(weight: FontWeight.w700)),
-                    Text(Strings.joinStudioHint,
-                        style: AppTheme.caption()),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded,
-                  color: AppColors.textSecondary),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _JoinSessionCard extends StatelessWidget {
-  final UserProfile profile;
-  const _JoinSessionCard({required this.profile});
+/// Shared row style for secondary home CTAs (currently just Solo workout).
+class _JoinCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  const _JoinCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -574,11 +651,7 @@ class _JoinSessionCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => JoinSessionScreen(profile: profile),
-          ),
-        ),
+        onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
@@ -592,29 +665,26 @@ class _JoinSessionCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: HrZones.colors[2]!.withValues(alpha: 0.15),
+                  color: AppColors.brandRed.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: Icon(Icons.qr_code_scanner_rounded,
-                    color: HrZones.colors[2]),
+                child: Icon(icon, color: AppColors.brandRed),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(Strings.joinGroupSession,
-                        style: AppTheme.bodyLarge(weight: FontWeight.w600)),
-                    const SizedBox(height: 2),
                     Text(
-                      Strings.scanQrFromTrainer,
-                      style: AppTheme.caption(),
+                      title,
+                      style: AppTheme.bodyLarge(weight: FontWeight.w700),
                     ),
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: AppTheme.caption()),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded,
-                  size: 14, color: AppColors.textSecondary),
+              Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
             ],
           ),
         ),

@@ -45,8 +45,11 @@ class CalcInfoButton extends StatelessWidget {
       onTap: () => showInfoSheet(context, title, steps),
       child: Padding(
         padding: const EdgeInsets.all(4),
-        child: Icon(Icons.info_outline_rounded,
-            size: size, color: AppColors.textSecondary),
+        child: Icon(
+          Icons.info_outline_rounded,
+          size: size,
+          color: AppColors.textSecondary,
+        ),
       ),
     );
   }
@@ -94,7 +97,8 @@ class _InfoSheetState extends State<_InfoSheet> {
       decoration: BoxDecoration(
         color: AppColors.bgSecondary,
         borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xl)),
+          top: Radius.circular(AppRadius.xl),
+        ),
       ),
       child: Padding(
         padding: EdgeInsets.only(
@@ -116,7 +120,11 @@ class _InfoSheetState extends State<_InfoSheet> {
             // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.md, AppSpacing.sm, 0),
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.sm,
+                0,
+              ),
               child: Row(
                 children: [
                   Expanded(child: Text(widget.title, style: AppTheme.h2())),
@@ -160,7 +168,11 @@ class _InfoSheetState extends State<_InfoSheet> {
             // Actions
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
               child: Row(
                 children: [
                   if (multi && _page > 0)
@@ -182,9 +194,7 @@ class _InfoSheetState extends State<_InfoSheet> {
                       ),
                     ),
                     child: Text(
-                      _isLast
-                          ? Strings.done
-                          : Strings.pick('Next', 'Dalje'),
+                      _isLast ? Strings.done : Strings.pick('Next', 'Dalje'),
                     ),
                   ),
                 ],
@@ -205,13 +215,20 @@ class _StepView extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(step.title,
-              style: AppTheme.bodyLarge(weight: FontWeight.w600)),
-          if (step.formula != null) ...[
+          Text(step.title, style: AppTheme.bodyLarge(weight: FontWeight.w600)),
+          // Only when there's an actual formula — an empty string used to
+          // paint a blank box. Uses the platform monospace (not a runtime
+          // GoogleFont, which rendered invisibly here) so the formula is
+          // reliably visible and its columns line up.
+          if (step.formula != null && step.formula!.trim().isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
             Container(
               width: double.infinity,
@@ -219,21 +236,26 @@ class _StepView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.bgTertiary,
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border(
-                  left: BorderSide(color: AppColors.brandRed, width: 3),
-                  top: BorderSide(color: AppColors.border),
-                  right: BorderSide(color: AppColors.border),
-                  bottom: BorderSide(color: AppColors.border),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Text(
+                step.formula!,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 14,
+                  height: 1.5,
+                  letterSpacing: 0.3,
+                  color: AppColors.textPrimary,
                 ),
               ),
-              child: Text(step.formula!,
-                  style: AppTheme.mono(fontSize: 14, letterSpacing: 0.3)),
             ),
           ],
           const SizedBox(height: AppSpacing.md),
-          Text(step.body,
-              textAlign: TextAlign.justify,
-              style: AppTheme.bodyLarge(color: AppColors.textSecondary)),
+          Text(
+            step.body,
+            textAlign: TextAlign.justify,
+            style: AppTheme.bodyLarge(color: AppColors.textSecondary),
+          ),
         ],
       ),
     );

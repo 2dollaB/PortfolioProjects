@@ -4,24 +4,23 @@ import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/strings.dart';
 import '../config/theme.dart';
-import '../models/cloud_session.dart';
 import '../models/user_profile.dart';
 import '../services/auth_service.dart';
 import '../services/mock_data.dart';
 import '../services/session_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/logo_heartbeat.dart';
+import '../widgets/qr_scan_screen.dart';
 import 'session_lobby_screen.dart';
 import 'workout_screen.dart';
 
-/// Join a group session.
-///
-/// Production: studio members don't need a code — the screen watches the
-/// studio's live session and joins it in one tap. Demo keeps the mock QR
-/// scanner flow.
+/// Join a group session by its 6-digit code — entered manually or scanned from
+/// the trainer's QR. Mirrors [JoinStudioScreen]: sessions are no longer
+/// auto-joined by studio membership, so an athlete at home can't wander into a
+/// live session; they must have this session's own code. The join is still
+/// refused (client + rules) if they aren't a member of the session's studio.
 class JoinSessionScreen extends StatefulWidget {
-  /// Production: the signed-in athlete (their studioId locates the session).
-  /// Null keeps the prototype/demo scanner.
+  /// Production: the signed-in athlete. Null keeps the prototype/demo scanner.
   final UserProfile? profile;
   const JoinSessionScreen({super.key, this.profile});
 
@@ -32,17 +31,8 @@ class JoinSessionScreen extends StatefulWidget {
 class _JoinSessionScreenState extends State<JoinSessionScreen> {
   final _code = TextEditingController();
   final bool _scanning = true;
-
-  Stream<CloudSession?>? _liveStream;
-
-  @override
-  void initState() {
-    super.initState();
-    final studioId = widget.profile?.studioId;
-    if (AuthService.currentUid != null && studioId != null) {
-      _liveStream = SessionRepository.watchLive(studioId);
-    }
-  }
+  bool _loading = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -50,36 +40,99 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
     super.dispose();
   }
 
-  void _join(CloudSession live) {
-    final uid = AuthService.currentUid;
-    if (uid != null && live.isKicked(uid)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(Strings.removedFromSession)),
-      );
+  Future<void> _join() async {
+    final code = _code.text.trim();
+    if (code.length != 6) {
+      setState(() => _error = Strings.sessionCodeError);
       return;
     }
-    // Into the waiting room — the workout begins when the trainer hits Start.
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => SessionLobbyScreen(
-          profile: widget.profile!,
-          session: live,
-        ),
-      ),
-    );
+    await _joinWithCode(code);
   }
 
-  String _stateLabel(CloudSession live) {
-    if (!live.isRunning) return Strings.waitingToStart;
-    final m = DateTime.now().difference(live.workoutStartedAt ?? live.startedAt).inMinutes;
-    if (m < 1) return Strings.justStarted;
-    return Strings.startedMinAgo(m);
+  /// Opens the camera, extracts the 6-digit code from a scanned QR and joins.
+  Future<void> _scan() async {
+    final raw = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => QrScanScreen(title: Strings.joinSession),
+      ),
+    );
+    if (raw == null || !mounted) return;
+    final match = RegExp(r'\d{6}').firstMatch(raw);
+    if (match == null) {
+      setState(() => _error = Strings.sessionNoMatch);
+      return;
+    }
+    final code = match.group(0)!;
+    _code.text = code;
+    await _joinWithCode(code);
+  }
+
+  /// Shared join path for both manual entry and QR scan.
+  Future<void> _joinWithCode(String code) async {
+    final uid = AuthService.currentUid;
+    if (uid == null) {
+      setState(() => _error = Strings.notSignedIn);
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final session = await SessionRepository.resolveByCode(code);
+      if (session == null) {
+        if (!mounted) return;
+        setState(() {
+          _loading = false;
+          _error = Strings.sessionNoMatch;
+        });
+        return;
+      }
+      // Refuse anyone who isn't in this session's studio (rules also block the
+      // session read + hr writes, so this is a friendly pre-check, not the gate).
+      // The home CTA is hidden unless you're in a studio, so in practice this
+      // only fires when you're in studio A and try a session from studio B.
+      if (widget.profile?.studioId != session.studioId) {
+        if (!mounted) return;
+        setState(() {
+          _loading = false;
+          _error = widget.profile?.studioId == null
+              ? Strings.joinStudioFirst
+              : Strings.sessionOtherStudio;
+        });
+        return;
+      }
+      if (session.isKicked(uid)) {
+        if (!mounted) return;
+        setState(() {
+          _loading = false;
+          _error = Strings.removedFromSession;
+        });
+        return;
+      }
+      if (!mounted) return;
+      // Into the waiting room — the workout begins when the trainer hits Start.
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => SessionLobbyScreen(
+            profile: widget.profile!,
+            session: session,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = Strings.couldNotJoinSession(e);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final stream = _liveStream;
-    if (stream == null && AuthService.currentUid == null) {
+    // Prototype / not signed in — keep the demo scanner walkthrough.
+    if (AuthService.currentUid == null || widget.profile == null) {
       return _buildDemo(context);
     }
 
@@ -94,32 +147,58 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
           ),
         ),
         body: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.xl),
-            // Signed in but not in a studio yet — sessions live inside one.
-            child: stream == null
-                ? Center(
-                    child: Text(
-                      Strings.joinStudioFirst,
-                      style: AppTheme.caption(),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                : StreamBuilder<CloudSession?>(
-                    stream: stream,
-                    builder: (context, snap) {
-                      if (snap.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      final live = snap.data;
-                      if (live == null) return const _NoLiveSession();
-                      return _LiveSessionCard(
-                        session: live,
-                        startedLabel: _stateLabel(live),
-                        onJoin: () => _join(live),
-                      );
-                    },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: AppSpacing.lg),
+                const Center(
+                    child: LogoHeartbeat(size: 28, showWordmark: false)),
+                const SizedBox(height: AppSpacing.xl),
+                Text(Strings.enterSessionCode, style: AppTheme.h2()),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  Strings.sessionCodeSubtitle,
+                  style: AppTheme.bodyLarge(color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                TextField(
+                  controller: _code,
+                  textAlign: TextAlign.center,
+                  style: AppTheme.statNumber(fontSize: 28)
+                      .copyWith(letterSpacing: 8),
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  onSubmitted: (_) => _join(),
+                  decoration: const InputDecoration(
+                    counterText: '',
+                    hintText: '••••••',
                   ),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    _error!,
+                    style: AppTheme.caption(color: AppColors.danger)
+                        .copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                BeatPrimaryButton(
+                  label: Strings.joinSession,
+                  icon: Icons.login_rounded,
+                  loading: _loading,
+                  onPressed: _join,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                BeatSecondaryButton(
+                  label: Strings.scanToJoin,
+                  icon: Icons.qr_code_scanner_rounded,
+                  onPressed: _loading ? null : _scan,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -181,7 +260,7 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
                 maxLength: 6,
                 decoration: const InputDecoration(
                   counterText: '',
-                  hintText: 'â€¢â€¢â€¢â€¢â€¢â€¢',
+                  hintText: '••••••',
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -201,117 +280,6 @@ class _JoinSessionScreenState extends State<JoinSessionScreen> {
           ),
         ),
       ),
-      ),
-    );
-  }
-}
-
-/// Production: no live session right now — the stream flips this view to the
-/// join card the moment the trainer launches one.
-class _NoLiveSession extends StatelessWidget {
-  const _NoLiveSession();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: AppColors.bgSecondary,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Icon(
-              Icons.podcasts_rounded,
-              color: AppColors.textSecondary,
-              size: 32,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(Strings.noLiveSession, style: AppTheme.h2()),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            Strings.noLiveSessionHint,
-            style: AppTheme.caption(),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Production: the studio's live session, one tap to join.
-class _LiveSessionCard extends StatelessWidget {
-  final CloudSession session;
-  final String startedLabel;
-  final VoidCallback onJoin;
-  const _LiveSessionCard({
-    required this.session,
-    required this.startedLabel,
-    required this.onJoin,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: AppColors.bgSecondary,
-          borderRadius: BorderRadius.circular(AppRadius.xl),
-          border: Border.all(color: AppColors.border),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.brandRed.withValues(alpha: 0.12),
-              blurRadius: 32,
-              spreadRadius: -8,
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.brandRed,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Text(
-                  Strings.liveNow,
-                  style: AppTheme.micro(color: AppColors.brandRed).copyWith(
-                    letterSpacing: 1.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(session.name, style: AppTheme.h1().copyWith(fontSize: 26)),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              '${Strings.workoutTypeLabel(session.typeLabel)} · $startedLabel',
-              style: AppTheme.bodyLarge(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            BeatPrimaryButton(
-              label: Strings.joinSession,
-              icon: Icons.login_rounded,
-              onPressed: onJoin,
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -16,7 +16,6 @@ import '../widgets/beat_button.dart';
 import '../widgets/home_header.dart';
 import '../widgets/mobile_frame.dart';
 import '../widgets/stat_chip.dart';
-import '../widgets/workout_type_sheet.dart';
 import 'all_sessions_screen.dart';
 import 'cloud_session_detail_screen.dart';
 import 'session_detail_screen.dart';
@@ -27,11 +26,7 @@ import 'trainer_monitor_screen.dart';
 class TrainerHomeScreen extends StatelessWidget {
   final UserProfile profile;
   final VoidCallback? onSignOut;
-  const TrainerHomeScreen({
-    super.key,
-    required this.profile,
-    this.onSignOut,
-  });
+  const TrainerHomeScreen({super.key, required this.profile, this.onSignOut});
 
   String _firstName() {
     final n = profile.name.trim();
@@ -67,118 +62,120 @@ class TrainerHomeScreen extends StatelessWidget {
     final production = studioId != null;
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl,
-          ),
-          children: [
-            HomeHeader(
-              greeting: _greeting(),
-              name: _firstName(),
-              subtitle: production ? studio?.name : MockData.studioName,
-              initials: HomeHeader.initialsOf(profile.name),
-              onAvatarTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => SettingsScreen(
-                    profile: profile,
-                    onSignOut: onSignOut,
+        backgroundColor: AppColors.bgPrimary,
+        body: SafeArea(
+          bottom: false,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.md,
+              AppSpacing.xl,
+              AppSpacing.xl,
+            ),
+            children: [
+              HomeHeader(
+                greeting: _greeting(),
+                name: _firstName(),
+                subtitle: production ? studio?.name : MockData.studioName,
+                initials: HomeHeader.initialsOf(profile.name),
+                onAvatarTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        SettingsScreen(profile: profile, onSignOut: onSignOut),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xl),
 
-            // Live session OR start-new-session hero — reactive to the cloud
-            // live session (production) or the local SessionStore (demo).
-            if (production)
-              StreamBuilder<CloudSession?>(
-                stream: SessionRepository.watchLive(studioId),
-                builder: (context, snap) {
-                  final live = snap.data;
-                  if (live != null) {
-                    return _LiveSessionHero(
-                      name: live.name,
-                      subtitle: '${Strings.workoutTypeLabel(live.typeLabel)} · ${Strings.liveNowLower}',
-                      onOpen: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => TrainerMonitorScreen(session: live),
+              // Live session OR start-new-session hero — reactive to the cloud
+              // live session (production) or the local SessionStore (demo).
+              if (production)
+                StreamBuilder<CloudSession?>(
+                  stream: SessionRepository.watchLive(studioId),
+                  builder: (context, snap) {
+                    final live = snap.data;
+                    if (live != null) {
+                      return _LiveSessionHero(
+                        name: live.name,
+                        subtitle:
+                            '${Strings.groupWorkout} · ${Strings.liveNowLower}',
+                        onOpen: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => TrainerMonitorScreen(session: live),
+                          ),
                         ),
-                      ),
-                    );
-                  }
-                  return _NoSessionHero(studioId: studioId);
-                },
-              )
-            else
-              ValueListenableBuilder<LiveSession?>(
-                valueListenable: SessionStore.instance.live,
-                builder: (context, live, _) {
-                  if (live != null) {
-                    return _LiveSessionHero(
-                      name: live.name,
-                      subtitle:
-                          '${Strings.workoutTypeLabel(live.type.displayName)} · ${Strings.athletesCount(live.athleteCount)}',
-                      onOpen: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const TrainerMonitorScreen(),
+                      );
+                    }
+                    return _NoSessionHero(studioId: studioId);
+                  },
+                )
+              else
+                ValueListenableBuilder<LiveSession?>(
+                  valueListenable: SessionStore.instance.live,
+                  builder: (context, live, _) {
+                    if (live != null) {
+                      return _LiveSessionHero(
+                        name: live.name,
+                        subtitle:
+                            '${Strings.groupWorkout} · ${Strings.athletesCount(live.athleteCount)}',
+                        onOpen: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const TrainerMonitorScreen(),
+                          ),
                         ),
-                      ),
-                    );
-                  }
-                  return const _NoSessionHero(studioId: null);
-                },
-              ),
+                      );
+                    }
+                    return const _NoSessionHero(studioId: null);
+                  },
+                ),
 
-            const SizedBox(height: AppSpacing.xl),
-            Text(Strings.studioAtGlance, style: AppTheme.h2()),
-            const SizedBox(height: AppSpacing.sm),
-            // Active today / sessions-per-week are computed from cloud
-            // sessions; '–' only while the studio doc is still loading.
-            production
-                ? (studio == null
-                    ? const _StudioStats(
-                        activeToday: '–',
-                        members: '–',
-                        sessionsPerWeek: '–',
-                      )
-                    : _StudioStatsLoader(
-                        studioId: studioId,
-                        members: studio.athleteUids.length,
-                      ))
-                : const _StudioStats(
-                    activeToday: '8',
-                    members: '34',
-                    sessionsPerWeek: '12',
-                  ),
-
-            const SizedBox(height: AppSpacing.xl),
-            Row(
-              children: [
-                Text(Strings.recentSessions, style: AppTheme.h2()),
-                const Spacer(),
-                // All-sessions screen still renders the demo store only.
-                if (!production)
-                  TextButton(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const AllSessionsScreen(),
-                      ),
+              const SizedBox(height: AppSpacing.xl),
+              Text(Strings.studioAtGlance, style: AppTheme.h2()),
+              const SizedBox(height: AppSpacing.sm),
+              // Active today / sessions-per-week are computed from cloud
+              // sessions; '–' only while the studio doc is still loading.
+              production
+                  ? (studio == null
+                        ? const _StudioStats(
+                            activeToday: '–',
+                            members: '–',
+                            sessionsPerWeek: '–',
+                          )
+                        : _StudioStatsLoader(
+                            studioId: studioId,
+                            members: studio.athleteUids.length,
+                          ))
+                  : const _StudioStats(
+                      activeToday: '8',
+                      members: '34',
+                      sessionsPerWeek: '12',
                     ),
-                    child: Text(Strings.seeAll),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            if (production)
-              _CloudRecentSessions(studioId: studioId)
-            else
-              const _RecentSessionsList(),
-          ],
+
+              const SizedBox(height: AppSpacing.xl),
+              Row(
+                children: [
+                  Text(Strings.recentSessions, style: AppTheme.h2()),
+                  const Spacer(),
+                  // All-sessions screen still renders the demo store only.
+                  if (!production)
+                    TextButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AllSessionsScreen(),
+                        ),
+                      ),
+                      child: Text(Strings.seeAll),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              if (production)
+                _CloudRecentSessions(studioId: studioId)
+              else
+                const _RecentSessionsList(),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -211,7 +208,9 @@ class _StudioStatsLoaderState extends State<_StudioStatsLoader> {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final sessions = await SessionRepository.fetchSince(
-        studioId, now.subtract(const Duration(days: 7)));
+      studioId,
+      now.subtract(const Duration(days: 7)),
+    );
     final today = sessions.where((s) => !s.startedAt.isBefore(todayStart));
     final active = <String>{};
     for (final s in today) {
@@ -251,11 +250,17 @@ class _StudioStats extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: StatChip(label: Strings.activeToday, value: activeToday)),
+        Expanded(
+          child: StatChip(label: Strings.activeToday, value: activeToday),
+        ),
         const SizedBox(width: AppSpacing.xs),
-        Expanded(child: StatChip(label: Strings.members, value: members)),
+        Expanded(
+          child: StatChip(label: Strings.members, value: members),
+        ),
         const SizedBox(width: AppSpacing.xs),
-        Expanded(child: StatChip(label: Strings.sessionsPerWk, value: sessionsPerWeek)),
+        Expanded(
+          child: StatChip(label: Strings.sessionsPerWk, value: sessionsPerWeek),
+        ),
       ],
     );
   }
@@ -296,10 +301,7 @@ class _CloudRecentSessions extends StatelessWidget {
               border: Border.all(color: AppColors.border),
             ),
             child: Center(
-              child: Text(
-                Strings.noSessionsYet,
-                style: AppTheme.caption(),
-              ),
+              child: Text(Strings.noSessionsYet, style: AppTheme.caption()),
             ),
           );
         }
@@ -321,24 +323,6 @@ class _CloudSessionRow extends StatelessWidget {
   final CloudSession session;
   const _CloudSessionRow({required this.session});
 
-  IconData get _icon {
-    switch (session.type.toLowerCase()) {
-      case 'hiit':
-        return Icons.bolt_rounded;
-      case 'strength':
-        return Icons.fitness_center_rounded;
-      case 'endurance':
-      case 'cardio':
-        return Icons.directions_run_rounded;
-      case 'crossfit':
-        return Icons.local_fire_department_rounded;
-      case 'cycling':
-        return Icons.directions_bike_rounded;
-      default:
-        return Icons.favorite_rounded;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final live = session.isLive;
@@ -347,12 +331,12 @@ class _CloudSessionRow extends StatelessWidget {
       child: InkWell(
         // Live sessions open the monitor; ended ones the results screen.
         onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => live
-                    ? TrainerMonitorScreen(session: session)
-                    : CloudSessionDetailScreen(session: session),
-              ),
-            ),
+          MaterialPageRoute(
+            builder: (_) => live
+                ? TrainerMonitorScreen(session: session)
+                : CloudSessionDetailScreen(session: session),
+          ),
+        ),
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -370,7 +354,11 @@ class _CloudSessionRow extends StatelessWidget {
                   color: AppColors.brandRed.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: Icon(_icon, color: AppColors.brandRed, size: 20),
+                child: Icon(
+                  Icons.groups_rounded,
+                  color: AppColors.brandRed,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -379,11 +367,12 @@ class _CloudSessionRow extends StatelessWidget {
                   children: [
                     Text(
                       session.name,
-                      style: AppTheme.bodyLarge(weight: FontWeight.w600)
-                          .copyWith(fontSize: 15),
+                      style: AppTheme.bodyLarge(
+                        weight: FontWeight.w600,
+                      ).copyWith(fontSize: 15),
                     ),
                     Text(
-                      '${_relativeDate(session.startedAt)} · ${Strings.workoutTypeLabel(session.typeLabel)}',
+                      '${_relativeDate(session.startedAt)} · ${Strings.groupWorkout}',
                       style: AppTheme.caption(),
                     ),
                   ],
@@ -404,9 +393,10 @@ class _CloudSessionRow extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       Strings.live,
-                      style: AppTheme.micro(color: AppColors.brandRed)
-                          .copyWith(
-                              letterSpacing: 1.5, fontWeight: FontWeight.w700),
+                      style: AppTheme.micro(color: AppColors.brandRed).copyWith(
+                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 )
@@ -446,10 +436,7 @@ class _RecentSessionsList extends StatelessWidget {
               border: Border.all(color: AppColors.border),
             ),
             child: Center(
-              child: Text(
-                Strings.noSessionsYet,
-                style: AppTheme.caption(),
-              ),
+              child: Text(Strings.noSessionsYet, style: AppTheme.caption()),
             ),
           );
         }
@@ -483,8 +470,8 @@ class _RecentSessionsList extends StatelessWidget {
                               color: AppColors.brandRed.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(AppRadius.md),
                             ),
-                            child: Icon(
-                              s.type.icon,
+                            child: const Icon(
+                              Icons.groups_rounded,
                               color: AppColors.brandRed,
                               size: 20,
                             ),
@@ -496,8 +483,9 @@ class _RecentSessionsList extends StatelessWidget {
                               children: [
                                 Text(
                                   s.name,
-                                  style: AppTheme.bodyLarge(weight: FontWeight.w600)
-                                      .copyWith(fontSize: 15),
+                                  style: AppTheme.bodyLarge(
+                                    weight: FontWeight.w600,
+                                  ).copyWith(fontSize: 15),
                                 ),
                                 Text(
                                   '${_relativeDate(s.startedAt)} · ${Strings.athletesCount(s.athleteCount)} · ${s.durationLabel}',
@@ -569,7 +557,8 @@ class _LiveSessionHero extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 8, height: 8,
+                width: 8,
+                height: 8,
                 decoration: const BoxDecoration(
                   color: AppColors.brandRed,
                   shape: BoxShape.circle,
@@ -578,16 +567,14 @@ class _LiveSessionHero extends StatelessWidget {
               const SizedBox(width: AppSpacing.xs),
               Text(
                 Strings.liveNow,
-                style: AppTheme.micro(color: AppColors.brandRed)
-                    .copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w700),
+                style: AppTheme.micro(
+                  color: AppColors.brandRed,
+                ).copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w700),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            name,
-            style: AppTheme.h1().copyWith(fontSize: 28),
-          ),
+          Text(name, style: AppTheme.h1().copyWith(fontSize: 28)),
           const SizedBox(height: AppSpacing.xs),
           Text(
             subtitle,
@@ -639,13 +626,17 @@ class _NoSessionHero extends StatelessWidget {
               const SizedBox(width: AppSpacing.xs),
               Text(
                 Strings.readyToTrain,
-                style: AppTheme.micro(color: AppColors.brandRed)
-                    .copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w600),
+                style: AppTheme.micro(
+                  color: AppColors.brandRed,
+                ).copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w600),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Text(Strings.startNewSession, style: AppTheme.h1().copyWith(fontSize: 28)),
+          Text(
+            Strings.startNewSession,
+            style: AppTheme.h1().copyWith(fontSize: 28),
+          ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             Strings.startSessionSubtitle,

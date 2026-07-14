@@ -3,15 +3,18 @@ import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/strings.dart';
 import '../config/theme.dart';
+import '../models/user_profile.dart';
 import '../models/workout_summary.dart';
 import '../services/auth_service.dart';
 import '../services/mock_data.dart';
 import '../services/workout_repository.dart';
 import '../widgets/mobile_frame.dart';
 import '../widgets/zone_badge.dart';
+import 'workout_summary_screen.dart';
 
 class WorkoutHistoryScreen extends StatefulWidget {
-  const WorkoutHistoryScreen({super.key});
+  final UserProfile profile;
+  const WorkoutHistoryScreen({super.key, required this.profile});
 
   @override
   State<WorkoutHistoryScreen> createState() => _WorkoutHistoryScreenState();
@@ -19,10 +22,8 @@ class WorkoutHistoryScreen extends StatefulWidget {
 
 class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
   String _timeFilter = 'All';
-  String? _typeFilter; // null means "any type"
 
   static const _timeFilters = ['All', 'This week', 'This month'];
-  static const _typeFilters = ['HIIT', 'Cardio', 'Strength', 'Cycling', 'Yoga'];
 
   List<WorkoutSummary> _applyFilters(List<WorkoutSummary> all) {
     final now = DateTime.now();
@@ -35,7 +36,6 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
           if (now.difference(w.startTime).inDays > 31) return false;
           break;
       }
-      if (_typeFilter != null && w.typeLabel != _typeFilter) return false;
       return true;
     }).toList();
   }
@@ -47,9 +47,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.xl),
           child: Text(
-            all.isEmpty
-                ? Strings.noWorkoutsYet
-                : Strings.noWorkoutsMatch,
+            all.isEmpty ? Strings.noWorkoutsYet : Strings.noWorkoutsMatch,
             style: AppTheme.caption(),
             textAlign: TextAlign.center,
           ),
@@ -65,7 +63,8 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
       ),
       itemCount: filtered.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
-      itemBuilder: (context, i) => _HistoryRow(workout: filtered[i]),
+      itemBuilder: (context, i) =>
+          _HistoryRow(workout: filtered[i], profile: widget.profile),
     );
   }
 
@@ -90,10 +89,8 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                 height: 44,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  // vertical: 6 keeps the pills clear of the divider below
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.xl,
-                    vertical: 6,
                   ),
                   children: [
                     for (final f in _timeFilters) ...[
@@ -102,31 +99,13 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                         selected: _timeFilter == f,
                         onTap: () => setState(() => _timeFilter = f),
                       ),
-                      const SizedBox(width: AppSpacing.xs),
-                    ],
-                    // right margin mirrors the trailing chip spacer so the
-                    // separator sits centered between the two filter groups
-                    Container(
-                      width: 1,
-                      margin: const EdgeInsets.only(
-                        right: AppSpacing.xs,
-                        top: 6,
-                        bottom: 6,
-                      ),
-                      color: AppColors.border,
-                    ),
-                    for (final t in _typeFilters) ...[
-                      _FilterChip(
-                        label: Strings.workoutTypeLabel(t),
-                        selected: _typeFilter == t,
-                        onTap: () => setState(() =>
-                            _typeFilter = _typeFilter == t ? null : t),
-                      ),
-                      const SizedBox(width: AppSpacing.xs),
+                      if (f != _timeFilters.last)
+                        const SizedBox(width: AppSpacing.xs),
                     ],
                   ],
                 ),
               ),
+              const SizedBox(height: AppSpacing.xs),
               Divider(color: AppColors.border, height: 1),
               Expanded(
                 child: uid == null
@@ -134,8 +113,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
                     : StreamBuilder<List<WorkoutSummary>>(
                         stream: WorkoutRepository.watchRecent(uid),
                         builder: (context, snap) {
-                          if (snap.connectionState ==
-                              ConnectionState.waiting) {
+                          if (snap.connectionState == ConnectionState.waiting) {
                             return const Center(
                               child: CircularProgressIndicator(),
                             );
@@ -178,10 +156,9 @@ class _FilterChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.pill),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md, vertical: AppSpacing.xs,
-          ),
-          alignment: Alignment.center,
+          height: 32,
+          constraints: const BoxConstraints(minWidth: 64),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.brandRed.withValues(alpha: 0.15)
@@ -191,15 +168,19 @@ class _FilterChip extends StatelessWidget {
               color: selected ? AppColors.brandRed : AppColors.border,
             ),
           ),
-          child: Text(
-            label,
-            style: AppTheme.caption(
-              color: selected
-                  ? AppColors.brandRed
-                  : AppColors.textSecondary,
-            ).copyWith(
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              fontSize: 13,
+          child: Center(
+            child: Text(
+              label,
+              style:
+                  AppTheme.caption(
+                    color: selected
+                        ? AppColors.brandRed
+                        : AppColors.textSecondary,
+                  ).copyWith(
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 13,
+                    height: 1.0,
+                  ),
             ),
           ),
         ),
@@ -210,102 +191,119 @@ class _FilterChip extends StatelessWidget {
 
 class _HistoryRow extends StatelessWidget {
   final WorkoutSummary workout;
-  const _HistoryRow({required this.workout});
+  final UserProfile profile;
+  const _HistoryRow({required this.workout, required this.profile});
 
-  @override
-  Widget build(BuildContext context) {
-    final zoneColor = AppColors.zoneColor(workout.dominantZone);
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.bgSecondary,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: zoneColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Icon(_iconFor(workout.type),
-                    color: zoneColor, size: 18),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      Strings.workoutTypeLabel(workout.typeLabel),
-                      style: AppTheme.bodyLarge(weight: FontWeight.w600)
-                          .copyWith(fontSize: 15),
-                    ),
-                    Text(
-                      '${workout.dateLabel} · ${workout.durationLabel}',
-                      style: AppTheme.caption(),
-                    ),
-                  ],
-                ),
-              ),
-              ZoneBadge(zone: workout.dominantZone, height: 22),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(3),
-            child: SizedBox(
-              height: 6,
-              child: Row(
-                children: [
-                  for (int z = 0; z <= 5; z++)
-                    if (workout.zoneDist[z] > 0)
-                      Expanded(
-                        flex: workout.zoneDist[z],
-                        child: Container(color: AppColors.zoneColor(z)),
-                      ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              _MiniStat(label: Strings.statAvg, value: '${workout.avgHr}'),
-              const SizedBox(width: AppSpacing.md),
-              _MiniStat(label: Strings.statMax, value: '${workout.maxHr}'),
-              const SizedBox(width: AppSpacing.md),
-              _MiniStat(label: 'KCAL', value: '${workout.calories}'),
-              const Spacer(),
-              _MiniStat(label: 'TRIMP', value: '${workout.trimp}'),
-            ],
-          ),
-        ],
+  bool get _isGroup => workout.type.toLowerCase() == 'group';
+
+  void _openSummary(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => WorkoutSummaryScreen(
+          profile: profile,
+          durationMin: workout.durationMin,
+          avgBpm: workout.avgHr,
+          maxBpm: workout.maxHr,
+          calories: workout.calories,
+          trimp: workout.trimp,
+          isGroup: _isGroup,
+          zoneDist: workout.zoneDist,
+          isHistorical: true,
+        ),
       ),
     );
   }
 
-  IconData _iconFor(String type) {
-    switch (type.toLowerCase()) {
-      case 'hiit':
-        return Icons.bolt_rounded;
-      case 'strength':
-        return Icons.fitness_center_rounded;
-      case 'cardio':
-        return Icons.directions_run_rounded;
-      case 'cycling':
-        return Icons.directions_bike_rounded;
-      case 'yoga':
-        return Icons.self_improvement_rounded;
-      default:
-        return Icons.favorite_rounded;
-    }
+  @override
+  Widget build(BuildContext context) {
+    final zoneColor = AppColors.zoneColor(workout.dominantZone);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _openSummary(context),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.bgSecondary,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: zoneColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    child: Icon(
+                      _isGroup
+                          ? Icons.groups_rounded
+                          : Icons.directions_run_rounded,
+                      color: zoneColor,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          Strings.groupSoloLabel(workout.typeLabel),
+                          style: AppTheme.bodyLarge(
+                            weight: FontWeight.w600,
+                          ).copyWith(fontSize: 15),
+                        ),
+                        Text(
+                          '${workout.dateLabel} · ${workout.durationLabel}',
+                          style: AppTheme.caption(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ZoneBadge(zone: workout.dominantZone, height: 22),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: SizedBox(
+                  height: 6,
+                  child: Row(
+                    children: [
+                      for (int z = 0; z <= 5; z++)
+                        if (workout.zoneDist[z] > 0)
+                          Expanded(
+                            flex: workout.zoneDist[z],
+                            child: Container(color: AppColors.zoneColor(z)),
+                          ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  _MiniStat(label: Strings.statAvg, value: '${workout.avgHr}'),
+                  const SizedBox(width: AppSpacing.md),
+                  _MiniStat(label: Strings.statMax, value: '${workout.maxHr}'),
+                  const SizedBox(width: AppSpacing.md),
+                  _MiniStat(label: 'KCAL', value: '${workout.calories}'),
+                  const Spacer(),
+                  _MiniStat(label: 'TRIMP', value: '${workout.trimp}'),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

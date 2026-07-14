@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/strings.dart';
@@ -34,18 +35,18 @@ class InviteSheet extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Container(
-                    width: 180,
-                    height: 180,
-                    decoration: BoxDecoration(
-                      color: AppColors.bgPrimary,
-                      borderRadius: BorderRadius.circular(8),
+                  QrImageView(
+                    data: code,
+                    version: QrVersions.auto,
+                    size: 180,
+                    backgroundColor: Colors.white,
+                    eyeStyle: const QrEyeStyle(
+                      eyeShape: QrEyeShape.square,
+                      color: Colors.black,
                     ),
-                    alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.qr_code_2_rounded,
-                      size: 160,
-                      color: Colors.white,
+                    dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.square,
+                      color: Colors.black,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),

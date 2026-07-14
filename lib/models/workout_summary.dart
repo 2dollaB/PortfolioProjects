@@ -9,7 +9,7 @@ class WorkoutSummary {
   /// Owner uid — only populated by cross-athlete reads (session detail),
   /// where attribution matters; per-user queries leave it null.
   final String? userId;
-  final String type; // raw enum name, e.g. 'hiit'
+  final String type; // 'group' | 'solo'
   final DateTime startTime;
   final DateTime endTime;
   final int avgHr;
@@ -45,7 +45,6 @@ class WorkoutSummary {
 
   String get typeLabel {
     if (type.isEmpty) return 'Workout';
-    if (type.toLowerCase() == 'hiit') return 'HIIT';
     return type[0].toUpperCase() + type.substring(1);
   }
 
@@ -67,7 +66,7 @@ class WorkoutSummary {
     return WorkoutSummary(
       id: id,
       userId: d['userId'] as String?,
-      type: d['type'] as String? ?? 'free',
+      type: d['type'] as String? ?? 'solo',
       startTime: ts(d['startTime']),
       endTime: ts(d['endTime']),
       avgHr: (d['avgHr'] as num?)?.toInt() ?? 0,
@@ -75,9 +74,8 @@ class WorkoutSummary {
       calories: (d['calories'] as num?)?.toInt() ?? 0,
       trimp: (d['trimp'] as num?)?.toInt() ?? 0,
       dominantZone: (d['dominantZone'] as num?)?.toInt() ?? 1,
-      zoneDist: (d['zoneDist'] as List?)
-              ?.map((e) => (e as num).toInt())
-              .toList() ??
+      zoneDist:
+          (d['zoneDist'] as List?)?.map((e) => (e as num).toInt()).toList() ??
           const [0, 0, 0, 0, 0, 0],
     );
   }

@@ -5,7 +5,6 @@ import '../config/strings.dart';
 import '../config/theme.dart';
 import '../services/session_store.dart';
 import '../widgets/mobile_frame.dart';
-import '../widgets/workout_type_sheet.dart';
 import 'session_detail_screen.dart';
 
 /// Full session history with filters. Opened from trainer home → "See all".
@@ -17,7 +16,6 @@ class AllSessionsScreen extends StatefulWidget {
 }
 
 class _AllSessionsScreenState extends State<AllSessionsScreen> {
-  WorkoutType? _typeFilter;
   String _timeFilter = 'All';
 
   String _relativeDate(DateTime d) {
@@ -31,15 +29,14 @@ class _AllSessionsScreenState extends State<AllSessionsScreen> {
 
   // Time filter uses stable internal keys; only the displayed label is localized.
   String _timeLabel(String key) => switch (key) {
-        'This week' => Strings.filterThisWeek,
-        'This month' => Strings.filterThisMonth,
-        _ => Strings.filterAll,
-      };
+    'This week' => Strings.filterThisWeek,
+    'This month' => Strings.filterThisMonth,
+    _ => Strings.filterAll,
+  };
 
   List<SessionRecord> _filter(List<SessionRecord> all) {
     final now = DateTime.now();
     return all.where((r) {
-      if (_typeFilter != null && r.type != _typeFilter) return false;
       switch (_timeFilter) {
         case 'This week':
           return now.difference(r.startedAt).inDays <= 7;
@@ -83,28 +80,19 @@ class _AllSessionsScreenState extends State<AllSessionsScreen> {
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         children: [
-                          for (final f in const ['All', 'This week', 'This month'])
+                          for (final f in const [
+                            'All',
+                            'This week',
+                            'This month',
+                          ])
                             Padding(
-                              padding: const EdgeInsets.only(right: AppSpacing.xs),
+                              padding: const EdgeInsets.only(
+                                right: AppSpacing.xs,
+                              ),
                               child: _FilterChip(
                                 label: _timeLabel(f),
                                 selected: _timeFilter == f,
                                 onTap: () => setState(() => _timeFilter = f),
-                              ),
-                            ),
-                          Container(
-                            width: 1,
-                            margin: const EdgeInsets.symmetric(horizontal: 6),
-                            color: AppColors.border,
-                          ),
-                          for (final t in WorkoutType.values)
-                            Padding(
-                              padding: const EdgeInsets.only(right: AppSpacing.xs),
-                              child: _FilterChip(
-                                label: Strings.workoutTypeLabel(t.displayName),
-                                selected: _typeFilter == t,
-                                onTap: () => setState(() =>
-                                    _typeFilter = _typeFilter == t ? null : t),
                               ),
                             ),
                         ],
@@ -134,8 +122,10 @@ class _AllSessionsScreenState extends State<AllSessionsScreen> {
                             itemCount: filtered.length,
                             separatorBuilder: (_, _) =>
                                 const SizedBox(height: AppSpacing.xs),
-                            itemBuilder: (context, i) =>
-                                _SessionRow(record: filtered[i], formatDate: _relativeDate),
+                            itemBuilder: (context, i) => _SessionRow(
+                              record: filtered[i],
+                              formatDate: _relativeDate,
+                            ),
                           ),
                   ),
                 ],
@@ -179,15 +169,16 @@ class _FilterChip extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: AppTheme.caption(
-              color: selected
-                  ? AppColors.brandRed
-                  : AppColors.textSecondary,
-            ).copyWith(
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              fontSize: 13,
-              height: 1.2,
-            ),
+            style:
+                AppTheme.caption(
+                  color: selected
+                      ? AppColors.brandRed
+                      : AppColors.textSecondary,
+                ).copyWith(
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: 13,
+                  height: 1.2,
+                ),
           ),
         ),
       ),
@@ -227,8 +218,11 @@ class _SessionRow extends StatelessWidget {
                   color: AppColors.brandRed.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(record.type.icon,
-                    color: AppColors.brandRed, size: 20),
+                child: Icon(
+                  Icons.groups_rounded,
+                  color: AppColors.brandRed,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -237,8 +231,9 @@ class _SessionRow extends StatelessWidget {
                   children: [
                     Text(
                       record.name,
-                      style: AppTheme.bodyLarge(weight: FontWeight.w600)
-                          .copyWith(fontSize: 15),
+                      style: AppTheme.bodyLarge(
+                        weight: FontWeight.w600,
+                      ).copyWith(fontSize: 15),
                     ),
                     Text(
                       '${formatDate(record.startedAt)} · ${record.athleteCount} ${Strings.athletesLower} · ${record.durationLabel}',
@@ -250,14 +245,19 @@ class _SessionRow extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('${record.groupTrimp}',
-                      style: AppTheme.statNumber(fontSize: 18)),
+                  Text(
+                    '${record.groupTrimp}',
+                    style: AppTheme.statNumber(fontSize: 18),
+                  ),
                   Text('TRIMP', style: AppTheme.micro()),
                 ],
               ),
               const SizedBox(width: AppSpacing.xs),
-              Icon(Icons.arrow_forward_ios_rounded,
-                  size: 12, color: AppColors.textTertiary),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 12,
+                color: AppColors.textTertiary,
+              ),
             ],
           ),
         ),

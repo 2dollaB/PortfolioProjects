@@ -35,6 +35,15 @@ service cloud.firestore {
         && request.auth.uid in studioData(studioId).memberUids;
     }
 
+    // A TV board paired to this studio (its anonymous uid was added to
+    // studios/{id}.tvUids by the trainer during pairing). Grants read-only
+    // access to the studio's live session + HR board so the wall screen can
+    // render it without a full trainer login.
+    function isStudioTv(studioId) {
+      return isSignedIn()
+        && request.auth.uid in studioData(studioId).get('tvUids', []);
+    }
+
     // An athlete may add ONLY themselves to a studio's memberUids (join flow).
     // Everything else on the studio doc stays owner-only.
     // TODO(Phase D): move joins to the inviteAthleteToStudio Cloud Function and
@@ -85,6 +94,7 @@ service cloud.firestore {
     match /studios/{studioId} {
       allow read: if isStudioMember(studioId)
         || (isSignedIn() && resource.data.ownerUid == request.auth.uid)
+        || isStudioTv(studioId)
         || isAdmin();
       allow create: if isSignedIn()
         && request.resource.data.ownerUid == request.auth.uid;
@@ -102,6 +112,21 @@ service cloud.firestore {
     // belong to (the studios doc itself stays members-only). Exposes only the
     // mapping, no member data. Created/removed by the owning trainer.
     match /invite_codes/{code} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && get(/databases/$(database)/documents/studios/$(request.resource.data.studioId))
+            .data.ownerUid == request.auth.uid;
+      allow delete: if isSignedIn()
+        && get(/databases/$(database)/documents/studios/$(resource.data.studioId))
+            .data.ownerUid == request.auth.uid;
+    }
+
+    // ── session_codes/{code} ─────────────────────────────────
+    // Code → sessionId lookup so an athlete can resolve which live session to
+    // join (sessions themselves stay members-only). Exposes only the mapping.
+    // The client still gets refused by the sessions/hr rules if they aren't a
+    // member of the session's studio. Created/removed by the session's trainer.
+    match /session_codes/{code} {
       allow read: if isSignedIn();
       allow create: if isSignedIn()
         && get(/databases/$(database)/documents/studios/$(request.resource.data.studioId))
@@ -146,7 +171,9 @@ service cloud.firestore {
     // ── sessions/{sessionId} ─────────────────────────────────
     // Only the studio owner hosts sessions; members read them.
     match /sessions/{sessionId} {
-      allow read: if isStudioMember(resource.data.studioId) || isAdmin();
+      allow read: if isStudioMember(resource.data.studioId)
+        || isStudioTv(resource.data.studioId)
+        || isAdmin();
       allow create: if isSignedIn()
         && request.resource.data.trainerUid == request.auth.uid
         && studioData(request.resource.data.studioId).ownerUid == request.auth.uid;
@@ -158,7 +185,8 @@ service cloud.firestore {
       // though canWriteHr now blocks them from posting new readings.
       match /hr/{uid} {
         allow read: if isSignedIn()
-          && isStudioMember(get(/databases/$(database)/documents/sessions/$(sessionId)).data.studioId);
+          && (isStudioMember(get(/databases/$(database)/documents/sessions/$(sessionId)).data.studioId)
+              || isStudioTv(get(/databases/$(database)/documents/sessions/$(sessionId)).data.studioId));
         allow create, update: if canWriteHr(sessionId, uid);
         allow delete: if isUser(uid);
       }
@@ -211,6 +239,31 @@ service cloud.firestore {
     // the member never sees them.
     match /trainer_notes/{trainerUid}/members/{memberUid} {
       allow read, write: if isUser(trainerUid);
+    }
+
+    // ── tv_sessions/{code} ────────────────────────────────────
+    // Phone ⇄ TV pairing handshake. The TV (anonymous auth) creates its own
+    // doc carrying its uid + a short code; the trainer's phone stamps the
+    // studioId onto it to complete the link. Exposes only the uid/studio
+    // mapping — the board data itself is gated by the studio's tvUids grant.
+    match /tv_sessions/{code} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.tvUid == request.auth.uid;
+      // The pairing phone may only stamp studioId — nothing else changes.
+      allow update: if isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studioId']);
+      allow delete: if isSignedIn()
+        && resource.data.tvUid == request.auth.uid;
+    }
+
+    // ── clock_sync/{uid} ──────────────────────────────────────
+    // Throwaway per-device doc used once to measure local-clock vs.
+    // Firestore-server-clock skew, so a group session's synced countdown
+    // lands on the same real-world instant on every phone (see ClockSync).
+    // Keyed by uid so a user can only touch their own doc.
+    match /clock_sync/{uid} {
+      allow read, create, update, delete: if isUser(uid);
     }
 
     // ── audit_log/{entryId} ──────────────────────────────────

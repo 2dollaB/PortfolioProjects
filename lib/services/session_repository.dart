@@ -1,5 +1,7 @@
+import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/cloud_session.dart';
+import 'clock_sync.dart';
 
 /// Writes/reads `sessions/{id}` and its `hr/{uid}` live-HR subcollection.
 /// Rules: only the studio owner creates/updates sessions; members read;
@@ -10,8 +12,17 @@ class SessionRepository {
   static final CollectionReference<Map<String, dynamic>> _sessions =
       FirebaseFirestore.instance.collection('sessions');
 
+  static final CollectionReference<Map<String, dynamic>> _sessionCodes =
+      FirebaseFirestore.instance.collection('session_codes');
+
+  static String _generateJoinCode() {
+    final r = math.Random();
+    return List.generate(6, (_) => r.nextInt(10)).join();
+  }
+
   /// Opens a session in [studioId] in the **lobby** state — joinable (status
-  /// 'live') but the workout clock hasn't started yet. Returns the new id.
+  /// 'live') but the workout clock hasn't started yet. Athletes join by
+  /// entering/scanning the returned 6-digit [joinCode]. Returns the new id.
   static Future<String> start({
     required String studioId,
     required String trainerUid,
@@ -24,11 +35,13 @@ class SessionRepository {
     // Enforce one live session per studio: end any leftovers first (e.g. a
     // session whose monitor tab was closed without ending it).
     await _endExistingLive(studioId);
+    final joinCode = _generateJoinCode();
     final ref = await _sessions.add({
       'studioId': studioId,
       'trainerUid': trainerUid,
       'name': name,
       'type': type,
+      'joinCode': joinCode,
       'status': 'live',
       'startedAt': FieldValue.serverTimestamp(),
       'runState': 'lobby',
@@ -40,7 +53,27 @@ class SessionRepository {
       'restSec': restSec,
       'rounds': rounds,
     });
+    // Code → session lookup (rule checks the caller owns the studio, so it must
+    // run after the session write above).
+    await _sessionCodes.doc(joinCode).set({
+      'sessionId': ref.id,
+      'studioId': studioId,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
     return ref.id;
+  }
+
+  /// Resolves a 6-digit session code to its live session, or null if the code
+  /// is unknown or its session is no longer live. Membership is enforced
+  /// separately (the caller checks studio membership; rules block the rest).
+  static Future<CloudSession?> resolveByCode(String code) async {
+    final lookup = await _sessionCodes.doc(code.trim()).get();
+    final sessionId = lookup.data()?['sessionId'] as String?;
+    if (sessionId == null) return null;
+    final doc = await _sessions.doc(sessionId).get();
+    if (!doc.exists) return null;
+    final session = CloudSession.fromDoc(doc.id, doc.data()!);
+    return session.isLive ? session : null;
   }
 
   /// Ends every still-live session in the studio (used before opening a new
@@ -60,12 +93,16 @@ class SessionRepository {
     }
   }
 
-  /// Trainer presses Start — the workout clock begins for everyone.
+  /// Trainer presses Start — writes a shared future instant
+  /// ([CloudSession.countdownDuration] out) as `runningSince` so every
+  /// athlete's device (and the trainer's own) counts down to the exact same
+  /// moment instead of each starting its own untimed countdown.
   static Future<void> beginWorkout(String sessionId) {
+    final startsAt = ClockSync.now().add(CloudSession.countdownDuration);
     return _sessions.doc(sessionId).update({
       'runState': 'running',
       'workoutStartedAt': FieldValue.serverTimestamp(),
-      'runningSince': FieldValue.serverTimestamp(),
+      'runningSince': Timestamp.fromDate(startsAt),
       'accumulatedMs': 0,
     });
   }
@@ -97,8 +134,10 @@ class SessionRepository {
 
   /// Streams a single session doc (lifecycle for athletes/TV/monitor).
   static Stream<CloudSession?> watch(String sessionId) {
-    return _sessions.doc(sessionId).snapshots().map(
-        (d) => d.exists ? CloudSession.fromDoc(d.id, d.data()!) : null);
+    return _sessions
+        .doc(sessionId)
+        .snapshots()
+        .map((d) => d.exists ? CloudSession.fromDoc(d.id, d.data()!) : null);
   }
 
   static Future<void> end(String sessionId) {
@@ -118,37 +157,46 @@ class SessionRepository {
         .where('status', isEqualTo: 'live')
         .limit(1)
         .snapshots()
-        .map((snap) => snap.docs.isEmpty
-            ? null
-            : CloudSession.fromDoc(snap.docs.first.id, snap.docs.first.data()));
+        .map(
+          (snap) => snap.docs.isEmpty
+              ? null
+              : CloudSession.fromDoc(
+                  snap.docs.first.id,
+                  snap.docs.first.data(),
+                ),
+        );
   }
 
   /// One-shot: sessions started on/after [since], newest first. Used for the
   /// trainer-home "Active today" / "Sessions / wk" stats. Reuses the
   /// studioId+startedAt index (equality on studioId, range on startedAt).
   static Future<List<CloudSession>> fetchSince(
-      String studioId, DateTime since) async {
+    String studioId,
+    DateTime since,
+  ) async {
     final snap = await _sessions
         .where('studioId', isEqualTo: studioId)
         .where('startedAt', isGreaterThanOrEqualTo: Timestamp.fromDate(since))
         .orderBy('startedAt', descending: true)
         .get();
-    return snap.docs
-        .map((d) => CloudSession.fromDoc(d.id, d.data()))
-        .toList();
+    return snap.docs.map((d) => CloudSession.fromDoc(d.id, d.data())).toList();
   }
 
   /// Past + current sessions, newest first (studioId+startedAt index).
-  static Stream<List<CloudSession>> watchRecent(String studioId,
-      {int limit = 20}) {
+  static Stream<List<CloudSession>> watchRecent(
+    String studioId, {
+    int limit = 20,
+  }) {
     return _sessions
         .where('studioId', isEqualTo: studioId)
         .orderBy('startedAt', descending: true)
         .limit(limit)
         .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => CloudSession.fromDoc(d.id, d.data()))
-            .toList());
+        .map(
+          (snap) => snap.docs
+              .map((d) => CloudSession.fromDoc(d.id, d.data()))
+              .toList(),
+        );
   }
 
   /// Athlete-side ~1/sec heartbeat into the live board. Merge-set so the
@@ -185,9 +233,14 @@ class SessionRepository {
 
   /// The live HR board (trainer monitor / TV view).
   static Stream<List<SessionHrEntry>> watchHr(String sessionId) {
-    return _sessions.doc(sessionId).collection('hr').snapshots().map(
-        (snap) => snap.docs
-            .map((d) => SessionHrEntry.fromDoc(d.id, d.data()))
-            .toList());
+    return _sessions
+        .doc(sessionId)
+        .collection('hr')
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((d) => SessionHrEntry.fromDoc(d.id, d.data()))
+              .toList(),
+        );
   }
 }

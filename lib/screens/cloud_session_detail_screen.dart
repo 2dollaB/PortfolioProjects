@@ -10,7 +10,6 @@ import '../services/user_repository.dart';
 import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/mobile_frame.dart';
-import '../widgets/workout_type_sheet.dart';
 import 'session_detail_screen.dart';
 
 /// Post-session analytics for an ended cloud session.
@@ -45,12 +44,16 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
       _failed = false;
     });
     try {
-      final workouts =
-          await WorkoutRepository.fetchBySession(widget.session.id);
+      final workouts = await WorkoutRepository.fetchBySession(
+        widget.session.id,
+      );
       Map<String, String> names = const {};
       if (workouts.isNotEmpty) {
-        final uids =
-            workouts.map((w) => w.userId).whereType<String>().toSet().toList();
+        final uids = workouts
+            .map((w) => w.userId)
+            .whereType<String>()
+            .toSet()
+            .toList();
         final profiles = await UserRepository.loadMany(uids);
         names = {for (final p in profiles) p.id: p.name};
       }
@@ -93,18 +96,13 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
     return SessionRecord(
       id: s.id,
       name: s.name,
-      type: WorkoutType.values.firstWhere(
-        (t) => t.name == s.type,
-        orElse: () => WorkoutType.hiit,
-      ),
       startedAt: s.startedAt,
       endedAt: s.endedAt ?? s.startedAt,
       durationMin: s.duration.inMinutes,
       athleteCount: n,
-      avgGroupBpm:
-          (results.fold<int>(0, (sum, r) => sum + r.avgBpm) / n).round(),
-      groupTrimp:
-          (results.fold<int>(0, (sum, r) => sum + r.trimp) / n).round(),
+      avgGroupBpm: (results.fold<int>(0, (sum, r) => sum + r.avgBpm) / n)
+          .round(),
+      groupTrimp: (results.fold<int>(0, (sum, r) => sum + r.trimp) / n).round(),
       results: results,
     );
   }
@@ -129,8 +127,9 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
             child: _loading
                 ? const CircularProgressIndicator()
                 : Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xl,
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -147,7 +146,8 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
                               ? Strings.couldNotLoadResults
                               : Strings.noSavedWorkoutsYet,
                           style: AppTheme.bodyLarge(
-                              color: AppColors.textSecondary),
+                            color: AppColors.textSecondary,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: AppSpacing.lg),
@@ -160,8 +160,8 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
                         BeatPrimaryButton(
                           label: Strings.backToHome,
                           icon: Icons.home_rounded,
-                          onPressed: () => Navigator.of(context)
-                              .popUntil((r) => r.isFirst),
+                          onPressed: () =>
+                              Navigator.of(context).popUntil((r) => r.isFirst),
                         ),
                       ],
                     ),

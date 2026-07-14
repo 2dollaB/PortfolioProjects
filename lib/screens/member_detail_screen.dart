@@ -25,8 +25,10 @@ class MemberDetailScreen extends StatefulWidget {
   final UserProfile? profile;
 
   const MemberDetailScreen({super.key, this.member, this.profile})
-      : assert((member == null) != (profile == null),
-            'Pass exactly one of member/profile');
+    : assert(
+        (member == null) != (profile == null),
+        'Pass exactly one of member/profile',
+      );
 
   @override
   State<MemberDetailScreen> createState() => _MemberDetailScreenState();
@@ -61,18 +63,31 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
   Future<void> _saveNotes() async {
     final p = widget.profile;
     final uid = AuthService.currentUid;
-    var message = Strings.notesSaved;
     if (p != null && uid != null) {
       try {
         await TrainerNotesRepository.save(uid, p.id, _notesCtrl.text.trim());
       } catch (_) {
-        message = Strings.notesSaveFailed;
+        // Save failed — stay on the screen and let the trainer retry.
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(Strings.notesSaveFailed),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
       }
     }
+    // Saved — back to the members list, with a confirmation there.
+    // Capture the (app-root) messenger before popping so we don't touch a
+    // deactivated context.
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.of(context).pop();
+    messenger.showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(Strings.notesSaved),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -92,14 +107,17 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
   /// 7×12 cell intensities (0 = rest day) from real workouts: cell brightness
   /// follows that day's TRIMP relative to the member's best day.
   List<List<double>> _heatmapFrom(List<WorkoutSummary> all) {
-    final firstCol = _weekStart.subtract(Duration(days: 7 * (_heatmapWeeks - 1)));
+    final firstCol = _weekStart.subtract(
+      Duration(days: 7 * (_heatmapWeeks - 1)),
+    );
     final byDay = <DateTime, int>{};
     for (final w in all) {
       final d = DateTime(w.startTime.year, w.startTime.month, w.startTime.day);
       byDay[d] = (byDay[d] ?? 0) + w.trimp;
     }
-    final maxTrimp =
-        byDay.values.isEmpty ? 1 : byDay.values.reduce(math.max).clamp(1, 1 << 31);
+    final maxTrimp = byDay.values.isEmpty
+        ? 1
+        : byDay.values.reduce(math.max).clamp(1, 1 << 31);
     return List.generate(7, (row) {
       return List.generate(_heatmapWeeks, (col) {
         final day = firstCol.add(Duration(days: col * 7 + row));
@@ -112,10 +130,14 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
   /// Weekly TRIMP sums, oldest → newest, current week last.
   List<int> _trendFrom(List<WorkoutSummary> all) {
     return List.generate(_trendWeeks, (i) {
-      final start = _weekStart.subtract(Duration(days: 7 * (_trendWeeks - 1 - i)));
+      final start = _weekStart.subtract(
+        Duration(days: 7 * (_trendWeeks - 1 - i)),
+      );
       final end = start.add(const Duration(days: 7));
       return all
-          .where((w) => !w.startTime.isBefore(start) && w.startTime.isBefore(end))
+          .where(
+            (w) => !w.startTime.isBefore(start) && w.startTime.isBefore(end),
+          )
           .fold(0, (s, w) => s + w.trimp);
     });
   }
@@ -168,8 +190,8 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
           lastSeen: !loaded
               ? '…'
               : all.isEmpty
-                  ? Strings.noWorkoutsShort
-                  : Strings.lastWorkout(all.first.dateLabel),
+              ? Strings.noWorkoutsShort
+              : Strings.lastWorkout(all.first.dateLabel),
           active: false,
           sessions: loaded ? '${all.length}' : '–',
           avgTrimp: loaded && all.isNotEmpty ? '${avg((w) => w.trimp)}' : '–',
@@ -197,147 +219,152 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
   }) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.of(context).pop(),
+        backgroundColor: AppColors.bgPrimary,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_horiz_rounded),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl,
-          ),
-          children: [
-            // Profile header
-            Row(
-              children: [
-                Stack(
-                  children: [
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.brandRed.withValues(alpha: 0.18),
-                        border: Border.all(
-                          color: AppColors.brandRed.withValues(alpha: 0.4),
-                          width: 1.5,
+        body: SafeArea(
+          bottom: false,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              0,
+              AppSpacing.xl,
+              AppSpacing.xl,
+            ),
+            children: [
+              // Profile header
+              Row(
+                children: [
+                  Stack(
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.brandRed.withValues(alpha: 0.18),
+                          border: Border.all(
+                            color: AppColors.brandRed.withValues(alpha: 0.4),
+                            width: 1.5,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          HomeHeader.initialsOf(name),
+                          style: AppTheme.h1(
+                            color: AppColors.brandRed,
+                          ).copyWith(fontWeight: FontWeight.w800, fontSize: 26),
                         ),
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        HomeHeader.initialsOf(name),
-                        style: AppTheme.h1(color: AppColors.brandRed)
-                            .copyWith(fontWeight: FontWeight.w800, fontSize: 26),
-                      ),
-                    ),
-                    if (active)
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: AppColors.success,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.bgPrimary,
-                              width: 2,
+                      if (active)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: AppColors.success,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.bgPrimary,
+                                width: 2,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name, style: AppTheme.h1().copyWith(fontSize: 22)),
-                      const SizedBox(height: 2),
-                      Text(email, style: AppTheme.caption()),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            active ? Icons.circle : Icons.access_time_rounded,
-                            size: 10,
-                            color: active
-                                ? AppColors.success
-                                : AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            lastSeen,
-                            style: AppTheme.caption(
+                    ],
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name, style: AppTheme.h1().copyWith(fontSize: 22)),
+                        const SizedBox(height: 2),
+                        Text(email, style: AppTheme.caption()),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              active ? Icons.circle : Icons.access_time_rounded,
+                              size: 10,
                               color: active
                                   ? AppColors.success
                                   : AppColors.textSecondary,
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(width: 4),
+                            Text(
+                              lastSeen,
+                              style: AppTheme.caption(
+                                color: active
+                                    ? AppColors.success
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            // Quick stats
-            Row(
-              children: [
-                Expanded(child: StatChip(label: Strings.sessions, value: sessions)),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(child: StatChip(label: Strings.avgTrimp, value: avgTrimp)),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(
-                    child: StatChip(label: Strings.avgHr, value: avgHr, unit: 'bpm')),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-            Text(Strings.attendance12w, style: AppTheme.h2()),
-            const SizedBox(height: AppSpacing.sm),
-            _AttendanceHeatmap(intensities: heatmap),
-
-            const SizedBox(height: AppSpacing.lg),
-            Text(Strings.trimpTrend8w, style: AppTheme.h2()),
-            const SizedBox(height: AppSpacing.sm),
-            _TrimpTrend(values: trend),
-
-            const SizedBox(height: AppSpacing.lg),
-            Text(Strings.trainerNotes, style: AppTheme.h2()),
-            Text(Strings.onlyYouSee, style: AppTheme.caption()),
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: _notesCtrl,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: Strings.addAthleteNote,
+                ],
               ),
-            ),
+              const SizedBox(height: AppSpacing.lg),
 
-            const SizedBox(height: AppSpacing.lg),
-            BeatPrimaryButton(
-              label: Strings.saveNotes,
-              icon: Icons.check_rounded,
-              onPressed: _saveNotes,
-            ),
-          ],
+              // Quick stats
+              Row(
+                children: [
+                  Expanded(
+                    child: StatChip(label: Strings.sessions, value: sessions),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: StatChip(label: Strings.avgTrimp, value: avgTrimp),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: StatChip(
+                      label: Strings.avgHr,
+                      value: avgHr,
+                      unit: 'bpm',
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+              Text(Strings.attendance12w, style: AppTheme.h2()),
+              const SizedBox(height: AppSpacing.sm),
+              _AttendanceHeatmap(intensities: heatmap),
+
+              const SizedBox(height: AppSpacing.lg),
+              Text(Strings.trimpTrend8w, style: AppTheme.h2()),
+              const SizedBox(height: AppSpacing.sm),
+              _TrimpTrend(values: trend),
+
+              const SizedBox(height: AppSpacing.lg),
+              Text(Strings.trainerNotes, style: AppTheme.h2()),
+              Text(Strings.onlyYouSee, style: AppTheme.caption()),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: _notesCtrl,
+                maxLines: 4,
+                decoration: InputDecoration(hintText: Strings.addAthleteNote),
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+              BeatPrimaryButton(
+                label: Strings.saveNotes,
+                icon: Icons.check_rounded,
+                onPressed: _saveNotes,
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -370,9 +397,7 @@ class _AttendanceHeatmap extends StatelessWidget {
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.all(1.5),
-                          child: _Cell(
-                            intensity: intensities[row][col],
-                          ),
+                          child: _Cell(intensity: intensities[row][col]),
                         ),
                       ),
                   ],
@@ -469,8 +494,7 @@ class _TrimpLinePainter extends CustomPainter {
     final fill = Path();
     for (int i = 0; i < values.length; i++) {
       final x = (i / (values.length - 1)) * size.width;
-      final y = size.height -
-          ((values[i] - minV) / range) * size.height * 0.85;
+      final y = size.height - ((values[i] - minV) / range) * size.height * 0.85;
       if (i == 0) {
         path.moveTo(x, y);
         fill.moveTo(x, size.height);
@@ -480,11 +504,7 @@ class _TrimpLinePainter extends CustomPainter {
         fill.lineTo(x, y);
       }
       // Dot at each point
-      canvas.drawCircle(
-        Offset(x, y),
-        3,
-        Paint()..color = AppColors.warning,
-      );
+      canvas.drawCircle(Offset(x, y), 3, Paint()..color = AppColors.warning);
     }
     fill.lineTo(size.width, size.height);
     fill.close();

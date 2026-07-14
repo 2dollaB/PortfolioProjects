@@ -11,6 +11,7 @@ import '../services/user_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/logo_heartbeat.dart';
 import '../widgets/mobile_frame.dart';
+import '../widgets/qr_scan_screen.dart';
 
 /// Athlete joins a studio with the 6-digit invite code from their trainer.
 /// Production-only: resolves the code, self-joins the studio, sets studioId.
@@ -39,6 +40,29 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
       setState(() => _error = Strings.enterCodeError);
       return;
     }
+    await _joinWithCode(code);
+  }
+
+  /// Opens the camera, extracts the 6-digit code from a scanned QR and joins.
+  Future<void> _scan() async {
+    final raw = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => QrScanScreen(title: Strings.scanToJoin),
+      ),
+    );
+    if (raw == null || !mounted) return;
+    final match = RegExp(r'\d{6}').firstMatch(raw);
+    if (match == null) {
+      setState(() => _error = Strings.qrNotAStudioCode);
+      return;
+    }
+    final code = match.group(0)!;
+    _code.text = code;
+    await _joinWithCode(code);
+  }
+
+  /// Shared join path used by both manual entry and QR scan.
+  Future<void> _joinWithCode(String code) async {
     final uid = AuthService.currentUid;
     if (uid == null) {
       setState(() => _error = Strings.notSignedIn);
@@ -145,6 +169,12 @@ class _JoinStudioScreenState extends State<JoinStudioScreen> {
                   icon: Icons.login_rounded,
                   loading: _loading,
                   onPressed: _join,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                BeatSecondaryButton(
+                  label: Strings.scanToJoin,
+                  icon: Icons.qr_code_scanner_rounded,
+                  onPressed: _loading ? null : _scan,
                 ),
               ],
             ),

@@ -36,7 +36,7 @@ class MockData {
     MockWorkout(
       date: 'Today',
       daysAgo: 0,
-      type: 'HIIT',
+      type: 'Group',
       durationMin: 42,
       avgBpm: 156,
       maxBpm: 184,
@@ -48,7 +48,7 @@ class MockData {
     MockWorkout(
       date: 'Yesterday',
       daysAgo: 1,
-      type: 'Strength',
+      type: 'Solo',
       durationMin: 55,
       avgBpm: 132,
       maxBpm: 168,
@@ -60,7 +60,7 @@ class MockData {
     MockWorkout(
       date: 'Mon 19',
       daysAgo: 3,
-      type: 'Endurance',
+      type: 'Group',
       durationMin: 72,
       avgBpm: 142,
       maxBpm: 162,
@@ -72,7 +72,7 @@ class MockData {
     MockWorkout(
       date: 'Sat 17',
       daysAgo: 5,
-      type: 'CrossFit',
+      type: 'Solo',
       durationMin: 38,
       avgBpm: 161,
       maxBpm: 189,

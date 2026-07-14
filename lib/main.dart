@@ -20,12 +20,26 @@ import 'screens/profile_setup_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/role_select_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/tv_board_entry.dart';
 import 'services/auth_service.dart';
 import 'services/ble_hr_service.dart';
 import 'services/foreground_service.dart';
 import 'services/mock_data.dart';
 import 'services/studio_repository.dart';
 import 'services/user_repository.dart';
+
+/// Public URL of the hosted web app — the "Show on TV" QR points at
+/// [kTvBoardUrl] so a smart-TV browser lands on the board.
+const String kWebAppUrl = 'https://beatsync-prod.web.app';
+const String kTvBoardUrl = '$kWebAppUrl/#/tv';
+
+/// True when the web app was opened as a TV board (`…/#/tv` or `?tv=1`). In
+/// this mode [BeatSyncApp] shows [TvBoardEntry] — anonymous auth + a pairing
+/// code — instead of the normal login/app shell.
+final bool kTvMode =
+    kIsWeb &&
+    (Uri.base.fragment.contains('tv') ||
+        Uri.base.queryParameters.containsKey('tv'));
 
 Future<void> _initHeavyServices() async {
   if (FeatureFlags.prototypeMode) return;
@@ -38,14 +52,11 @@ Future<void> _initHeavyServices() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Crashlytics: report uncaught Flutter + platform errors from real
   // devices (web unsupported; skipped in the prototype demo).
   if (!kIsWeb && !FeatureFlags.prototypeMode) {
-    FlutterError.onError =
-        FirebaseCrashlytics.instance.recordFlutterFatalError;
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
     PlatformDispatcher.instance.onError = (error, stack) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
@@ -75,17 +86,20 @@ void main() async {
     initialThemeMode = saved == 'light'
         ? ThemeMode.light
         : saved == 'system'
-            ? ThemeMode.system
-            : ThemeMode.dark;
-    Strings.lang =
-        prefs.getString('app_lang') == 'hr' ? AppLang.hr : AppLang.en;
+        ? ThemeMode.system
+        : ThemeMode.dark;
+    Strings.lang = prefs.getString('app_lang') == 'hr'
+        ? AppLang.hr
+        : AppLang.en;
   }
   // Keep the color tokens in sync with the chosen mode before the first build,
   // so screens that read AppColors' semantic getters render the right palette.
   AppColors.brightness = brightnessForMode(initialThemeMode);
   applySystemOverlay(AppColors.brightness);
 
-  runApp(BeatSyncApp(key: BeatSyncApp.appKey, initialThemeMode: initialThemeMode));
+  runApp(
+    BeatSyncApp(key: BeatSyncApp.appKey, initialThemeMode: initialThemeMode),
+  );
 }
 
 /// System bars matching the app brightness: dark status icons on light
@@ -93,13 +107,15 @@ void main() async {
 /// nav bar in the semantic background instead of pinned dark.
 void applySystemOverlay(Brightness b) {
   final barIcons = b == Brightness.dark ? Brightness.light : Brightness.dark;
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: barIcons,
-    statusBarBrightness: b,
-    systemNavigationBarColor: AppColors.bgPrimary,
-    systemNavigationBarIconBrightness: barIcons,
-  ));
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: barIcons,
+      statusBarBrightness: b,
+      systemNavigationBarColor: AppColors.bgPrimary,
+      systemNavigationBarIconBrightness: barIcons,
+    ),
+  );
 }
 
 /// Resolves a [ThemeMode] to the concrete [Brightness] the UI should paint with
@@ -120,7 +136,8 @@ class BeatSyncApp extends StatefulWidget {
 
   const BeatSyncApp({super.key, this.initialThemeMode = ThemeMode.dark});
 
-  static final GlobalKey<BeatSyncAppState> appKey = GlobalKey<BeatSyncAppState>();
+  static final GlobalKey<BeatSyncAppState> appKey =
+      GlobalKey<BeatSyncAppState>();
 
   @override
   State<BeatSyncApp> createState() => BeatSyncAppState();
@@ -140,8 +157,9 @@ class BeatSyncAppState extends State<BeatSyncApp> {
   void setLang(AppLang lang) {
     Strings.lang = lang;
     setState(() {});
-    SharedPreferences.getInstance()
-        .then((p) => p.setString('app_lang', lang.code));
+    SharedPreferences.getInstance().then(
+      (p) => p.setString('app_lang', lang.code),
+    );
   }
 
   void setThemeMode(ThemeMode mode) {
@@ -153,8 +171,9 @@ class BeatSyncAppState extends State<BeatSyncApp> {
       ThemeMode.dark => 'dark',
       ThemeMode.system => 'system',
     };
-    SharedPreferences.getInstance()
-        .then((p) => p.setString('theme_mode', name));
+    SharedPreferences.getInstance().then(
+      (p) => p.setString('theme_mode', name),
+    );
   }
 
   @override
@@ -165,7 +184,9 @@ class BeatSyncAppState extends State<BeatSyncApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: _themeMode,
-      home: FeatureFlags.prototypeMode
+      home: kTvMode
+          ? const TvBoardEntry()
+          : FeatureFlags.prototypeMode
           ? const _PrototypeFlow()
           : const _ProductionFlow(),
     );
@@ -223,9 +244,9 @@ class _PrototypeFlowState extends State<_PrototypeFlow> {
     switch (_step) {
       case _Step.splash:
         return SplashScreen(
-          onDone: () => setState(() => _step = _onboardingDone
-              ? _Step.login
-              : _Step.onboarding),
+          onDone: () => setState(
+            () => _step = _onboardingDone ? _Step.login : _Step.onboarding,
+          ),
         );
 
       case _Step.onboarding:
@@ -276,13 +297,11 @@ class _PrototypeFlowState extends State<_PrototypeFlow> {
             _role = role;
             _step = _Step.home;
           }),
+          onExit: () => setState(() => _step = _Step.roleSelect),
         );
 
       case _Step.home:
-        return MainNavShell(
-          profile: _profile,
-          onSignOut: _signOut,
-        );
+        return MainNavShell(profile: _profile, onSignOut: _signOut);
     }
   }
 }
@@ -322,9 +341,9 @@ class _LoadingScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: AppColors.bgPrimary,
-        body: const Center(child: CircularProgressIndicator()),
-      );
+    backgroundColor: AppColors.bgPrimary,
+    body: const Center(child: CircularProgressIndicator()),
+  );
 }
 
 /// Login ⇄ register toggle for signed-out users.
@@ -411,7 +430,10 @@ class _BannedScreen extends StatelessWidget {
                 style: AppTheme.body(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.xl),
-              OutlinedButton(onPressed: onSignOut, child: const Text('Sign out')),
+              OutlinedButton(
+                onPressed: onSignOut,
+                child: const Text('Sign out'),
+              ),
             ],
           ),
         ),
@@ -441,8 +463,7 @@ class _ProfileOnboardingState extends State<_ProfileOnboarding> {
       final studioId = await StudioRepository.create(
         ownerUid: uid,
         name: result.studioName.isEmpty ? 'My Studio' : result.studioName,
-        location:
-            result.studioLocation.isEmpty ? null : result.studioLocation,
+        location: result.studioLocation.isEmpty ? null : result.studioLocation,
         maxMembers: result.studioCapacity,
         inviteCode: result.inviteCode,
       );
@@ -461,15 +482,14 @@ class _ProfileOnboardingState extends State<_ProfileOnboarding> {
   @override
   Widget build(BuildContext context) {
     if (_role == null) {
-      return RoleSelectScreen(
-        onSelected: (r) => setState(() => _role = r),
-      );
+      return RoleSelectScreen(onSelected: (r) => setState(() => _role = r));
     }
     return ProfileSetupScreen(
       role: _role!,
       initialName: AuthService.currentUser?.displayName,
       onComplete: (_) {},
       onSave: _persist,
+      onExit: () => setState(() => _role = null),
     );
   }
 }

@@ -19,11 +19,7 @@ class EditProfileScreen extends StatefulWidget {
   final UserProfile profile;
   final void Function(UserProfile updated)? onSaved;
 
-  const EditProfileScreen({
-    super.key,
-    required this.profile,
-    this.onSaved,
-  });
+  const EditProfileScreen({super.key, required this.profile, this.onSaved});
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -47,9 +43,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     // route. The local cache answers instantly, so no visible flash.
     final uid = AuthService.currentUid;
     if (uid != null) {
-      UserRepository.load(uid).then((fresh) {
-        if (fresh != null && mounted) setState(() => _seed(fresh));
-      }).catchError((_) {});
+      UserRepository.load(uid)
+          .then((fresh) {
+            if (fresh != null && mounted) setState(() => _seed(fresh));
+          })
+          .catchError((_) {});
     }
   }
 
@@ -155,156 +153,87 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      appBar: AppBar(
-        title: Text(Strings.personalInfo),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl,
+        backgroundColor: AppColors.bgPrimary,
+        appBar: AppBar(
+          title: Text(Strings.personalInfo),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => Navigator.of(context).pop(),
           ),
-          children: [
-            _label(Strings.name),
-            TextField(
-              controller: _name,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                hintText: Strings.pick('Your name', 'Vaše ime'),
-                prefixIcon: const Icon(Icons.person_outline_rounded),
-              ),
+        ),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.md,
+              AppSpacing.xl,
+              AppSpacing.xl,
             ),
-            const SizedBox(height: AppSpacing.md),
-
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _label(Strings.age),
-                      _numField(_age, hint: '30', suffix: 'yrs'),
-                    ],
-                  ),
+            children: [
+              if (AuthService.currentUser?.email != null) ...[
+                _label(Strings.email),
+                _ReadOnlyField(
+                  value: AuthService.currentUser!.email!,
+                  icon: Icons.mail_outline_rounded,
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _label(Strings.sex),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.bgSecondary,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: DropdownButton<Sex>(
-                          value: _sex,
-                          isExpanded: true,
-                          underline: const SizedBox(),
-                          icon: Icon(Icons.expand_more_rounded,
-                              color: AppColors.textSecondary),
-                          dropdownColor: AppColors.bgSecondary,
-                          style: AppTheme.bodyLarge(),
-                          items: Sex.values
-                              .map((s) => DropdownMenuItem(
-                                    value: s,
-                                    child: Text(Strings.sexName(s)),
-                                  ))
-                              .toList(),
-                          onChanged: (v) {
-                            if (v != null) setState(() => _sex = v);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                const SizedBox(height: AppSpacing.md),
               ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _label(Strings.weight),
-                      _numField(_weight, hint: '75', suffix: 'kg', decimal: true),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _label(Strings.height),
-                      _numField(_height, hint: '178', suffix: 'cm'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            _label(Strings.restingHrOptional),
-            _numField(_restingHr, hint: 'e.g. 62', suffix: 'bpm'),
-            const SizedBox(height: AppSpacing.lg),
-
-            _label(Strings.fitnessLevel),
-            for (final lvl in FitnessLevel.values) ...[
-              _fitnessChip(lvl),
-              const SizedBox(height: AppSpacing.xs),
-            ],
-
-            const SizedBox(height: AppSpacing.md),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.bgSecondary,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.brandRed.withValues(alpha: 0.2),
+              _label(Strings.name),
+              TextField(
+                controller: _name,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  hintText: Strings.pick('Your name', 'Vaše ime'),
+                  prefixIcon: const Icon(Icons.person_outline_rounded),
                 ),
               ),
-              child: Row(
+              const SizedBox(height: AppSpacing.md),
+
+              Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.brandRed.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _label(Strings.age),
+                        _numField(_age, hint: '30', suffix: 'yrs'),
+                      ],
                     ),
-                    child: const Icon(Icons.monitor_heart_rounded,
-                        color: AppColors.brandRed, size: 20),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(Strings.estimatedHrMax,
-                                style: AppTheme.caption()),
-                            const SizedBox(width: 2),
-                            const HrMaxInfoButton(),
-                          ],
-                        ),
-                        Text(
-                          '${_previewHrMax()} bpm',
-                          style: AppTheme.statNumber(
-                            fontSize: 22,
-                            color: AppColors.brandRed,
-                            weight: FontWeight.w800,
+                        _label(Strings.sex),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.bgSecondary,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: DropdownButton<Sex>(
+                            value: _sex,
+                            isExpanded: true,
+                            underline: const SizedBox(),
+                            icon: Icon(
+                              Icons.expand_more_rounded,
+                              color: AppColors.textSecondary,
+                            ),
+                            dropdownColor: AppColors.bgSecondary,
+                            style: AppTheme.bodyLarge(),
+                            items: Sex.values
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s,
+                                    child: Text(Strings.sexName(s)),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) {
+                              if (v != null) setState(() => _sex = v);
+                            },
                           ),
                         ),
                       ],
@@ -312,29 +241,124 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: AppSpacing.md),
 
-            const SizedBox(height: AppSpacing.xl),
-            BeatPrimaryButton(
-              label: Strings.pick('Save changes', 'Spremi promjene'),
-              icon: Icons.check_rounded,
-              onPressed: _save,
-            ),
-          ],
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _label(Strings.weight),
+                        _numField(
+                          _weight,
+                          hint: '75',
+                          suffix: 'kg',
+                          decimal: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _label(Strings.height),
+                        _numField(_height, hint: '178', suffix: 'cm'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              _label(Strings.restingHrOptional),
+              _numField(_restingHr, hint: 'e.g. 62', suffix: 'bpm'),
+              const SizedBox(height: AppSpacing.lg),
+
+              _label(Strings.fitnessLevel),
+              for (final lvl in FitnessLevel.values) ...[
+                _fitnessChip(lvl),
+                const SizedBox(height: AppSpacing.xs),
+              ],
+
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.bgSecondary,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.brandRed.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandRed.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.monitor_heart_rounded,
+                        color: AppColors.brandRed,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                Strings.estimatedHrMax,
+                                style: AppTheme.caption(),
+                              ),
+                              const SizedBox(width: 2),
+                              const HrMaxInfoButton(),
+                            ],
+                          ),
+                          Text(
+                            '${_previewHrMax()} bpm',
+                            style: AppTheme.statNumber(
+                              fontSize: 22,
+                              color: AppColors.brandRed,
+                              weight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.xl),
+              BeatPrimaryButton(
+                label: Strings.pick('Save changes', 'Spremi promjene'),
+                icon: Icons.check_rounded,
+                onPressed: _save,
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
 
   Widget _label(String t) => Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-        child: Text(
-          t.toUpperCase(),
-          style: AppTheme.micro(color: AppColors.textSecondary)
-              .copyWith(letterSpacing: 1.4),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+    child: Text(
+      t.toUpperCase(),
+      style: AppTheme.micro(
+        color: AppColors.textSecondary,
+      ).copyWith(letterSpacing: 1.4),
+    ),
+  );
 
   Widget _numField(
     TextEditingController c, {
@@ -393,19 +417,59 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   children: [
                     Text(
                       Strings.fitnessName(level),
-                      style: AppTheme.bodyLarge(weight: FontWeight.w600)
-                          .copyWith(fontSize: 14),
+                      style: AppTheme.bodyLarge(
+                        weight: FontWeight.w600,
+                      ).copyWith(fontSize: 14),
                     ),
                     Text(Strings.fitnessDesc(level), style: AppTheme.caption()),
                   ],
                 ),
               ),
               if (selected)
-                const Icon(Icons.check_circle_rounded,
-                    color: AppColors.brandRed, size: 20),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.brandRed,
+                  size: 20,
+                ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Non-editable field — same look as the inputs, for values the user can see
+/// but not change here (e.g. their sign-in email).
+class _ReadOnlyField extends StatelessWidget {
+  final String value;
+  final IconData icon;
+  const _ReadOnlyField({required this.value, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 14,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.textSecondary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              value,
+              style: AppTheme.bodyLarge(color: AppColors.textSecondary),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }

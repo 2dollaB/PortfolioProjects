@@ -1,9 +1,12 @@
 # QR Code Join — Implementation Plan
 
-Status: **planned, not built.** The QR visuals currently in the app are
-placeholders (a static `Icons.qr_code_2_rounded` in `InviteSheet`, and a
-decorative scanner frame in `JoinSessionScreen._ScannerStage`). The packages
-`qr_flutter` and `mobile_scanner` are already in `pubspec.yaml` but unused.
+Status: **implemented (option a), pending physical-device test.** Trainer side
+renders a real `QrImageView` of the invite code in `InviteSheet`; athlete side
+scans it in `JoinStudioScreen` via a `MobileScanner` route that extracts the
+6-digit code and runs the existing join path. Camera permissions added for both
+platforms. Still open: item 3 (decommission the fake `JoinSessionScreen`
+scanner) was left as clearly-labeled demo, and camera scanning needs a real
+device to verify (emulator has no camera, same as BLE).
 
 ## Key architectural note
 

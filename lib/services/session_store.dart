@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
-import '../widgets/workout_type_sheet.dart';
 import 'mock_data.dart';
 
 /// In-memory session state for the prototype.
@@ -32,7 +31,6 @@ class SessionStore {
   /// clock hasn't started). Picks the first [athleteCount] mock participants.
   void startLive({
     required String name,
-    required WorkoutType type,
     int athleteCount = 10,
     int workSec = 45,
     int restSec = 20,
@@ -41,7 +39,6 @@ class SessionStore {
     live.value = LiveSession(
       id: 'live-${DateTime.now().millisecondsSinceEpoch}',
       name: name,
-      type: type,
       startedAt: DateTime.now(),
       athleteCount: athleteCount,
       workSec: workSec,
@@ -55,23 +52,35 @@ class SessionStore {
     final l = live.value;
     if (l == null) return;
     live.value = l.copyWith(
-        runState: 'running', runningSince: DateTime.now(), accumulatedMs: 0);
+      runState: 'running',
+      runningSince: DateTime.now(),
+      accumulatedMs: 0,
+    );
+  }
+
+  /// Discard a not-yet-started live session without recording it (used when
+  /// the trainer backs out of the lobby to reconfigure).
+  void cancelLive() {
+    live.value = null;
   }
 
   void pauseLive() {
     final l = live.value;
     if (l == null || l.runningSince == null) return;
-    final acc = l.accumulatedMs +
+    final acc =
+        l.accumulatedMs +
         DateTime.now().difference(l.runningSince!).inMilliseconds;
-    live.value =
-        l.copyWith(runState: 'paused', accumulatedMs: acc, clearRunningSince: true);
+    live.value = l.copyWith(
+      runState: 'paused',
+      accumulatedMs: acc,
+      clearRunningSince: true,
+    );
   }
 
   void resumeLive() {
     final l = live.value;
     if (l == null) return;
-    live.value =
-        l.copyWith(runState: 'running', runningSince: DateTime.now());
+    live.value = l.copyWith(runState: 'running', runningSince: DateTime.now());
   }
 
   /// End the current live session, capturing analytics + moving to history.
@@ -95,15 +104,17 @@ class SessionStore {
       final cal = (durationMin * (avg / 180) * 8.5 * 1.0).round();
       // Zone distribution (Z0..Z5) percentages summing to 100.
       final dist = _mockZoneDistribution(rng);
-      results.add(AthleteResult(
-        athleteId: p.id,
-        name: p.name,
-        avgBpm: avg,
-        maxBpm: max,
-        trimp: trimp,
-        calories: cal,
-        timeInZones: dist,
-      ));
+      results.add(
+        AthleteResult(
+          athleteId: p.id,
+          name: p.name,
+          avgBpm: avg,
+          maxBpm: max,
+          trimp: trimp,
+          calories: cal,
+          timeInZones: dist,
+        ),
+      );
     }
 
     final avgGroupBpm =
@@ -114,7 +125,6 @@ class SessionStore {
     final record = SessionRecord(
       id: l.id,
       name: l.name,
-      type: l.type,
       startedAt: l.startedAt,
       endedAt: endedAt,
       durationMin: durationMin,
@@ -133,10 +143,12 @@ class SessionStore {
   int get todaysSessionCount {
     final today = DateTime.now();
     return history.value
-        .where((r) =>
-            r.startedAt.year == today.year &&
-            r.startedAt.month == today.month &&
-            r.startedAt.day == today.day)
+        .where(
+          (r) =>
+              r.startedAt.year == today.year &&
+              r.startedAt.month == today.month &&
+              r.startedAt.day == today.day,
+        )
         .length;
   }
 
@@ -157,24 +169,21 @@ class SessionStore {
     final now = DateTime.now();
     history.value = [
       _fakeRecord(
-        name: 'Friday HIIT 18:00',
-        type: WorkoutType.hiit,
+        name: 'Friday 18:00',
         startedAt: now.subtract(const Duration(hours: 18)),
         durationMin: 42,
         athleteCount: 14,
         groupTrimp: 92,
       ),
       _fakeRecord(
-        name: 'Wednesday Strength',
-        type: WorkoutType.strength,
+        name: 'Wednesday 07:00',
         startedAt: now.subtract(const Duration(days: 2)),
         durationMin: 55,
         athleteCount: 9,
         groupTrimp: 68,
       ),
       _fakeRecord(
-        name: 'Monday Endurance',
-        type: WorkoutType.endurance,
+        name: 'Monday 06:30',
         startedAt: now.subtract(const Duration(days: 4)),
         durationMin: 72,
         athleteCount: 12,
@@ -185,7 +194,6 @@ class SessionStore {
 
   SessionRecord _fakeRecord({
     required String name,
-    required WorkoutType type,
     required DateTime startedAt,
     required int durationMin,
     required int athleteCount,
@@ -194,22 +202,23 @@ class SessionStore {
     final rng = math.Random(name.hashCode);
     final participants = MockData.liveOf(athleteCount);
     final results = participants
-        .map((p) => AthleteResult(
-              athleteId: p.id,
-              name: p.name,
-              avgBpm: p.avgBpm + rng.nextInt(8) - 4,
-              maxBpm: p.bpm + 8 + rng.nextInt(15),
-              trimp: groupTrimp + rng.nextInt(20) - 10,
-              calories: (durationMin * 7.5 + rng.nextInt(50)).round(),
-              timeInZones: _mockZoneDistribution(rng),
-            ))
+        .map(
+          (p) => AthleteResult(
+            athleteId: p.id,
+            name: p.name,
+            avgBpm: p.avgBpm + rng.nextInt(8) - 4,
+            maxBpm: p.bpm + 8 + rng.nextInt(15),
+            trimp: groupTrimp + rng.nextInt(20) - 10,
+            calories: (durationMin * 7.5 + rng.nextInt(50)).round(),
+            timeInZones: _mockZoneDistribution(rng),
+          ),
+        )
         .toList();
     final avgGroupBpm =
         results.map((r) => r.avgBpm).reduce((a, b) => a + b) ~/ results.length;
     return SessionRecord(
       id: 'past-${startedAt.millisecondsSinceEpoch}',
       name: name,
-      type: type,
       startedAt: startedAt,
       endedAt: startedAt.add(Duration(minutes: durationMin)),
       durationMin: durationMin,
@@ -226,7 +235,6 @@ class SessionStore {
 class LiveSession {
   final String id;
   final String name;
-  final WorkoutType type;
   final DateTime startedAt;
   final int athleteCount;
   final int workSec;
@@ -241,7 +249,6 @@ class LiveSession {
   LiveSession({
     required this.id,
     required this.name,
-    required this.type,
     required this.startedAt,
     required this.athleteCount,
     required this.workSec,
@@ -272,15 +279,15 @@ class LiveSession {
     return LiveSession(
       id: id,
       name: name,
-      type: type,
       startedAt: startedAt,
       athleteCount: athleteCount,
       workSec: workSec,
       restSec: restSec,
       rounds: rounds,
       runState: runState ?? this.runState,
-      runningSince:
-          clearRunningSince ? null : (runningSince ?? this.runningSince),
+      runningSince: clearRunningSince
+          ? null
+          : (runningSince ?? this.runningSince),
       accumulatedMs: accumulatedMs ?? this.accumulatedMs,
     );
   }
@@ -289,7 +296,6 @@ class LiveSession {
 class SessionRecord {
   final String id;
   final String name;
-  final WorkoutType type;
   final DateTime startedAt;
   final DateTime endedAt;
   final int durationMin;
@@ -301,7 +307,6 @@ class SessionRecord {
   SessionRecord({
     required this.id,
     required this.name,
-    required this.type,
     required this.startedAt,
     required this.endedAt,
     required this.durationMin,
