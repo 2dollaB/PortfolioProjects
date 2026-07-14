@@ -8,7 +8,6 @@ import '../config/theme.dart';
 import '../services/session_store.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/stat_chip.dart';
-import '../widgets/workout_type_sheet.dart';
 import '../widgets/zone_badge.dart';
 
 /// Detailed analytics for a single completed session.
@@ -47,73 +46,91 @@ class SessionDetailScreen extends StatelessWidget {
     final hottestZone = zones.indexOf(zones.reduce(math.max));
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      appBar: AppBar(
-        title: Text(Strings.sessionAnalytics),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl,
+        backgroundColor: AppColors.bgPrimary,
+        appBar: AppBar(
+          title: Text(Strings.sessionAnalytics),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => Navigator.of(context).pop(),
           ),
-          children: [
-            _Header(record: record, formatted: _formatDate(record.startedAt)),
-            const SizedBox(height: AppSpacing.lg),
-            _HeroStats(record: record),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(child: StatChip(label: Strings.athletes, value: '${record.athleteCount}')),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(child: StatChip(label: Strings.duration, value: record.durationLabel)),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(child: StatChip(
-                  label: Strings.dominant,
-                  value: 'Z$hottestZone',
-                  accent: AppColors.zoneColor(hottestZone == 0 ? 1 : hottestZone),
-                )),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(Strings.timeInZones, style: AppTheme.h2()),
-            Text(Strings.groupAvgAllAthletes,
-                style: AppTheme.caption()),
-            const SizedBox(height: AppSpacing.sm),
-            _ZoneBar(zones: zones),
-            const SizedBox(height: AppSpacing.md),
-            for (int z = 1; z <= 5; z++) ...[
-              _ZoneRow(
-                zone: z,
-                percent: zones[z],
-                minutes: record.durationMin * zones[z] ~/ 100,
-              ),
-              if (z < 5) const SizedBox(height: 6),
-            ],
-            const SizedBox(height: AppSpacing.lg),
-            Text(Strings.athletes, style: AppTheme.h2()),
-            Text(Strings.participated(record.results.length),
-                style: AppTheme.caption()),
-            const SizedBox(height: AppSpacing.sm),
-            for (final r in record.results) ...[
-              _AthleteRow(result: r, hrMaxRef: 200),
-              const SizedBox(height: AppSpacing.xs),
-            ],
-            const SizedBox(height: AppSpacing.lg),
-            // Finalize action — returns all the way to the home screen.
-            BeatPrimaryButton(
-              label: Strings.backToHome,
-              icon: Icons.home_rounded,
-              onPressed: () =>
-                  Navigator.of(context).popUntil((r) => r.isFirst),
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
         ),
-      ),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.md,
+              AppSpacing.xl,
+              AppSpacing.xl,
+            ),
+            children: [
+              _Header(record: record, formatted: _formatDate(record.startedAt)),
+              const SizedBox(height: AppSpacing.lg),
+              _HeroStats(record: record),
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: StatChip(
+                      label: Strings.athletes,
+                      value: '${record.athleteCount}',
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: StatChip(
+                      label: Strings.duration,
+                      value: record.durationLabel,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: StatChip(
+                      label: Strings.dominant,
+                      value: 'Z$hottestZone',
+                      accent: AppColors.zoneColor(
+                        hottestZone == 0 ? 1 : hottestZone,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(Strings.timeInZones, style: AppTheme.h2()),
+              Text(Strings.groupAvgAllAthletes, style: AppTheme.caption()),
+              const SizedBox(height: AppSpacing.sm),
+              _ZoneBar(zones: zones),
+              const SizedBox(height: AppSpacing.md),
+              for (int z = 1; z <= 5; z++) ...[
+                _ZoneRow(
+                  zone: z,
+                  percent: zones[z],
+                  minutes: record.durationMin * zones[z] ~/ 100,
+                ),
+                if (z < 5) const SizedBox(height: 6),
+              ],
+              const SizedBox(height: AppSpacing.lg),
+              Text(Strings.athletes, style: AppTheme.h2()),
+              Text(
+                Strings.participated(record.results.length),
+                style: AppTheme.caption(),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              for (final r in record.results) ...[
+                _AthleteRow(result: r, hrMaxRef: 200),
+                const SizedBox(height: AppSpacing.xs),
+              ],
+              const SizedBox(height: AppSpacing.lg),
+              // Finalize action — returns all the way to the home screen.
+              BeatPrimaryButton(
+                label: Strings.backToHome,
+                icon: Icons.home_rounded,
+                onPressed: () =>
+                    Navigator.of(context).popUntil((r) => r.isFirst),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -135,7 +152,11 @@ class _Header extends StatelessWidget {
             color: AppColors.brandRed.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(record.type.icon, color: AppColors.brandRed, size: 26),
+          child: const Icon(
+            Icons.groups_rounded,
+            color: AppColors.brandRed,
+            size: 26,
+          ),
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
@@ -144,7 +165,7 @@ class _Header extends StatelessWidget {
             children: [
               Text(record.name, style: AppTheme.h2()),
               Text(
-                '${Strings.workoutTypeLabel(record.type.displayName)} · $formatted',
+                '${Strings.groupWorkout} · $formatted',
                 style: AppTheme.caption(),
               ),
             ],
@@ -173,8 +194,10 @@ class _HeroStats extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                Text(Strings.avgGroupHr,
-                    style: AppTheme.micro().copyWith(letterSpacing: 1.4)),
+                Text(
+                  Strings.avgGroupHr,
+                  style: AppTheme.micro().copyWith(letterSpacing: 1.4),
+                ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   '${record.avgGroupBpm}',
@@ -191,8 +214,10 @@ class _HeroStats extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                Text(Strings.groupTrimpCaps,
-                    style: AppTheme.micro().copyWith(letterSpacing: 1.4)),
+                Text(
+                  Strings.groupTrimpCaps,
+                  style: AppTheme.micro().copyWith(letterSpacing: 1.4),
+                ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   '${record.groupTrimp}',
@@ -262,9 +287,12 @@ class _ZoneRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.xs),
-        Text('Z$zone',
-            style: AppTheme.caption(color: c)
-                .copyWith(fontWeight: FontWeight.w600)),
+        Text(
+          'Z$zone',
+          style: AppTheme.caption(
+            color: c,
+          ).copyWith(fontWeight: FontWeight.w600),
+        ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Stack(
@@ -339,8 +367,9 @@ class _AthleteRow extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               _initials,
-              style: AppTheme.caption(color: zoneColor)
-                  .copyWith(fontWeight: FontWeight.w700, fontSize: 12),
+              style: AppTheme.caption(
+                color: zoneColor,
+              ).copyWith(fontWeight: FontWeight.w700, fontSize: 12),
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
@@ -350,8 +379,9 @@ class _AthleteRow extends StatelessWidget {
               children: [
                 Text(
                   result.name,
-                  style: AppTheme.bodyLarge(weight: FontWeight.w600)
-                      .copyWith(fontSize: 14),
+                  style: AppTheme.bodyLarge(
+                    weight: FontWeight.w600,
+                  ).copyWith(fontSize: 14),
                 ),
                 Text(
                   Strings.avgPeak(result.avgBpm, result.maxBpm),
@@ -367,8 +397,10 @@ class _AthleteRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text('${result.trimp}',
-                      style: AppTheme.statNumber(fontSize: 16)),
+                  Text(
+                    '${result.trimp}',
+                    style: AppTheme.statNumber(fontSize: 16),
+                  ),
                   const SizedBox(width: 3),
                   Text('TRIMP', style: AppTheme.micro()),
                 ],

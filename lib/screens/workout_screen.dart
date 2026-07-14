@@ -14,14 +14,16 @@ import '../models/hr_data.dart';
 import '../models/user_profile.dart';
 import '../services/auth_service.dart';
 import '../services/ble_hr_service.dart';
+import '../services/clock_sync.dart';
 import '../services/foreground_service.dart';
 import '../services/session_repository.dart';
 import '../services/workout_recovery_service.dart';
 import '../services/workout_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/bpm_display.dart';
+import '../widgets/floating_pills.dart';
 import '../widgets/mobile_frame.dart';
-import '../widgets/workout_type_sheet.dart';
+import '../widgets/session_status_banner.dart';
 import '../widgets/zone_bar.dart';
 import 'tv_host_screen.dart';
 import 'workout_summary_screen.dart';
@@ -37,17 +39,26 @@ class WorkoutScreen extends StatefulWidget {
   /// publishes the athlete's HR to the session's live board ~1/sec.
   final CloudSession? session;
 
-  /// Picked from the WorkoutTypeSheet before launch. Saved with the workout
-  /// so history can filter by type.
-  final WorkoutType? workoutType;
+  /// Optional interval timer for a solo workout (set from the solo setup).
+  /// [workSec] == 0 means no interval timer — a plain open workout.
+  final int workSec;
+  final int restSec;
+  final int rounds;
 
   const WorkoutScreen({
     super.key,
     required this.profile,
     this.inGroupSession = false,
     this.session,
-    this.workoutType,
+    this.workSec = 0,
+    this.restSec = 0,
+    this.rounds = 1,
   });
+
+  bool get hasIntervals => workSec > 0;
+
+  /// Saved with the workout so history can distinguish group vs solo.
+  String get _workoutTypeValue => session != null ? 'group' : 'solo';
 
   @override
   State<WorkoutScreen> createState() => _WorkoutScreenState();
@@ -77,6 +88,19 @@ class _WorkoutScreenState extends State<WorkoutScreen>
   StreamSubscription<CloudSession?>? _sessionSub;
   bool _finishing = false; // guards against double save / navigation
 
+  // 3-2-1 countdown before the elapsed-time clock actually starts. For a
+  // group session this targets the session's shared `runningSince` instant
+  // (set by SessionRepository.beginWorkout) so every athlete — and the
+  // trainer — counts down to the exact same moment. Solo just counts down
+  // locally from the moment the screen opens.
+  late final DateTime _countdownTarget =
+      widget.session?.runningSince ??
+      DateTime.now().add(CloudSession.countdownDuration);
+  int _countdown = 0;
+  Timer? _countdownTimer;
+  bool _showGo = false;
+  bool get _countingDown => _countdown > 0 || _showGo;
+
   @override
   void initState() {
     super.initState();
@@ -92,10 +116,57 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     final gs = widget.session;
     if (gs != null && AuthService.currentUid != null) {
       _sessionSub = SessionRepository.watch(gs.id).listen(_onSessionUpdate);
+      // Best-effort — corrects _countdownTarget's comparisons against this
+      // device's own clock drift. Usually already synced from the lobby.
+      unawaited(ClockSync.sync());
     }
-    _stopwatch.start();
-    _tick = Timer.periodic(const Duration(milliseconds: 800), (_) => _step());
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    // HR sampling + publishing starts right away — during the countdown too
+    // — so the trainer's board (and this athlete's own BPM ring) show real
+    // ticking numbers before the workout is officially "live". Only the
+    // elapsed-time clock waits for _beginTracking().
+    _tick = Timer.periodic(const Duration(milliseconds: 800), (_) => _step());
+    _armCountdown();
+  }
+
+  void _recomputeCountdown() {
+    final remaining = _countdownTarget.difference(ClockSync.now());
+    _countdown = remaining.isNegative
+        ? 0
+        : (remaining.inMilliseconds / 1000).ceil();
+  }
+
+  void _armCountdown() {
+    _recomputeCountdown();
+    if (_countdown <= 0) {
+      _flashGoThenBegin();
+      return;
+    }
+    _countdownTimer = Timer.periodic(const Duration(milliseconds: 250), (_) {
+      if (!mounted) return;
+      _recomputeCountdown();
+      if (_countdown <= 0) {
+        _countdownTimer?.cancel();
+        _flashGoThenBegin();
+      } else {
+        setState(() {});
+      }
+    });
+  }
+
+  /// Flashes "GO" briefly once the countdown hits zero, then starts the clock.
+  void _flashGoThenBegin() {
+    setState(() => _showGo = true);
+    Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      setState(() => _showGo = false);
+      _beginTracking();
+    });
+  }
+
+  /// Starts the elapsed-time clock once the 3-2-1 countdown finishes.
+  void _beginTracking() {
+    _stopwatch.start();
   }
 
   /// Trainer-driven lifecycle for production group sessions.
@@ -132,16 +203,20 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     final session = widget.session;
     final uid = AuthService.currentUid;
     if (session != null && uid != null) {
-      unawaited(SessionRepository.removeHr(sessionId: session.id, uid: uid)
-          .catchError((_) {}));
+      unawaited(
+        SessionRepository.removeHr(
+          sessionId: session.id,
+          uid: uid,
+        ).catchError((_) {}),
+      );
     }
     // Kicked workouts aren't saved, so drop the crash-recovery snapshot too.
     unawaited(WorkoutRecoveryService.clear());
     if (!mounted) return;
     Navigator.of(context).popUntil((r) => r.isFirst);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(Strings.removedFromSession)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(Strings.removedFromSession)));
   }
 
   void _step() {
@@ -152,7 +227,8 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         // Real sensor: hold the last reading through brief dropouts rather
         // than blending in fake data.
         final sample = _lastBle;
-        _bleLive = sample != null &&
+        _bleLive =
+            sample != null &&
             DateTime.now().difference(sample.timestamp) <
                 const Duration(seconds: 8);
         next = sample?.bpm ?? _bpm;
@@ -177,6 +253,48 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     });
     _publishHr();
     _maybeSnapshot();
+    // Solo interval timer finished all rounds → wrap up to the summary.
+    final iv = _intervalState();
+    if (iv != null && iv.done && !_finishing) {
+      _goToSummary();
+    }
+  }
+
+  /// Interval phase derived from elapsed workout time (deterministic, so it
+  /// stays accurate regardless of tick jitter). Null when no interval timer.
+  ({SessionPhase phase, int remainingSec, int round, bool done})?
+  _intervalState() {
+    if (!widget.hasIntervals) return null;
+    var t = _stopwatch.elapsed.inSeconds;
+    final w = widget.workSec, r = widget.restSec, rounds = widget.rounds;
+    for (var round = 1; round <= rounds; round++) {
+      if (t < w) {
+        return (
+          phase: SessionPhase.work,
+          remainingSec: w - t,
+          round: round,
+          done: false,
+        );
+      }
+      t -= w;
+      if (round < rounds && r > 0) {
+        if (t < r) {
+          return (
+            phase: SessionPhase.rest,
+            remainingSec: r - t,
+            round: round,
+            done: false,
+          );
+        }
+        t -= r;
+      }
+    }
+    return (
+      phase: SessionPhase.idle,
+      remainingSec: 0,
+      round: rounds,
+      done: true,
+    );
   }
 
   int get _avgBpm => _bpmHistory.isEmpty
@@ -205,19 +323,21 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     final now = DateTime.now();
     _lastSnapshot = now;
     final stats = _zoneStats(widget.profile.hrMax);
-    unawaited(WorkoutRecoveryService.snapshot({
-      'userId': uid,
-      'type': widget.workoutType?.name ?? 'free',
-      'startMs': now.subtract(_stopwatch.elapsed).millisecondsSinceEpoch,
-      'lastMs': now.millisecondsSinceEpoch,
-      'avgHr': _avgBpm,
-      'maxHr': _maxBpm,
-      'calories': _kcal.round(),
-      'trimp': _trimp.round(),
-      'zoneDist': stats.zoneDist,
-      'dominantZone': stats.dominantZone,
-      'sessionId': widget.session?.id,
-    }));
+    unawaited(
+      WorkoutRecoveryService.snapshot({
+        'userId': uid,
+        'type': widget._workoutTypeValue,
+        'startMs': now.subtract(_stopwatch.elapsed).millisecondsSinceEpoch,
+        'lastMs': now.millisecondsSinceEpoch,
+        'avgHr': _avgBpm,
+        'maxHr': _maxBpm,
+        'calories': _kcal.round(),
+        'trimp': _trimp.round(),
+        'zoneDist': stats.zoneDist,
+        'dominantZone': stats.dominantZone,
+        'sessionId': widget.session?.id,
+      }),
+    );
   }
 
   /// ~1/sec heartbeat to the group session's live board. Failures (e.g. the
@@ -262,6 +382,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _tick?.cancel();
+    _countdownTimer?.cancel();
     _bleSub?.cancel();
     _sessionSub?.cancel();
     if (!kIsWeb && !FeatureFlags.prototypeMode) {
@@ -281,6 +402,10 @@ class _WorkoutScreenState extends State<WorkoutScreen>
   }
 
   Future<void> _endWorkout() async {
+    // Already ending elsewhere (e.g. the trainer ended the session while
+    // this dialog was about to open) — don't show a confirm that can never
+    // do anything, and don't re-enter _goToSummary.
+    if (_finishing) return;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -325,8 +450,12 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     final uid = AuthService.currentUid;
     if (session != null && uid != null) {
       // Drop off the live board; fails harmlessly if the session ended.
-      unawaited(SessionRepository.removeHr(sessionId: session.id, uid: uid)
-          .catchError((_) {}));
+      unawaited(
+        SessionRepository.removeHr(
+          sessionId: session.id,
+          uid: uid,
+        ).catchError((_) {}),
+      );
     }
     unawaited(_persistWorkout());
     unawaited(WorkoutRecoveryService.clear());
@@ -347,7 +476,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
           calories: calories,
           trimp: trimp,
           profile: widget.profile,
-          workoutType: widget.workoutType,
+          isGroup: widget.session != null,
           zoneDist: zoneDist,
         ),
       ),
@@ -365,7 +494,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     try {
       await WorkoutRepository.save(
         userId: uid,
-        type: widget.workoutType?.name ?? 'free',
+        type: widget._workoutTypeValue,
         startTime: end.subtract(_stopwatch.elapsed),
         endTime: end,
         avgHr: _avgBpm,
@@ -442,8 +571,9 @@ class _WorkoutScreenState extends State<WorkoutScreen>
           const SizedBox(width: 4),
           Text(
             label,
-            style: AppTheme.caption(color: color)
-                .copyWith(fontWeight: FontWeight.w600),
+            style: AppTheme.caption(
+              color: color,
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -463,216 +593,328 @@ class _WorkoutScreenState extends State<WorkoutScreen>
 
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      body: SafeArea(
-        child: Column(
+        backgroundColor: AppColors.bgPrimary,
+        body: Stack(
           children: [
-            // Live indicator + close
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md, AppSpacing.xs, AppSpacing.md, 0,
-              ),
-              child: Row(
+            SafeArea(
+              child: Column(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: _endWorkout,
+                  // Live indicator + close
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.xs,
+                      AppSpacing.md,
+                      0,
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: _endWorkout,
+                        ),
+                        if (widget.inGroupSession) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.brandRed.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.pill,
+                              ),
+                              border: Border.all(
+                                color: AppColors.brandRed.withValues(
+                                  alpha: 0.3,
+                                ),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.brandRed,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  Strings.liveStudioSession,
+                                  style: AppTheme.micro(
+                                    color: AppColors.brandRed,
+                                  ).copyWith(fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const Spacer(),
+                        _sensorChip(),
+                      ],
+                    ),
                   ),
-                  if (widget.inGroupSession) ...[
-                    const SizedBox(width: AppSpacing.xs),
+
+                  if (_paused)
                     Container(
+                      margin: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.xs,
+                        AppSpacing.md,
+                        0,
+                      ),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: 4,
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.xs,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.brandRed.withValues(alpha: 0.15),
+                        color: AppColors.warning.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                         border: Border.all(
-                          color: AppColors.brandRed.withValues(alpha: 0.3),
+                          color: AppColors.warning.withValues(alpha: 0.4),
                         ),
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: AppColors.brandRed,
-                              shape: BoxShape.circle,
-                            ),
+                          const Icon(
+                            Icons.pause_rounded,
+                            size: 16,
+                            color: AppColors.warning,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            Strings.liveStudioSession,
-                            style: AppTheme.micro(color: AppColors.brandRed)
-                                .copyWith(fontWeight: FontWeight.w600),
+                            widget.inGroupSession
+                                ? Strings.pausedByTrainer
+                                : Strings.paused,
+                            style: AppTheme.caption(
+                              color: AppColors.warning,
+                            ).copyWith(fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                     ),
+
+                  // Solo interval timer — WORK/REST + remaining + round.
+                  if (widget.hasIntervals && !_countingDown) ...[
+                    Builder(
+                      builder: (context) {
+                        final iv = _intervalState();
+                        if (iv == null) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.md,
+                            AppSpacing.sm,
+                            AppSpacing.md,
+                            0,
+                          ),
+                          child: Center(
+                            child: PhasePill(
+                              phase: iv.done ? SessionPhase.idle : iv.phase,
+                              remaining: Duration(seconds: iv.remainingSec),
+                              roundLabel: iv.done
+                                  ? Strings.complete
+                                  : Strings.roundOf(iv.round, widget.rounds),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
+
+                  SizedBox(height: shortScreen ? AppSpacing.sm : AppSpacing.lg),
                   const Spacer(),
-                  _sensorChip(),
-                ],
-              ),
-            ),
 
-            if (_paused)
-              Container(
-                margin: const EdgeInsets.fromLTRB(
-                  AppSpacing.md, AppSpacing.xs, AppSpacing.md, 0,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: AppSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border:
-                      Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.pause_rounded,
-                        size: 16, color: AppColors.warning),
-                    const SizedBox(width: 6),
-                    Text(
-                      widget.inGroupSession ? Strings.pausedByTrainer : Strings.paused,
-                      style: AppTheme.caption(color: AppColors.warning)
-                          .copyWith(fontWeight: FontWeight.w600),
+                  // BIG BPM — shrinks on short viewports so the bottom controls fit.
+                  BpmDisplay(bpm: _bpm, hrMax: hrMax, size: bpmSize),
+
+                  SizedBox(height: shortScreen ? AppSpacing.sm : AppSpacing.lg),
+
+                  // Zone bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xl,
                     ),
-                  ],
-                ),
-              ),
+                    child: ZoneBar(activeZone: zone == 0 ? 1 : zone),
+                  ),
 
-            SizedBox(height: shortScreen ? AppSpacing.sm : AppSpacing.lg),
-            const Spacer(),
+                  SizedBox(height: shortScreen ? AppSpacing.md : AppSpacing.xl),
 
-            // BIG BPM — shrinks on short viewports so the bottom controls fit.
-            BpmDisplay(bpm: _bpm, hrMax: hrMax, size: bpmSize),
-
-            SizedBox(height: shortScreen ? AppSpacing.sm : AppSpacing.lg),
-
-            // Zone bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-              child: ZoneBar(activeZone: zone == 0 ? 1 : zone),
-            ),
-
-            SizedBox(height: shortScreen ? AppSpacing.md : AppSpacing.xl),
-
-            // Stats row
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _LiveStat(
-                      label: Strings.duration,
-                      value: _formatDuration(_stopwatch.elapsed),
-                      color: AppColors.textPrimary,
+                  // Stats row
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
                     ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 36,
-                    color: AppColors.border,
-                  ),
-                  Expanded(
-                    child: _LiveStat(
-                      label: Strings.calories,
-                      value: _kcal.round().toString(),
-                      unit: 'kcal',
-                      color: zoneColor,
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 36,
-                    color: AppColors.border,
-                  ),
-                  Expanded(
-                    child: _LiveStat(
-                      label: 'TRIMP',
-                      value: _trimp.toStringAsFixed(0),
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: shortScreen ? AppSpacing.sm : 0),
-            const Spacer(),
-
-            // "View whole studio" button — only in group sessions.
-            // Uses same horizontal padding as the controls below so widths match.
-            if (widget.inGroupSession) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: _ViewStudioButton(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => TvHostScreen(
-                        studioId: widget.session == null
-                            ? null
-                            : widget.profile.studioId,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-            ],
-
-            // Controls
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.xs, AppSpacing.lg, AppSpacing.lg,
-              ),
-              // In a group session, Pause/Resume is the trainer's call — the
-              // athlete just gets Leave. Solo workouts keep their own Pause.
-              child: widget.inGroupSession
-                  ? BeatPrimaryButton(
-                      label: Strings.leave,
-                      icon: Icons.stop_rounded,
-                      onPressed: _endWorkout,
-                    )
-                  : Row(
+                    child: Row(
                       children: [
                         Expanded(
-                          child: BeatSecondaryButton(
-                            label: _paused ? Strings.resume : Strings.pause,
-                            icon: _paused
-                                ? Icons.play_arrow_rounded
-                                : Icons.pause_rounded,
-                            onPressed: () => setState(() {
-                              _paused = !_paused;
-                              if (_paused) {
-                                _stopwatch.stop();
-                              } else {
-                                _stopwatch.start();
-                              }
-                            }),
+                          child: _LiveStat(
+                            label: Strings.duration,
+                            value: _formatDuration(_stopwatch.elapsed),
+                            color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
+                        Container(
+                          width: 1,
+                          height: 36,
+                          color: AppColors.border,
+                        ),
                         Expanded(
-                          child: BeatPrimaryButton(
-                            label: Strings.endLabel,
-                            icon: Icons.stop_rounded,
-                            onPressed: _endWorkout,
+                          child: _LiveStat(
+                            label: Strings.calories,
+                            value: _kcal.round().toString(),
+                            unit: 'kcal',
+                            color: zoneColor,
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 36,
+                          color: AppColors.border,
+                        ),
+                        Expanded(
+                          child: _LiveStat(
+                            label: 'TRIMP',
+                            value: _trimp.toStringAsFixed(0),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ],
                     ),
+                  ),
+
+                  SizedBox(height: shortScreen ? AppSpacing.sm : 0),
+                  const Spacer(),
+
+                  // "View whole studio" button — only in group sessions.
+                  // Uses same horizontal padding as the controls below so widths match.
+                  if (widget.inGroupSession) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      child: _ViewStudioButton(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => TvHostScreen(
+                              studioId: widget.session == null
+                                  ? null
+                                  : widget.profile.studioId,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+
+                  // Controls
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.xs,
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                    ),
+                    // In a group session, Pause/Resume is the trainer's call — the
+                    // athlete just gets Leave. Solo workouts keep their own Pause.
+                    child: widget.inGroupSession
+                        ? BeatPrimaryButton(
+                            label: Strings.leave,
+                            icon: Icons.stop_rounded,
+                            onPressed: _endWorkout,
+                          )
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: BeatSecondaryButton(
+                                  label: _paused
+                                      ? Strings.resume
+                                      : Strings.pause,
+                                  icon: _paused
+                                      ? Icons.play_arrow_rounded
+                                      : Icons.pause_rounded,
+                                  onPressed: () => setState(() {
+                                    _paused = !_paused;
+                                    if (_paused) {
+                                      _stopwatch.stop();
+                                    } else {
+                                      _stopwatch.start();
+                                    }
+                                  }),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: BeatPrimaryButton(
+                                  label: Strings.endLabel,
+                                  icon: Icons.stop_rounded,
+                                  onPressed: _endWorkout,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ],
+              ),
             ),
+            if (_countingDown)
+              _CountdownOverlay(value: _countdown, showGo: _showGo),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Full-screen 3-2-1 countdown shown before the clock + elapsed time start.
+/// HR sampling is already running underneath, so the trainer's board (and
+/// this athlete's own numbers, once revealed) tick during this screen too.
+class _CountdownOverlay extends StatelessWidget {
+  final int value;
+  final bool showGo;
+  const _CountdownOverlay({required this.value, required this.showGo});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Container(
+        color: AppColors.bgPrimary,
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              Strings.getReady,
+              style: AppTheme.h2().copyWith(letterSpacing: 2),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              showGo ? '' : Strings.startingIn,
+              style: AppTheme.caption(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, anim) => ScaleTransition(
+                scale: anim,
+                child: FadeTransition(opacity: anim, child: child),
+              ),
+              child: Text(
+                showGo ? Strings.go : '$value',
+                key: ValueKey(showGo ? -1 : value),
+                style: AppTheme.statNumber(
+                  fontSize: 120,
+                  color: AppColors.brandRed,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -774,13 +1016,11 @@ class _ViewStudioButton extends StatelessWidget {
                   children: [
                     Text(
                       Strings.viewWholeStudio,
-                      style: AppTheme.bodyLarge(weight: FontWeight.w600)
-                          .copyWith(fontSize: 15),
+                      style: AppTheme.bodyLarge(
+                        weight: FontWeight.w600,
+                      ).copyWith(fontSize: 15),
                     ),
-                    Text(
-                      Strings.seeEveryone,
-                      style: AppTheme.caption(),
-                    ),
+                    Text(Strings.seeEveryone, style: AppTheme.caption()),
                   ],
                 ),
               ),

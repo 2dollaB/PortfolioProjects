@@ -22,6 +22,15 @@ class ParticipantCard extends StatelessWidget {
   final int hrMax;
   final VoidCallback? onTap;
 
+  /// False while the workout hasn't actually started yet (lobby or the
+  /// synced countdown) — the tile shows a neutral grey border/stripe and a
+  /// kick "X" instead of the zone badge, since there's no zone to show yet.
+  final bool isLive;
+
+  /// Kick action — shown as the "X" in place of the zone badge when
+  /// [isLive] is false. Ignored once live.
+  final VoidCallback? onKick;
+
   const ParticipantCard({
     super.key,
     required this.name,
@@ -30,6 +39,8 @@ class ParticipantCard extends StatelessWidget {
     required this.hrMax,
     this.avatarUrl,
     this.onTap,
+    this.isLive = true,
+    this.onKick,
   });
 
   String get _initials {
@@ -44,7 +55,11 @@ class ParticipantCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final zone = HrZones.fromBpm(bpm, hrMax);
     final activeZone = zone == 0 ? 1 : zone;
-    final color = AppColors.zoneColor(activeZone);
+    // Neutral grey pre-live — there's no zone to show before the workout
+    // actually starts (lobby or the synced countdown).
+    final color = isLive
+        ? AppColors.zoneColor(activeZone)
+        : AppColors.textTertiary;
     final pct = hrMax > 0 ? (bpm / hrMax).clamp(0.0, 1.0) : 0.0;
 
     return LayoutBuilder(
@@ -68,7 +83,10 @@ class ParticipantCard extends StatelessWidget {
                 color: AppColors.bgSecondary,
                 borderRadius: BorderRadius.circular(12),
                 // Zone color tints the border, so identity is readable even at distance
-                border: Border.all(color: color.withValues(alpha: 0.45), width: 1.2),
+                border: Border.all(
+                  color: color.withValues(alpha: 0.45),
+                  width: 1.2,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: color.withValues(alpha: 0.10),
@@ -97,6 +115,8 @@ class ParticipantCard extends StatelessWidget {
                               color: color,
                               showAvatar: showAvatar,
                               dense: !tall,
+                              isLive: isLive,
+                              onKick: onKick,
                             ),
                             const SizedBox(height: 2),
                             // ── BPM ──
@@ -132,8 +152,9 @@ class ParticipantCard extends StatelessWidget {
                                   const Spacer(),
                                   Text(
                                     '${(pct * 100).round()}%',
-                                    style: AppTheme.micro(color: color)
-                                        .copyWith(fontWeight: FontWeight.w700),
+                                    style: AppTheme.micro(
+                                      color: color,
+                                    ).copyWith(fontWeight: FontWeight.w700),
                                   ),
                                 ],
                               ),
@@ -161,6 +182,8 @@ class _TopRow extends StatelessWidget {
   final Color color;
   final bool showAvatar;
   final bool dense;
+  final bool isLive;
+  final VoidCallback? onKick;
 
   const _TopRow({
     required this.initials,
@@ -169,6 +192,8 @@ class _TopRow extends StatelessWidget {
     required this.color,
     required this.showAvatar,
     required this.dense,
+    required this.isLive,
+    this.onKick,
   });
 
   @override
@@ -218,34 +243,61 @@ class _TopRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          // Solid zone-color chip with big Z number — most visible identity element
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: dense ? 8 : 10,
-              vertical: dense ? 3 : 4,
-            ),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.5),
-                  blurRadius: 8,
-                  spreadRadius: -2,
+          // Pre-live with a kick handler (trainer): "X" to remove — there's no
+          // zone yet. Pre-live without one (TV board): nothing, the neutral
+          // grey border alone signals "not started". Live: solid zone-color
+          // chip with the big Z number, the most visible identity element.
+          if (!isLive && onKick != null)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onKick,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: dense ? 26 : 30,
+                  height: dense ? 26 : 30,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.bgTertiary,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: color.withValues(alpha: 0.45)),
+                  ),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: dense ? 16 : 18,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ],
-            ),
-            child: Text(
-              'Z$zone',
-              style: TextStyle(
-                fontSize: dense ? 16 : 19,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-                height: 1.0,
-                letterSpacing: 0.4,
+              ),
+            )
+          else if (isLive)
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: dense ? 8 : 10,
+                vertical: dense ? 3 : 4,
+              ),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.5),
+                    blurRadius: 8,
+                    spreadRadius: -2,
+                  ),
+                ],
+              ),
+              child: Text(
+                'Z$zone',
+                style: TextStyle(
+                  fontSize: dense ? 16 : 19,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  height: 1.0,
+                  letterSpacing: 0.4,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -288,8 +340,9 @@ class _BpmBlock extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
                   'bpm',
-                  style: AppTheme.caption(color: AppColors.textSecondary)
-                      .copyWith(fontSize: 12),
+                  style: AppTheme.caption(
+                    color: AppColors.textSecondary,
+                  ).copyWith(fontSize: 12),
                 ),
               ),
             ],

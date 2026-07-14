@@ -18,9 +18,9 @@ enum AppLang {
 
   /// Native label shown in the language picker.
   String get label => switch (this) {
-        AppLang.en => 'English',
-        AppLang.hr => 'Hrvatski',
-      };
+    AppLang.en => 'English',
+    AppLang.hr => 'Hrvatski',
+  };
 }
 
 class Strings {
@@ -37,23 +37,29 @@ class Strings {
 
   // ── Enum display (Sex / FitnessLevel) ────────────────────────
   static String sexName(Sex s) => switch (s) {
-        Sex.male => _pick('Male', 'Muško'),
-        Sex.female => _pick('Female', 'Žensko'),
-        Sex.other => _pick('Other', 'Ostalo'),
-      };
+    Sex.male => _pick('Male', 'Muško'),
+    Sex.female => _pick('Female', 'Žensko'),
+    Sex.other => _pick('Other', 'Ostalo'),
+  };
   static String fitnessName(FitnessLevel l) => switch (l) {
-        FitnessLevel.beginner => _pick('Beginner', 'Početnik'),
-        FitnessLevel.casual => _pick('Casual', 'Rekreativac'),
-        FitnessLevel.advanced => _pick('Advanced', 'Napredni'),
-      };
+    FitnessLevel.beginner => _pick('Beginner', 'Početnik'),
+    FitnessLevel.casual => _pick('Casual', 'Rekreativac'),
+    FitnessLevel.advanced => _pick('Advanced', 'Napredni'),
+  };
   static String fitnessDesc(FitnessLevel l) => switch (l) {
-        FitnessLevel.beginner =>
-          _pick('New to regular exercise', 'Novi u redovitom vježbanju'),
-        FitnessLevel.casual =>
-          _pick('Exercise 2-3 times/week', 'Vježbam 2-3 puta tjedno'),
-        FitnessLevel.advanced =>
-          _pick('Train 5+ times/week', 'Treniram 5+ puta tjedno'),
-      };
+    FitnessLevel.beginner => _pick(
+      'New to regular exercise',
+      'Novi u redovitom vježbanju',
+    ),
+    FitnessLevel.casual => _pick(
+      'Exercise 2-3 times/week',
+      'Vježbam 2-3 puta tjedno',
+    ),
+    FitnessLevel.advanced => _pick(
+      'Train 5+ times/week',
+      'Treniram 5+ puta tjedno',
+    ),
+  };
 
   // ── Common / actions ─────────────────────────────────────────
   static String get cancel => _pick('Cancel', 'Odustani');
@@ -68,27 +74,31 @@ class Strings {
   // ── Auth / onboarding ────────────────────────────────────────
   static String get welcomeBack => _pick('Welcome back', 'Dobrodošli natrag');
   static String get loginSubtitle => _pick(
-      'Sign in to keep your training history in sync.',
-      'Prijavite se kako bi vaša povijest treninga ostala sinkronizirana.');
+    'Sign in to keep your training history in sync.',
+    'Prijavite se kako bi vaša povijest treninga ostala sinkronizirana.',
+  );
   static String get email => _pick('Email', 'E-pošta');
   static String get password => _pick('Password', 'Lozinka');
   static String get forgotPassword =>
       _pick('Forgot password?', 'Zaboravljena lozinka?');
   static String get verificationSent => _pick(
-      'Verification email sent — check your inbox.',
-      'Verifikacijski mail poslan — provjeri inbox.');
-  static String get verifyEmailBanner => _pick(
-      'Verify your email', 'Potvrdite svoj email');
+    'Verification email sent — check your inbox.',
+    'Verifikacijski mail poslan — provjeri inbox.',
+  );
+  static String get verifyEmailBanner =>
+      _pick('Verify your email', 'Potvrdite svoj email');
   static String get resend => _pick('Resend', 'Pošalji ponovno');
   static String get resetPasswordTitle =>
       _pick('Reset password', 'Zaboravljena lozinka');
   static String get resetPasswordSubtitle => _pick(
-      "Enter your email and we'll send you a link to set a new password.",
-      'Unesi e-poštu i poslat ćemo ti link za postavljanje nove lozinke.');
+    "Enter your email and we'll send you a link to set a new password.",
+    'Unesi e-poštu i poslat ćemo ti link za postavljanje nove lozinke.',
+  );
   static String get sendResetLink => _pick('Send reset link', 'Pošalji link');
   static String get resetLinkSent => _pick(
-      'If an account exists for that email, a reset link is on its way.',
-      'Ako račun s tom e-poštom postoji, link za reset je na putu.');
+    'If an account exists for that email, a reset link is on its way.',
+    'Ako račun s tom e-poštom postoji, link za reset je na putu.',
+  );
   static String get backToSignIn =>
       _pick('Back to sign in', 'Natrag na prijavu');
   static String get signIn => _pick('Sign in', 'Prijava');
@@ -109,8 +119,9 @@ class Strings {
   static String get passwordRequired =>
       _pick('Password is required', 'Lozinka je obavezna');
   static String get passwordTooShort => _pick(
-      'Password must be at least 6 characters',
-      'Lozinka mora imati barem 6 znakova');
+    'Password must be at least 6 characters',
+    'Lozinka mora imati barem 6 znakova',
+  );
   static String get invalidCredentials =>
       _pick('Invalid credentials', 'Neispravni podaci za prijavu');
 
@@ -118,20 +129,22 @@ class Strings {
   static String get createAccount => _pick('Create account', 'Stvori račun');
   static String get createYourAccount =>
       _pick('Create your account', 'Stvorite svoj račun');
-  static String get registerTagline =>
-      _pick('Two minutes — then you can train.',
-          'Dvije minute — i možete trenirati.');
+  static String get registerTagline => _pick(
+    'Two minutes — then you can train.',
+    'Dvije minute — i možete trenirati.',
+  );
   static String get name => _pick('Name', 'Ime');
   static String get confirmPasswordRequired =>
       _pick('Please confirm your password', 'Potvrdite svoju lozinku');
   static String get bySigningUp => _pick(
-      'By signing up you agree to our Terms & Privacy Policy.',
-      'Registracijom prihvaćate naše Uvjete i Pravila privatnosti.');
-  static String get backToLogin =>
-      _pick('Back to login', 'Natrag na prijavu');
+    'By signing up you agree to our Terms & Privacy Policy.',
+    'Registracijom prihvaćate naše Uvjete i Pravila privatnosti.',
+  );
+  static String get backToLogin => _pick('Back to login', 'Natrag na prijavu');
   static String get registerSubtitle => _pick(
-      'Start tracking your heart rate in group sessions.',
-      'Počnite pratiti svoj puls na grupnim treninzima.');
+    'Start tracking your heart rate in group sessions.',
+    'Počnite pratiti svoj puls na grupnim treninzima.',
+  );
   static String get fullName => _pick('Full name', 'Ime i prezime');
   static String get nameRequired =>
       _pick('Name is required', 'Ime je obavezno');
@@ -144,16 +157,19 @@ class Strings {
   static String get pickYourRole =>
       _pick('Pick your role', 'Odaberite svoju ulogu');
   static String get roleTailor => _pick(
-      "We'll tailor the experience for how you train.",
-      'Prilagodit ćemo iskustvo načinu na koji trenirate.');
+    "We'll tailor the experience for how you train.",
+    'Prilagodit ćemo iskustvo načinu na koji trenirate.',
+  );
   static String get imAthlete => _pick("I'm an athlete", 'Ja sam sportaš');
   static String get athleteCardDesc => _pick(
-      'Connect your HR strap, join sessions, track your training history.',
-      'Povežite mjerač pulsa, pridružite se treninzima i pratite svoju povijest.');
+    'Connect your HR strap, join sessions, track your training history.',
+    'Povežite mjerač pulsa, pridružite se treninzima i pratite svoju povijest.',
+  );
   static String get imTrainer => _pick("I'm a trainer", 'Ja sam trener');
   static String get trainerCardDesc => _pick(
-      'Run a studio, host live sessions, see every athlete in real time.',
-      'Vodite studio, organizirajte treninge uživo i pratite svakog sportaša u stvarnom vremenu.');
+    'Run a studio, host live sessions, see every athlete in real time.',
+    'Vodite studio, organizirajte treninge uživo i pratite svakog sportaša u stvarnom vremenu.',
+  );
   static String get continueLabel => _pick('Continue', 'Nastavi');
 
   // Splash + onboarding
@@ -165,25 +181,31 @@ class Strings {
   static String get onbConnectTitle =>
       _pick('Connect your strap', 'Povežite svoj mjerač');
   static String get onbConnectBody => _pick(
-      'BeatSync pairs with any Bluetooth heart-rate strap — Polar, Wahoo, Garmin, generic. Your BPM is live the moment you walk into the gym.',
-      'BeatSync se povezuje s bilo kojim Bluetooth mjeračem pulsa — Polar, Wahoo, Garmin ili generički. Vaš puls je vidljiv čim uđete u teretanu.');
+    'BeatSync pairs with any Bluetooth heart-rate strap — Polar, Wahoo, Garmin, generic. Your BPM is live the moment you walk into the gym.',
+    'BeatSync se povezuje s bilo kojim Bluetooth mjeračem pulsa — Polar, Wahoo, Garmin ili generički. Vaš puls je vidljiv čim uđete u teretanu.',
+  );
   static String get onbNotCompTitle =>
       _pick('Not a competition', 'Nije natjecanje');
   static String get onbNotCompBody => _pick(
-      'BeatSync is a heart-rate monitoring tool for trainers. Train together, see the studio in real time — no podium, no ranking pressure.',
-      'BeatSync je alat za praćenje pulsa za trenere. Trenirajte zajedno i pratite studio uživo — bez postolja i pritiska rangiranja.');
+    'BeatSync is a heart-rate monitoring tool for trainers. Train together, see the studio in real time — no podium, no ranking pressure.',
+    'BeatSync je alat za praćenje pulsa za trenere. Trenirajte zajedno i pratite studio uživo — bez postolja i pritiska rangiranja.',
+  );
 
   // ── Profile-setup wizard ─────────────────────────────────────
   static String get ageRange =>
       _pick('Age must be between 13 and 100', 'Dob mora biti između 13 i 100');
-  static String get weightRange => _pick('Weight must be between 30 and 250 kg',
-      'Težina mora biti između 30 i 250 kg');
+  static String get weightRange => _pick(
+    'Weight must be between 30 and 250 kg',
+    'Težina mora biti između 30 i 250 kg',
+  );
   static String get heightRange => _pick(
-      'Height must be between 100 and 230 cm',
-      'Visina mora biti između 100 i 230 cm');
+    'Height must be between 100 and 230 cm',
+    'Visina mora biti između 100 i 230 cm',
+  );
   static String get restingHrRange => _pick(
-      'Resting HR must be between 30 and 120 bpm',
-      'Puls u mirovanju mora biti između 30 i 120 bpm');
+    'Resting HR must be between 30 and 120 bpm',
+    'Puls u mirovanju mora biti između 30 i 120 bpm',
+  );
   static String get studioNameRequired =>
       _pick('Studio name is required', 'Naziv studija je obavezan');
   static String setupFailed(Object e) =>
@@ -191,8 +213,7 @@ class Strings {
 
   static String get enterYourStudio =>
       _pick('Enter your studio', 'Uđite u svoj studio');
-  static String get startTraining =>
-      _pick('Start training', 'Započni trening');
+  static String get startTraining => _pick('Start training', 'Započni trening');
   static String get createStudio => _pick('Create studio', 'Stvori studio');
   static String get skipForNow => _pick('Skip for now', 'Preskoči za sada');
 
@@ -201,35 +222,36 @@ class Strings {
   static String get buildYourRhythm =>
       _pick("Let's build your rhythm", 'Izgradimo vaš ritam');
   static String get personalSubtitle => _pick(
-      'A few numbers to calibrate your zones and effort scores.',
-      'Nekoliko brojki za kalibraciju vaših zona i ocjena napora.');
+    'A few numbers to calibrate your zones and effort scores.',
+    'Nekoliko brojki za kalibraciju vaših zona i ocjena napora.',
+  );
   static String get trainingProfileOverline =>
       _pick('Training profile', 'Trening profil');
   static String get fitnessQuestion =>
       _pick("What's your fitness level?", 'Koja je vaša razina kondicije?');
   static String get fitnessSubtitle => _pick(
-      'Calibrates your training effect and calorie calculations.',
-      'Kalibrira učinak treninga i izračun kalorija.');
+    'Calibrates your training effect and calorie calculations.',
+    'Kalibrira učinak treninga i izračun kalorija.',
+  );
   static String get strapOverline => _pick('Bluetooth', 'Bluetooth');
   static String get strapSubtitle => _pick(
-      'Polar · Wahoo · Garmin · generic Bluetooth straps.',
-      'Polar · Wahoo · Garmin · generički Bluetooth mjerači.');
+    'Polar · Wahoo · Garmin · generic Bluetooth straps.',
+    'Polar · Wahoo · Garmin · generički Bluetooth mjerači.',
+  );
   static String get yourStudioOverline => _pick('Your studio', 'Vaš studio');
   static String get buildYourSpace =>
       _pick('Build your space', 'Izgradite svoj prostor');
   static String get studioFormSubtitle => _pick(
-      'This is where your athletes will join you.',
-      'Ovdje će vam se pridružiti vaši sportaši.');
+    'This is where your athletes will join you.',
+    'Ovdje će vam se pridružiti vaši sportaši.',
+  );
 
   static String get age => _pick('Age', 'Dob');
-  static String get sex => _pick('Sex', 'Spol');
+  static String get sex => _pick('Gender', 'Spol');
   static String get weight => _pick('Weight', 'Težina');
   static String get height => _pick('Height', 'Visina');
   static String get restingHrOptional =>
       _pick('Resting HR (optional)', 'Puls u mirovanju (opcionalno)');
-  static String get restingHrTip => _pick(
-      'Measure lying down in the morning before getting up.',
-      'Izmjerite ležeći ujutro prije ustajanja.');
   static String get studioName => _pick('Studio name', 'Naziv studija');
   static String get locationOptional =>
       _pick('Location (optional)', 'Lokacija (opcionalno)');
@@ -239,85 +261,121 @@ class Strings {
       _pick('Estimated HR max', 'Procijenjeni maks. puls');
   static String get hrMaxInfoTitle => _pick('About HR max', 'O maks. pulsu');
   static String get hrMaxInfoBody => _pick(
-      'BeatSync estimates your maximum heart rate from your age with the '
-      'Tanaka formula: 208 − 0.7 × age. For women it uses the Gulati '
-      'formula: 206 − 0.88 × age, which reflects female heart-rate response '
-      'better. Both come from large clinical studies and are more accurate '
-      'than the classic "220 − age". Your true maximum can still differ a '
-      'little — if you exceed it during a workout, BeatSync raises it '
-      'automatically.',
-      'BeatSync procjenjuje vaš maksimalni puls iz dobi Tanaka formulom: '
-      '208 − 0,7 × dob. Za žene koristi Gulati formulu: 206 − 0,88 × dob, '
-      'koja bolje odražava ženski puls. Obje dolaze iz velikih kliničkih '
-      'studija i preciznije su od klasične "220 − dob". Stvarni maksimum '
-      'ipak može malo odstupati — ako ga premašite tijekom treninga, '
-      'BeatSync ga automatski povećava.');
+    'BeatSync estimates your maximum heart rate from your age with the '
+        'Tanaka formula: 208 − 0.7 × age. For women it uses the Gulati '
+        'formula: 206 − 0.88 × age, which reflects female heart-rate response '
+        'better. Both come from large clinical studies and are more accurate '
+        'than the classic "220 − age". Your true maximum can still differ a '
+        'little — if you exceed it during a workout, BeatSync raises it '
+        'automatically.',
+    'BeatSync procjenjuje vaš maksimalni puls iz dobi Tanaka formulom: '
+        '208 − 0,7 × dob. Za žene koristi Gulati formulu: 206 − 0,88 × dob, '
+        'koja bolje odražava ženski puls. Obje dolaze iz velikih kliničkih '
+        'studija i preciznije su od klasične "220 − dob". Stvarni maksimum '
+        'ipak može malo odstupati — ako ga premašite tijekom treninga, '
+        'BeatSync ga automatski povećava.',
+  );
+  // Stepped HR-max explainer (account setup + wherever HR max shows).
+  static String get hrMaxStep1Title => _pick('What it is', 'Što je to');
+  static String get hrMaxStep1Body => _pick(
+    'Your maximum heart rate is the ceiling — the most beats per minute your '
+        'heart can reach. Every zone and your training load are measured '
+        'against it.',
+    'Maksimalni puls je gornja granica — najviše otkucaja u minuti koje vaše '
+        'srce može dosegnuti. Sve zone i vaše opterećenje mjere se u odnosu '
+        'na njega.',
+  );
+  static String get hrMaxStep2Title =>
+      _pick('How we estimate it', 'Kako je procjenjujemo');
+  static String get hrMaxStep2Body => _pick(
+    'From your age — more accurate than the classic "220 − age". Women use '
+        'the Gulati formula, which fits female heart-rate response better.',
+    'Iz vaše dobi — preciznije od klasične "220 − dob". Žene koriste Gulati '
+        'formulu, koja bolje odgovara ženskom pulsu.',
+  );
+  static String get hrMaxStep3Title => _pick('It adapts', 'Prilagođava se');
+  static String get hrMaxStep3Body => _pick(
+    'Your true max can differ a little. If you beat this number during a '
+        'workout, BeatSync raises it automatically.',
+    'Vaš stvarni maksimum može malo odstupati. Ako premašite ovaj broj '
+        'tijekom treninga, BeatSync ga automatski povećava.',
+  );
+
   static String get trainingProfileFallback =>
       _pick('your training profile', 'vaš trening profil');
   // ── Stepped calc explainers (title + formula + body per step) ──
-  static String get zonesInfoTitle =>
-      _pick('Heart rate zones', 'Zone pulsa');
-  static String get zonesStep1Title =>
-      _pick('What a zone is', 'Što je zona');
-  static String get zonesStep1Formula =>
-      _pick('zone % = current HR ÷ your HR max',
-            'zona % = trenutni puls ÷ vaš maks. puls');
+  static String get zonesInfoTitle => _pick('Heart rate zones', 'Zone pulsa');
+  static String get zonesStep1Title => _pick('What a zone is', 'Što je zona');
+  static String get zonesStep1Formula => _pick(
+    'zone % = current HR ÷ your HR max',
+    'zona % = trenutni puls ÷ vaš maks. puls',
+  );
   static String get zonesStep1Body => _pick(
-      'Zones are shares of your personal HR max, so two people at the same '
-      'BPM can be in different zones. Below 50% counts as rest.',
-      'Zone su udjeli vašeg osobnog maks. pulsa, pa dvoje ljudi s istim '
-      'pulsom može biti u različitim zonama. Ispod 50% računa se kao odmor.');
-  static String get zonesStep2Title =>
-      _pick('The five zones', 'Pet zona');
+    'Zones are shares of your personal HR max, so two people at the same '
+        'BPM can be in different zones. Below 50% counts as rest.',
+    'Zone su udjeli vašeg osobnog maks. pulsa, pa dvoje ljudi s istim '
+        'pulsom može biti u različitim zonama. Ispod 50% računa se kao odmor.',
+  );
+  static String get zonesStep2Title => _pick('The five zones', 'Pet zona');
   static String get zonesStep2Formula => _pick(
-      'Z1  50 to 59%   Warmup\nZ2  60 to 69%   Fat burn\n'
-      'Z3  70 to 79%   Aerobic\nZ4  80 to 89%   Anaerobic\n'
-      'Z5  90 to 100%  VO₂ max',
-      'Z1  50 do 59%   Zagrijavanje\nZ2  60 do 69%   Masti\n'
-      'Z3  70 do 79%   Aerobna\nZ4  80 do 89%   Anaerobna\n'
-      'Z5  90 do 100%  VO₂ max');
+    'Z1  50 to 59%   Warmup\nZ2  60 to 69%   Fat burn\n'
+        'Z3  70 to 79%   Aerobic\nZ4  80 to 89%   Anaerobic\n'
+        'Z5  90 to 100%  VO₂ max',
+    'Z1  50 do 59%   Zagrijavanje\nZ2  60 do 69%   Masti\n'
+        'Z3  70 do 79%   Aerobna\nZ4  80 do 89%   Anaerobna\n'
+        'Z5  90 do 100%  VO₂ max',
+  );
   static String get zonesStep2Body => _pick(
-      'Higher zones are harder to hold and drive most of your training load.',
-      'Više zone teže je održati i nose najveći dio opterećenja treninga.');
+    'Higher zones are harder to hold and drive most of your training load.',
+    'Više zone teže je održati i nose najveći dio opterećenja treninga.',
+  );
 
   static String get calcInfoTitle =>
       _pick('How we get these numbers', 'Kako računamo ove brojke');
   static String get calcCaloriesTitle => _pick('Calories', 'Kalorije');
   static String get calcCaloriesFormula => _pick(
-      'Keytel (2005)\nfrom avg HR · weight · age · sex · time',
-      'Keytel (2005.)\niz prosj. pulsa · težine · dobi · spola · vremena');
+    'Keytel (2005)\nfrom avg HR · weight · age · sex · time',
+    'Keytel (2005.)\niz prosj. pulsa · težine · dobi · spola · vremena',
+  );
   static String get calcCaloriesBody => _pick(
-      'A published regression model, not a flat guess. It reads your actual '
-      'average heart rate, so a harder session burns more.',
-      'Objavljeni regresijski model, ne paušalna procjena. Uzima vaš stvarni '
-      'prosječni puls, pa napornija sesija troši više.');
+    'A published regression model, not a flat guess. It reads your actual '
+        'average heart rate, so a harder session burns more.',
+    'Objavljeni regresijski model, ne paušalna procjena. Uzima vaš stvarni '
+        'prosječni puls, pa napornija sesija troši više.',
+  );
   static String get calcTrimpTitle => _pick('TRIMP', 'TRIMP');
   static String get calcTrimpFormula => _pick(
-      'Σ  t · ΔHR · 0.64 · e^(k · ΔHR)\nΔHR = (HR - rest) ÷ (max - rest)',
-      'Σ  t · ΔHR · 0,64 · e^(k · ΔHR)\nΔHR = (puls - mir) ÷ (maks - mir)');
+    'Σ  t · ΔHR · 0.64 · e^(k · ΔHR)\nΔHR = (HR - rest) ÷ (max - rest)',
+    'Σ  t · ΔHR · 0,64 · e^(k · ΔHR)\nΔHR = (puls - mir) ÷ (maks - mir)',
+  );
   static String get calcTrimpBody => _pick(
-      'Training Impulse (Bannister). Each second is weighted by how close you '
-      'were to your max, so hard minutes count exponentially more. Around 50 '
-      'to 80 is a moderate 30 minute session; 150 plus is a hard hour.',
-      'Training Impulse (Bannister). Svaka sekunda ponderira se prema blizini '
-      'maksimuma, pa teške minute vrijede eksponencijalno više. Oko 50 do 80 '
-      'je umjeren 30 minutni trening; 150 plus je naporan sat.');
+    'Training Impulse (Bannister). Each second is weighted by how close you '
+        'were to your max, so hard minutes count exponentially more. Around 50 '
+        'to 80 is a moderate 30 minute session; 150 plus is a hard hour.',
+    'Training Impulse (Bannister). Svaka sekunda ponderira se prema blizini '
+        'maksimuma, pa teške minute vrijede eksponencijalno više. Oko 50 do 80 '
+        'je umjeren 30 minutni trening; 150 plus je naporan sat.',
+  );
   static String get calcHrMaxTitle => _pick('HR max', 'Maks. puls');
   static String get calcHrMaxFormula => _pick(
-      'Tanaka:          208 - 0.7 × age\nGulati (women):  206 - 0.88 × age',
-      'Tanaka:        208 - 0,7 × dob\nGulati (žene):  206 - 0,88 × dob');
+    'Tanaka:          208 - 0.7 × age\nGulati (women):  206 - 0.88 × age',
+    'Tanaka:        208 - 0,7 × dob\nGulati (žene):  206 - 0,88 × dob',
+  );
   static String get calcHrMaxBody => _pick(
-      'Your zones and TRIMP are all relative to this. Estimated from age, '
-      'more accurate than the classic 220 formula, and raised automatically '
-      'if you beat it in a workout.',
-      'Vaše zone i TRIMP računaju se u odnosu na ovo. Procijenjeno iz dobi, '
-      'preciznije od klasične formule 220, i automatski se povećava ako ga '
-      'premašite tijekom treninga.');
+    'Your zones and TRIMP are all relative to this. Estimated from age, '
+        'more accurate than the classic 220 formula, and raised automatically '
+        'if you beat it in a workout.',
+    'Vaše zone i TRIMP računaju se u odnosu na ovo. Procijenjeno iz dobi, '
+        'preciznije od klasične formule 220, i automatski se povećava ako ga '
+        'premašite tijekom treninga.',
+  );
 
-  static String get searchForStraps => _pick('Search for straps', 'Traži mjerače');
+  static String get searchForStraps =>
+      _pick('Search for straps', 'Traži mjerače');
   static String get pairLater => _pick(
-      'You can also pair from settings later.',
-      'Možete povezati i kasnije u postavkama.');
+    'You can also pair from settings later.',
+    'Možete povezati i kasnije u postavkama.',
+  );
   static String get searchingStraps =>
       _pick('Searching for nearby straps…', 'Tražim obližnje mjerače…');
   static String get connected => _pick('Connected', 'Povezano');
@@ -328,131 +386,145 @@ class Strings {
   static String get upToPrefix => _pick('Up to ', 'Do ');
   static String get membersSuffix => _pick('members', 'članova');
   static String get upgradeLater => _pick(
-      'Upgrade later if you outgrow this.',
-      'Nadogradite kasnije ako prerastete ovo.');
-  static String get studioCreated => _pick('Studio created!', 'Studio stvoren!');
+    'Upgrade later if you outgrow this.',
+    'Nadogradite kasnije ako prerastete ovo.',
+  );
+  static String get studioCreated =>
+      _pick('Studio created!', 'Studio stvoren!');
   static String get inviteCode => _pick('INVITE CODE', 'POZIVNI KOD');
   static String get shareInvite => _pick(
-      'Share this with your athletes to join your studio.',
-      'Podijelite ovo sa sportašima da se pridruže vašem studiju.');
+    'Share this with your athletes to join your studio.',
+    'Podijelite ovo sa sportašima da se pridruže vašem studiju.',
+  );
   static String get yourStudioFallback => _pick('Your studio', 'Vaš studio');
   static String get createYourStudio =>
       _pick('Create your studio', 'Stvorite svoj studio');
   static String get upgradePlanLater => _pick(
-      'You can upgrade your plan later if you outgrow this.',
-      'Plan možete nadograditi kasnije ako prerastete ovo.');
+    'You can upgrade your plan later if you outgrow this.',
+    'Plan možete nadograditi kasnije ako prerastete ovo.',
+  );
 
   // ── Athlete home ─────────────────────────────────────────────
   static String get goodMorning => _pick('Good morning', 'Dobro jutro');
   static String get goodAfternoon => _pick('Good afternoon', 'Dobar dan');
   static String get goodEvening => _pick('Good evening', 'Dobra večer');
-  static String get readyWhenYouAre =>
-      _pick('READY WHEN YOU ARE', 'SPREMNI KAD I VI');
   static String get startWorkout => _pick('Start workout', 'Započni trening');
   static String get startWorkoutSubtitle => _pick(
-      "We'll connect your HR strap and pick up where you left off.",
-      'Povezat ćemo vaš mjerač pulsa i nastaviti gdje ste stali.');
-  static String get lastSessionPrefix =>
-      _pick('Last session · ', 'Zadnji trening · ');
-  static String avgDuration(String dur) =>
-      _pick('avg · $dur', 'prosj. · $dur');
+    "We'll connect your HR strap and pick up where you left off.",
+    'Povezat ćemo vaš mjerač pulsa i nastaviti gdje ste stali.',
+  );
   static String get thisWeek => _pick('This week', 'Ovaj tjedan');
   static String get recentWorkouts =>
       _pick('Recent workouts', 'Nedavni treninzi');
   static String get seeAll => _pick('See all', 'Prikaži sve');
   static String get noWorkoutsYet => _pick(
-      'No workouts yet.\nFinish a session and it shows up here.',
-      'Još nema treninga.\nZavršite trening i pojavit će se ovdje.');
+    'No workouts yet.\nFinish a session and it shows up here.',
+    'Još nema treninga.\nZavršite trening i pojavit će se ovdje.',
+  );
   static String get sessions => _pick('Sessions', 'Treninzi');
   static String get thisWeekUnit => _pick('this week', 'ovaj tjedan');
   static String get time => _pick('Time', 'Vrijeme');
-  static String get joinAStudio => _pick('Join a studio', 'Pridruži se studiju');
+  static String get joinAStudio =>
+      _pick('Join a studio', 'Pridruži se studiju');
   static String get joinStudioHint => _pick(
-      "Enter your trainer's 6-digit code",
-      'Unesite trenerov 6-znamenkasti kod');
+    "Enter your trainer's 6-digit code",
+    'Unesite trenerov 6-znamenkasti kod',
+  );
   static String get joinGroupSession =>
       _pick('Join a group session', 'Pridruži se grupnom treningu');
-  static String get scanQrFromTrainer => _pick(
-      'Scan the QR from your trainer', 'Skenirajte QR od svog trenera');
+  static String get scanQrFromTrainer =>
+      _pick('Scan the QR from your trainer', 'Skenirajte QR od svog trenera');
 
   // ── Join studio ──────────────────────────────────────────────
   static String get enterStudioCode =>
       _pick('Enter your studio code', 'Unesite kod studija');
   static String get studioCodeSubtitle => _pick(
-      'Your trainer shares a 6-digit code to join their studio.',
-      'Vaš trener dijeli 6-znamenkasti kod za pridruživanje studiju.');
+    'Your trainer shares a 6-digit code to join their studio.',
+    'Vaš trener dijeli 6-znamenkasti kod za pridruživanje studiju.',
+  );
   static String get enterCodeError => _pick(
-      'Enter the 6-digit code from your trainer.',
-      'Unesite 6-znamenkasti kod od svog trenera.');
+    'Enter the 6-digit code from your trainer.',
+    'Unesite 6-znamenkasti kod od svog trenera.',
+  );
   static String get notSignedIn =>
       _pick('You are not signed in.', 'Niste prijavljeni.');
   static String get codeNoMatch => _pick(
-      "That code didn't match a studio.",
-      'Taj kod ne odgovara nijednom studiju.');
+    "That code didn't match a studio.",
+    'Taj kod ne odgovara nijednom studiju.',
+  );
   static String couldNotJoin(Object e) =>
       _pick('Could not join: $e', 'Pridruživanje nije uspjelo: $e');
   static String get joinedStudio =>
       _pick('You joined the studio!', 'Pridružili ste se studiju!');
   static String get joinStudioBtn => _pick('Join studio', 'Pridruži se');
-  static String get scanToJoin =>
-      _pick('Scan QR', 'Skeniraj QR');
+  static String get scanToJoin => _pick('Scan QR', 'Skeniraj QR');
   static String get pointAtQr => _pick(
-      'Point your camera at the studio QR code',
-      'Usmjerite kameru na QR kod studija');
+    'Point your camera at the studio QR code',
+    'Usmjerite kameru na QR kod studija',
+  );
   static String get cameraPermissionNeeded => _pick(
-      'Camera access is needed to scan the QR code.',
-      'Za skeniranje QR koda potreban je pristup kameri.');
-  static String get qrNotAStudioCode => _pick(
-      "That QR isn't a studio code.",
-      'Taj QR nije kod studija.');
+    'Camera access is needed to scan the QR code.',
+    'Za skeniranje QR koda potreban je pristup kameri.',
+  );
+  static String get qrNotAStudioCode =>
+      _pick("That QR isn't a studio code.", 'Taj QR nije kod studija.');
 
   // ── Join / live session ──────────────────────────────────────
-  static String get joinSession => _pick('Join session', 'Pridruži se treningu');
+  static String get joinSession =>
+      _pick('Join session', 'Pridruži se treningu');
   static String get enterSessionCode =>
       _pick('Enter the session code', 'Unesite kod treninga');
   static String get sessionCodeSubtitle => _pick(
-      'Your trainer shares a code for each session.',
-      'Vaš trener dijeli kod za svaki trening.');
+    'Your trainer shares a code for each session.',
+    'Vaš trener dijeli kod za svaki trening.',
+  );
   static String get sessionCodeError => _pick(
-      'Enter the 6-digit session code.',
-      'Unesite 6-znamenkasti kod treninga.');
+    'Enter the 6-digit session code.',
+    'Unesite 6-znamenkasti kod treninga.',
+  );
   static String get sessionNoMatch => _pick(
-      "That code didn't match a live session.",
-      'Taj kod ne odgovara aktivnom treningu.');
+    "That code didn't match a live session.",
+    'Taj kod ne odgovara aktivnom treningu.',
+  );
   static String get sessionOtherStudio => _pick(
-      "You can't join — this session belongs to another studio.",
-      'Ne možete se pridružiti — ovaj trening pripada drugom studiju.');
+    "You can't join — this session belongs to another studio.",
+    'Ne možete se pridružiti — ovaj trening pripada drugom studiju.',
+  );
   static String couldNotJoinSession(Object e) =>
       _pick('Could not join: $e', 'Pridruživanje nije uspjelo: $e');
   static String get removedFromSession => _pick(
-      'You were removed from this session.',
-      'Uklonjeni ste s ovog treninga.');
-  static String get waitingToStart =>
-      _pick('waiting to start', 'čeka početak');
+    'You were removed from this session.',
+    'Uklonjeni ste s ovog treninga.',
+  );
+  static String get waitingToStart => _pick('waiting to start', 'čeka početak');
   static String get justStarted => _pick('just started', 'upravo započeo');
   static String startedMinAgo(int m) =>
       _pick('started ${m}m ago', 'započeo prije $m min');
   static String get joinStudioFirst => _pick(
-      'Join a studio first —\ngroup sessions happen inside one.',
-      'Prvo se pridružite studiju —\ngrupni treninzi odvijaju se unutar njega.');
+    'Join a studio first —\ngroup sessions happen inside one.',
+    'Prvo se pridružite studiju —\ngrupni treninzi odvijaju se unutar njega.',
+  );
   static String get scanQrTitle => _pick(
-      'Scan the QR code from your trainer',
-      'Skenirajte QR kod od svog trenera');
+    'Scan the QR code from your trainer',
+    'Skenirajte QR kod od svog trenera',
+  );
   static String get holdSteady => _pick(
-      'Hold your phone steady — we connect automatically.',
-      'Držite telefon mirno — povezujemo se automatski.');
+    'Hold your phone steady — we connect automatically.',
+    'Držite telefon mirno — povezujemo se automatski.',
+  );
   static String get orEnterCode => _pick('OR ENTER CODE', 'ILI UNESITE KOD');
   static String get noLiveSession =>
       _pick('No live session right now', 'Trenutno nema treninga uživo');
   static String get noLiveSessionHint => _pick(
-      'When your trainer starts one,\nit shows up here automatically.',
-      'Kad ga vaš trener pokrene,\npojavit će se ovdje automatski.');
+    'When your trainer starts one,\nit shows up here automatically.',
+    'Kad ga vaš trener pokrene,\npojavit će se ovdje automatski.',
+  );
   static String get liveNow => _pick('LIVE NOW', 'UŽIVO SADA');
   static String get scanning => _pick('Scanning…', 'Skeniram…');
 
   // Session lobby (waiting room)
-  static String get waitingForTrainer => _pick(
-      'Waiting for your trainer to start…', 'Čekanje da trener započne…');
+  static String get waitingForTrainer =>
+      _pick('Waiting for your trainer to start…', 'Čekanje da trener započne…');
   static String connectionIssue(Object e) =>
       _pick('Connection issue: $e', 'Problem s vezom: $e');
   static String get youreInTheRoom =>
@@ -461,11 +533,15 @@ class Strings {
   static String get leave => _pick('Leave', 'Napusti');
 
   // ── Workout (live) ───────────────────────────────────────────
+  static String get getReady => _pick('GET READY', 'PRIPREMI SE');
+  static String get startingIn => _pick('Starting in', 'Počinje za');
+  static String get go => _pick('GO', 'KREĆI');
   static String get endWorkoutTitle =>
       _pick('End workout?', 'Završiti trening?');
   static String get endWorkoutBody => _pick(
-      "We'll save your session and show you the summary.",
-      'Spremit ćemo trening i prikazati sažetak.');
+    "We'll save your session and show you the summary.",
+    'Spremit ćemo trening i prikazati sažetak.',
+  );
   static String get endLabel => _pick('End', 'Završi');
   static String get simulated => _pick('Simulated', 'Simulirano');
   static String get liveStudioSession =>
@@ -480,12 +556,13 @@ class Strings {
   static String get viewWholeStudio =>
       _pick('View whole studio', 'Pogledaj cijeli studio');
   static String get seeEveryone => _pick(
-      'See everyone training together', 'Vidite sve kako treniraju zajedno');
+    'See everyone training together',
+    'Vidite sve kako treniraju zajedno',
+  );
 
   // ── Workout summary ──────────────────────────────────────────
   static String get workoutSummary =>
       _pick('Workout summary', 'Sažetak treninga');
-  static String get workoutFallback => _pick('Workout', 'Trening');
   static String get average => _pick('AVERAGE', 'PROSJEK');
   static String get peak => _pick('PEAK', 'VRHUNAC');
   static String get timeInZones => _pick('Time in zones', 'Vrijeme u zonama');
@@ -498,8 +575,9 @@ class Strings {
   static String get discardWorkoutTitle =>
       _pick('Discard this workout?', 'Odbaciti ovaj trening?');
   static String get discardWorkoutBody => _pick(
-      "Your heart-rate data and stats for this session won't be kept.",
-      'Podaci o pulsu i statistika ove sesije neće biti sačuvani.');
+    "Your heart-rate data and stats for this session won't be kept.",
+    'Podaci o pulsu i statistika ove sesije neće biti sačuvani.',
+  );
   static String get keepWorkout => _pick('Keep', 'Zadrži');
 
   // ── Workout history ──────────────────────────────────────────
@@ -509,46 +587,30 @@ class Strings {
   static String get filterAll => _pick('All', 'Sve');
   static String get filterThisMonth => _pick('This month', 'Ovaj mjesec');
   static String get noWorkoutsMatch => _pick(
-      'No workouts match your filters.',
-      'Nijedan trening ne odgovara filtrima.');
-  static String get couldNotLoadWorkouts => _pick(
-      'Could not load workouts.', 'Učitavanje treninga nije uspjelo.');
+    'No workouts match your filters.',
+    'Nijedan trening ne odgovara filtrima.',
+  );
+  static String get couldNotLoadWorkouts =>
+      _pick('Could not load workouts.', 'Učitavanje treninga nije uspjelo.');
   static String get statAvg => _pick('AVG', 'PROSJ');
   static String get statMax => _pick('MAX', 'MAKS');
 
   /// Display label for a filter time key ('All' / 'This week' / 'This month').
   static String timeFilterLabel(String key) => switch (key) {
-        'This week' => thisWeek,
-        'This month' => filterThisMonth,
-        _ => filterAll,
-      };
+    'This week' => thisWeek,
+    'This month' => filterThisMonth,
+    _ => filterAll,
+  };
 
-  /// Localized display for an English workout type label. Values stay English
-  /// in the model; this maps them for display only.
-  static String workoutTypeLabel(String en) => switch (en.toLowerCase()) {
-        'cardio' => _pick('Cardio', 'Kardio'),
-        'strength' => _pick('Strength', 'Snaga'),
-        'cycling' => _pick('Cycling', 'Biciklizam'),
-        'yoga' => _pick('Yoga', 'Joga'),
-        'endurance' => _pick('Endurance', 'Izdržljivost'),
-        _ => en, // HIIT, CrossFit, etc. — keep as-is
-      };
+  static String get groupWorkout => _pick('Group workout', 'Grupni trening');
+  static String get soloWorkout => _pick('Solo workout', 'Samostalni trening');
 
-  static String workoutTypeDesc(String en) => switch (en.toLowerCase()) {
-        'hiit' =>
-          _pick('High-intensity intervals', 'Intervali visokog intenziteta'),
-        'strength' => _pick('Weights · resistance', 'Utezi · otpor'),
-        'endurance' => _pick('Long, steady effort', 'Dug, ravnomjeran napor'),
-        'cardio' =>
-          _pick('Sustained moderate pace', 'Umjeren, postojan tempo'),
-        'crossfit' => _pick('Functional · circuits', 'Funkcionalno · kružni'),
-        _ => '',
-      };
-  static String get whatTraining =>
-      _pick('What are you training?', 'Što treniraš?');
-  static String get tagSessionHint => _pick(
-      "We'll tag your session so you can filter by type later.",
-      'Označit ćemo trening da ga kasnije možete filtrirati po vrsti.');
+  /// Localized display for a 'Group' / 'Solo' type label.
+  static String groupSoloLabel(String en) => switch (en.toLowerCase()) {
+    'group' => groupWorkout,
+    'solo' => soloWorkout,
+    _ => en,
+  };
 
   // ── Trainer home ─────────────────────────────────────────────
   static String get coach => _pick('Coach', 'Trener');
@@ -557,8 +619,9 @@ class Strings {
   static String get studioAtGlance =>
       _pick('Studio at a glance', 'Studio na prvi pogled');
   static String get noSessionsYet => _pick(
-      'No sessions yet — start your first.',
-      'Još nema treninga — pokrenite prvi.');
+    'No sessions yet — start your first.',
+    'Još nema treninga — pokrenite prvi.',
+  );
   static String get activeToday => _pick('Active today', 'Aktivni danas');
   static String get members => _pick('Members', 'Članovi');
   static String get sessionsPerWk =>
@@ -576,8 +639,9 @@ class Strings {
   static String get startNewSession =>
       _pick('Start new session', 'Pokreni novi trening');
   static String get startSessionSubtitle => _pick(
-      "Pick the type, set intervals, share the code — and you're live.",
-      'Odaberite vrstu, postavite intervale, podijelite kod — i krećete uživo.');
+    "Pick the type, set intervals, share the code — and you're live.",
+    'Odaberite vrstu, postavite intervale, podijelite kod — i krećete uživo.',
+  );
   static String get createSession => _pick('Create session', 'Stvori trening');
 
   // ── Member list ──────────────────────────────────────────────
@@ -585,27 +649,30 @@ class Strings {
   static String get inviteAthlete =>
       _pick('Invite an athlete', 'Pozovi sportaša');
   static String get inviteShareHint => _pick(
-      'Share this code or QR — they enter it in the app.',
-      'Podijelite kod ili QR — unose ga u aplikaciji.');
+    'Share this code or QR — they enter it in the app.',
+    'Podijelite kod ili QR — unose ga u aplikaciji.',
+  );
   static String get shareInviteBtn =>
       _pick('Share invite', 'Podijeli pozivnicu');
-  static String get couldNotLoadStudio => _pick(
-      'Could not load your studio.', 'Učitavanje studija nije uspjelo.');
-  static String get couldNotLoadMembers => _pick(
-      'Could not load members.', 'Učitavanje članova nije uspjelo.');
+  static String get couldNotLoadStudio =>
+      _pick('Could not load your studio.', 'Učitavanje studija nije uspjelo.');
+  static String get couldNotLoadMembers =>
+      _pick('Could not load members.', 'Učitavanje članova nije uspjelo.');
   static String get noMembersYet => _pick(
-      'No members yet.\nShare your invite code — athletes join with it.',
-      'Još nema članova.\nPodijelite pozivni kod — sportaši se pridružuju njime.');
-  static String get searchByName => _pick('Search by name', 'Pretraži po imenu');
+    'No members yet.\nShare your invite code — athletes join with it.',
+    'Još nema članova.\nPodijelite pozivni kod — sportaši se pridružuju njime.',
+  );
+  static String get searchByName =>
+      _pick('Search by name', 'Pretraži po imenu');
   static String get invite => _pick('Invite', 'Pozovi');
   static String get inactive => _pick('Inactive', 'Neaktivni');
   static String get noSessionsYetMember =>
       _pick('No sessions yet', 'Još nema treninga');
   static String memberFilterLabel(String key) => switch (key) {
-        'Active today' => activeToday,
-        'Inactive' => inactive,
-        _ => filterAll,
-      };
+    'Active today' => activeToday,
+    'Inactive' => inactive,
+    _ => filterAll,
+  };
 
   // ── Trainer: member detail ───────────────────────────────────
   static String get notesSaved => _pick('Notes saved', 'Bilješke spremljene');
@@ -624,7 +691,9 @@ class Strings {
   static String get onlyYouSee =>
       _pick('Only you can see these.', 'Samo vi ovo vidite.');
   static String get addAthleteNote => _pick(
-      'Add notes about this athlete…', 'Dodajte bilješke o ovom sportašu…');
+    'Add notes about this athlete…',
+    'Dodajte bilješke o ovom sportašu…',
+  );
   static String get saveNotes => _pick('Save notes', 'Spremi bilješke');
 
   // ── Trainer: studio analytics ────────────────────────────────
@@ -642,24 +711,29 @@ class Strings {
       _pick('Top athletes', 'Najaktivniji sportaši');
   static String get mostActiveMonth =>
       _pick('Most active this month', 'Najaktivniji ovaj mjesec');
-  static String get noWorkoutsMonth => _pick(
-      'No workouts this month yet.', 'Još nema treninga ovaj mjesec.');
+  static String get noWorkoutsMonth =>
+      _pick('No workouts this month yet.', 'Još nema treninga ovaj mjesec.');
   static String get noChartData => _pick(
-      'No data yet — it fills in after a few sessions.',
-      'Još nema podataka — popunit će se nakon nekoliko treninga.');
+    'No data yet — it fills in after a few sessions.',
+    'Još nema podataka — popunit će se nakon nekoliko treninga.',
+  );
   static String get sessionsLower => _pick('sessions', 'treninga');
 
   // ── Sessions (history / detail) ──────────────────────────────
   static String get allSessions => _pick('All sessions', 'Sve sesije');
   static String get filterThisWeek => _pick('This week', 'Ovaj tjedan');
   static String get noSessionsMatch => _pick(
-      'No sessions match your filters.', 'Nijedna sesija ne odgovara filtrima.');
+    'No sessions match your filters.',
+    'Nijedna sesija ne odgovara filtrima.',
+  );
   static String get athletesLower => _pick('athletes', 'sportaša');
   static String get sessionAnalytics =>
       _pick('Session analytics', 'Analitika sesije');
   static String get dominant => _pick('Dominant', 'Dominantna');
   static String get groupAvgAllAthletes => _pick(
-      'Group average across all athletes', 'Grupni prosjek svih sportaša');
+    'Group average across all athletes',
+    'Grupni prosjek svih sportaša',
+  );
   static String participated(int n) =>
       _pick('$n participated', '$n sudjelovalo');
   static String get avgGroupHr => _pick('AVG GROUP HR', 'PROS. GRUPNI PULS');
@@ -669,11 +743,13 @@ class Strings {
   static String avgPeak(int avg, int peak) =>
       _pick('avg $avg · peak $peak', 'prosj. $avg · vrh $peak');
   static String get couldNotLoadResults => _pick(
-      "Couldn't load this session's results.",
-      'Učitavanje rezultata nije uspjelo.');
+    "Couldn't load this session's results.",
+    'Učitavanje rezultata nije uspjelo.',
+  );
   static String get noSavedWorkoutsYet => _pick(
-      'No saved workouts yet — results appear once athletes end their workout.',
-      'Još nema spremljenih treninga — rezultati se pojavljuju kad sportaši završe trening.');
+    'No saved workouts yet — results appear once athletes end their workout.',
+    'Još nema spremljenih treninga — rezultati se pojavljuju kad sportaši završe trening.',
+  );
   static String get refresh => _pick('Refresh', 'Osvježi');
 
   // ── Trainer: start/host session ──────────────────────────────
@@ -681,130 +757,226 @@ class Strings {
   static String get untitledSession =>
       _pick('Untitled session', 'Bezimeni trening');
   static String get couldNotStartSession => _pick(
-      'Could not start the session. Try again.',
-      'Pokretanje treninga nije uspjelo. Pokušajte ponovno.');
+    'Could not start the session. Try again.',
+    'Pokretanje treninga nije uspjelo. Pokušajte ponovno.',
+  );
   static String get sessionNameLabel => _pick('Session name', 'Naziv treninga');
-  static String get typeLabel => _pick('Type', 'Vrsta');
   static String get intervalTimer =>
       _pick('Interval timer', 'Intervalni tajmer');
   static String get intervalTimerDesc => _pick(
-      'Auto work/rest cycles with countdown.',
-      'Automatski ciklusi rada/odmora s odbrojavanjem.');
+    'Auto work/rest cycles with countdown.',
+    'Automatski ciklusi rada/odmora s odbrojavanjem.',
+  );
   static String get work => _pick('Work', 'Rad');
   static String get rest => _pick('Rest', 'Odmor');
   static String get rounds => _pick('Rounds', 'Runde');
   static String get sec => _pick('sec', 'sek');
+  static String get setsUnit => _pick('set', 'set');
   static String get qrJoinHint => _pick(
-      'Athletes will scan a QR code to join once you launch the session.',
-      'Sportaši skeniraju QR kod za pridruživanje nakon što pokrenete trening.');
-  static String get launchSession =>
-      _pick('Launch session', 'Pokreni trening');
+    "Once you launch, this session shows up on your athletes' home screen to "
+        'join in one tap — or they can scan the QR code if it doesn’t.',
+    'Nakon pokretanja, trening se pojavi na početnom ekranu sportaša za '
+        'pridruživanje jednim dodirom — ili skeniraju QR kod ako se ne pojavi.',
+  );
+  static String get untitledSessionHint =>
+      _pick('e.g. Morning HIIT', 'npr. Jutarnji trening');
+  static String get launchSession => _pick('Launch session', 'Pokreni trening');
 
   // ── Trainer: live monitor ────────────────────────────────────
   static String get complete => _pick('Complete', 'Završeno');
   static String roundOf(int r, int total) =>
       _pick('Round $r/$total', 'Runda $r/$total');
   static String get couldNotStartWorkout => _pick(
-      'Could not start the workout. Try again.',
-      'Pokretanje treninga nije uspjelo. Pokušajte ponovno.');
+    'Could not start the workout. Try again.',
+    'Pokretanje treninga nije uspjelo. Pokušajte ponovno.',
+  );
   static String get couldNotPause => _pick(
-      'Could not pause. Try again.', 'Pauziranje nije uspjelo. Pokušajte ponovno.');
+    'Could not pause. Try again.',
+    'Pauziranje nije uspjelo. Pokušajte ponovno.',
+  );
   static String get couldNotResume => _pick(
-      'Could not resume. Try again.', 'Nastavak nije uspio. Pokušajte ponovno.');
+    'Could not resume. Try again.',
+    'Nastavak nije uspio. Pokušajte ponovno.',
+  );
   static String get couldNotRemoveAthlete => _pick(
-      'Could not remove athlete. Try again.',
-      'Uklanjanje sportaša nije uspjelo. Pokušajte ponovno.');
+    'Could not remove athlete. Try again.',
+    'Uklanjanje sportaša nije uspjelo. Pokušajte ponovno.',
+  );
   static String get couldNotEndSession => _pick(
-      'Could not end the session. Try again.',
-      'Završavanje treninga nije uspjelo. Pokušajte ponovno.');
+    'Could not end the session. Try again.',
+    'Završavanje treninga nije uspjelo. Pokušajte ponovno.',
+  );
   static String removeAthleteTitle(String name) =>
       _pick('Remove $name?', 'Ukloniti $name?');
   static String get removeAthleteBody => _pick(
-      "They'll be dropped from the session and can't rejoin it.",
-      'Bit će uklonjen iz treninga i ne može se ponovno pridružiti.');
+    "They'll be dropped from the session and can't rejoin it.",
+    'Bit će uklonjen iz treninga i ne može se ponovno pridružiti.',
+  );
   static String get remove => _pick('Remove', 'Ukloni');
   static String get lobbyWaiting =>
       _pick('Lobby · waiting to start', 'Predvorje · čeka se početak');
-  static String get inTheRoom => _pick('In the room', 'U sobi');
   static String get waitingForAthletes => _pick(
-      'Waiting for athletes to join…\nShare the QR / invite code.',
-      'Čekanje da se sportaši pridruže…\nPodijelite QR / pozivni kod.');
+    'Waiting for athletes to join…\nShare the QR / invite code.',
+    'Čekanje da se sportaši pridruže…\nPodijelite QR / pozivni kod.',
+  );
   static String get intensity => _pick('Intensity', 'Intenzitet');
   static String get endSessionTitle =>
       _pick('End session?', 'Završiti sesiju?');
   static String get endSessionBody => _pick(
-      'This ends the workout for everyone and shows the results.',
-      'Ovo završava trening za sve i prikazuje rezultate.');
+    'This ends the workout for everyone and shows the results.',
+    'Ovo završava trening za sve i prikazuje rezultate.',
+  );
   static String get endSession => _pick('End session', 'Završi sesiju');
-  static String get ready => _pick('Ready', 'Spreman');
 
   // ── TV host board ────────────────────────────────────────────
   static String get tvNoLiveSession => _pick(
-      'No live session right now — the board lights up when one starts.',
-      'Trenutno nema treninga uživo — ploča se pali kad trening počne.');
+    'No live session right now — the board lights up when one starts.',
+    'Trenutno nema treninga uživo — ploča se pali kad trening počne.',
+  );
   static String get pausedCaps => _pick('PAUSED', 'PAUZIRANO');
   static String get startingSoon => _pick('STARTING SOON', 'USKORO POČINJE');
   static String get getIntoPosition => _pick(
-      'Get into position — scan the code to join',
-      'Zauzmite mjesta — skenirajte kod za pridruživanje');
+    'Get into position — scan the code to join',
+    'Zauzmite mjesta — skenirajte kod za pridruživanje',
+  );
   static String get waitingForAthletesShort =>
       _pick('Waiting for athletes…', 'Čekanje sportaša…');
   static String get waitingToJoin => _pick(
-      'Waiting for athletes to join…', 'Čekanje da se sportaši pridruže…');
+    'Waiting for athletes to join…',
+    'Čekanje da se sportaši pridruže…',
+  );
 
   // ── Health data ──────────────────────────────────────────────
   static String get restingHrLabel => _pick('Resting HR', 'Puls u mirovanju');
   static String get fitnessLevel => _pick('Fitness level', 'Razina kondicije');
   static String zoneName(int z) => switch (z) {
-        0 => _pick('Rest', 'Odmor'),
-        1 => _pick('Warmup', 'Zagrijavanje'),
-        2 => _pick('Fat Burn', 'Sagorijevanje masti'),
-        3 => _pick('Aerobic', 'Aerobno'),
-        4 => _pick('Anaerobic', 'Anaerobno'),
-        _ => _pick('VO2 Max', 'VO2 Maks'),
-      };
+    0 => _pick('Rest', 'Odmor'),
+    1 => _pick('Warmup', 'Zagrijavanje'),
+    2 => _pick('Fat Burn', 'Sagorijevanje masti'),
+    3 => _pick('Aerobic', 'Aerobno'),
+    4 => _pick('Anaerobic', 'Anaerobno'),
+    _ => _pick('VO2 Max', 'VO2 Maks'),
+  };
 
   // ── Device pairing ───────────────────────────────────────────
   static String get heartRateSensor =>
       _pick('Heart rate sensor', 'Mjerač pulsa');
   static String get btPermissionNeeded => _pick(
-      'Bluetooth permission is needed to find your sensor.',
-      'Za pronalazak senzora potrebno je dopuštenje za Bluetooth.');
+    'Bluetooth permission is needed to find your sensor.',
+    'Za pronalazak senzora potrebno je dopuštenje za Bluetooth.',
+  );
   static String get pairYourSensor =>
       _pick('Pair your sensor', 'Povežite svoj senzor');
   static String get pairSensorSubtitle => _pick(
-      'Any Bluetooth chest strap works — or a sports watch in '
-          'heart-rate broadcast mode.',
-      'Radi bilo koji Bluetooth prsni mjerač — ili sportski sat u '
-          'načinu emitiranja pulsa.');
+    'Any Bluetooth chest strap works — or a sports watch in '
+        'heart-rate broadcast mode.',
+    'Radi bilo koji Bluetooth prsni mjerač — ili sportski sat u '
+        'načinu emitiranja pulsa.',
+  );
   static String get couldNotConnectSensor => _pick(
-      "Couldn't connect — make sure the sensor is awake "
-          'and close by, then try again.',
-      'Povezivanje nije uspjelo — provjerite je li senzor aktivan '
-          'i blizu, pa pokušajte ponovno.');
+    "Couldn't connect — make sure the sensor is awake "
+        'and close by, then try again.',
+    'Povezivanje nije uspjelo — provjerite je li senzor aktivan '
+        'i blizu, pa pokušajte ponovno.',
+  );
   static String get deviceOccupied => _pick(
-      'This sensor is already connected to another user.',
-      'Uređaj je već spojen na drugog korisnika.');
+    'This sensor is already connected to another user.',
+    'Uređaj je već spojen na drugog korisnika.',
+  );
   static String get tryAgain => _pick('Try again', 'Pokušaj ponovno');
   static String get startScanning =>
       _pick('Start scanning', 'Započni skeniranje');
   static String connectingTo(String name) =>
       _pick('Connecting to $name…', 'Povezivanje s $name…');
   static String get holdTight => _pick(
-      'Hold tight — this takes a few seconds.',
-      'Strpljenja — ovo traje nekoliko sekundi.');
+    'Hold tight — this takes a few seconds.',
+    'Strpljenja — ovo traje nekoliko sekundi.',
+  );
   static String get wearStrap => _pick(
-      'Wear the strap so it wakes up and starts advertising.',
-      'Stavite mjerač da se aktivira i počne emitirati.');
+    'Wear the strap so it wakes up and starts advertising.',
+    'Stavite mjerač da se aktivira i počne emitirati.',
+  );
   static String get lookingForSensors =>
       _pick('Looking for sensors nearby…', 'Tražim senzore u blizini…');
   static String get stop => _pick('Stop', 'Zaustavi');
   static String get connectedCaps => _pick('CONNECTED', 'POVEZANO');
   static String get waitingFirstBeat =>
       _pick('Waiting for the first heartbeat…', 'Čekanje prvog otkucaja…');
+  static String get yourHeartRate => _pick('YOUR HEART RATE', 'VAŠ PULS');
+
+  // Solo workout setup
+  static String get connectStrap =>
+      _pick('Connect HR strap', 'Poveži mjerač pulsa');
+  static String get strapConnected => _pick('Connected', 'Povezano');
+  static String get strapOptional =>
+      _pick('Optional — tap to pair', 'Opcionalno — dodirni za povezivanje');
+
+  // ── Show on TV ───────────────────────────────────────────────
+  // Phone "Connect to TV" tab
+  static String get connectToTv => _pick('Connect to TV', 'Poveži s TV-om');
+  static String get connectToTvTitle =>
+      _pick('Show the board on your TV', 'Prikažite ploču na svom TV-u');
+  static String get connectToTvSubtitle => _pick(
+    'Open the board on your TV once, then link it here — it follows your session automatically.',
+    'Otvorite ploču na TV-u jednom, pa je povežite ovdje — dalje sama prati vaš trening.',
+  );
+  static String get tvPhoneStep1 => _pick(
+    'On your TV, open a web browser and go to:',
+    'Na TV-u otvorite web preglednik i idite na:',
+  );
+  static String get tvPhoneStep2 => _pick(
+    'The TV shows a 4-digit code — enter it below.',
+    'TV prikaže 4-znamenkasti kod — unesite ga ispod.',
+  );
+  static String get tvEnterCode => _pick('TV CODE', 'TV KOD');
+  static String get tvCodeError => _pick(
+    'Enter the 4-digit code from your TV.',
+    'Unesite 4-znamenkasti kod s TV-a.',
+  );
+  static String get tvCodeNoMatch => _pick(
+    "That code didn't match a waiting TV.",
+    'Taj kod ne odgovara nijednom TV-u koji čeka.',
+  );
+  static String get tvNoStudio => _pick(
+    'Create your studio first to connect a TV.',
+    'Prvo stvorite studio da biste povezali TV.',
+  );
+  static String get tvPairFailed => _pick(
+    'Could not connect. Try again.',
+    'Povezivanje nije uspjelo. Pokušajte ponovno.',
+  );
+  static String get connect => _pick('Connect', 'Poveži');
+  static String get tvConnected => _pick('TV connected', 'TV povezan');
+  static String get tvConnectedHint => _pick(
+    'Your board is live on the TV and will follow this session.',
+    'Ploča je uživo na TV-u i pratit će ovaj trening.',
+  );
+  static String get tvConnectAnother =>
+      _pick('Connect another TV', 'Poveži drugi TV');
+  static String get previewOnThisDevice =>
+      _pick('Preview on this device', 'Pregled na ovom uređaju');
+
+  // Web TV board (pairing screen)
+  static String get tvConnectTitle =>
+      _pick('Connect this TV', 'Povežite ovaj TV');
+  static String get tvConnectSubtitle => _pick(
+    'On your phone, open Connect to TV and enter this code.',
+    'Na mobitelu otvorite Poveži s TV-om i unesite ovaj kod.',
+  );
+  static String get tvWaitingForPhone =>
+      _pick('Waiting for your phone…', 'Čekanje mobitela…');
+  static String get tvSignInFailed => _pick(
+    "Couldn't start the TV board. Refresh the page.",
+    'Pokretanje TV ploče nije uspjelo. Osvježite stranicu.',
+  );
+  static String get tvCodeFailed => _pick(
+    "Couldn't create a code. Refresh the page.",
+    'Stvaranje koda nije uspjelo. Osvježite stranicu.',
+  );
   static String get liveHrReady => _pick(
-      'Live heart rate — you’re ready to train.',
-      'Puls uživo — spremni ste za trening.');
+    'Live heart rate — you’re ready to train.',
+    'Puls uživo — spremni ste za trening.',
+  );
   static String get signalLabel => _pick('Signal', 'Signal');
   static String get signalStrong => _pick('Strong', 'Jak');
   static String get signalGood => _pick('Good', 'Dobar');
@@ -817,8 +989,10 @@ class Strings {
   static String get athletesCaps => _pick('ATHLETES', 'SPORTAŠI');
   static String get timeCaps => _pick('TIME', 'VRIJEME');
   static String get standby => _pick('Standby', 'Pripravnost');
-  static String get athletesJoinCode =>
-      _pick('Athletes join with this code', 'Sportaši se pridružuju ovim kodom');
+  static String get athletesJoinCode => _pick(
+    'Athletes join with this code',
+    'Sportaši se pridružuju ovim kodom',
+  );
   static String get less => _pick('Less', 'Manje');
   static String get more => _pick('More', 'Više');
   static String hrvQuality(int rmssd) {
@@ -836,6 +1010,12 @@ class Strings {
   static String get support => _pick('Support', 'Podrška');
 
   static String get personalInfo => _pick('Personal info', 'Osobni podaci');
+  static String get changePassword =>
+      _pick('Change password', 'Promijeni lozinku');
+  static String changePasswordBody(String email) => _pick(
+    "We'll email a secure link to $email so you can set a new password.",
+    'Poslat ćemo siguran link na $email da postavite novu lozinku.',
+  );
   static String get healthData => _pick('Health data', 'Zdravstveni podaci');
   static String get connectedDevices =>
       _pick('Connected devices', 'Povezani uređaji');
@@ -851,10 +1031,11 @@ class Strings {
   static String get signOut => _pick('Sign out', 'Odjava');
   static String get deleteAccount => _pick('Delete account', 'Izbriši račun');
   static String get deleteAccountWarning => _pick(
-      'This permanently deletes your account, your workouts and your studio '
-          'data. This cannot be undone.',
-      'Ovo trajno briše vaš račun, vaše treninge i podatke studija. '
-          'Radnja se ne može poništiti.');
+    'This permanently deletes your account, your workouts and your studio '
+        'data. This cannot be undone.',
+    'Ovo trajno briše vaš račun, vaše treninge i podatke studija. '
+        'Radnja se ne može poništiti.',
+  );
   static String get deleteAccountPasswordHint =>
       _pick('Enter your password to confirm', 'Unesite lozinku za potvrdu');
   static String get deleteAccountConfirm =>
@@ -862,8 +1043,9 @@ class Strings {
   static String get deleteAccountWrongPassword =>
       _pick('Wrong password.', 'Pogrešna lozinka.');
   static String get deleteAccountFailed => _pick(
-      'Deletion failed. Check your connection and try again.',
-      'Brisanje nije uspjelo. Provjerite vezu i pokušajte ponovno.');
+    'Deletion failed. Check your connection and try again.',
+    'Brisanje nije uspjelo. Provjerite vezu i pokušajte ponovno.',
+  );
 
   // Appearance options
   static String get themeLight => _pick('Light', 'Svijetlo');

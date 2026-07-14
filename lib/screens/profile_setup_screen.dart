@@ -15,13 +15,7 @@ import '../widgets/hr_max_info_button.dart';
 import 'device_pairing_screen.dart';
 
 /// One step in the post-registration setup wizard.
-enum _PageType {
-  personal,
-  fitness,
-  strap,
-  studioForm,
-  studioSuccess,
-}
+enum _PageType { personal, fitness, strap, studioForm, studioSuccess }
 
 /// What the wizard hands back to the production [ProfileSetupScreen.onSave]
 /// hook. Studio fields are only meaningful when [UserProfile.role] is trainer.
@@ -67,6 +61,10 @@ class ProfileSetupScreen extends StatefulWidget {
   /// keeps them on the wizard.
   final Future<void> Function(ProfileSetupResult result)? onSave;
 
+  /// Called when the user backs out of the wizard's first page — used to
+  /// return to the role picker so they can switch athlete ⇄ trainer.
+  final VoidCallback? onExit;
+
   const ProfileSetupScreen({
     super.key,
     this.initialName,
@@ -74,6 +72,7 @@ class ProfileSetupScreen extends StatefulWidget {
     required this.onComplete,
     this.role = UserRole.athlete,
     this.onSave,
+    this.onExit,
   });
 
   @override
@@ -225,7 +224,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   void _onBack() {
     FocusScope.of(context).unfocus();
-    if (_page == 0) return;
+    if (_page == 0) {
+      // First page — hand back to the role picker (switch athlete ⇄ trainer).
+      widget.onExit?.call();
+      return;
+    }
     _pageController.previousPage(
       duration: const Duration(milliseconds: 320),
       curve: Curves.easeInOutCubic,
@@ -235,7 +238,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   Future<void> _saveAndFinish() async {
     final age = int.tryParse(_ageCtrl.text) ?? 30;
     final weight = double.tryParse(_weightCtrl.text.replaceAll(',', '.')) ?? 75;
-    final height = double.tryParse(_heightCtrl.text.replaceAll(',', '.')) ?? 178;
+    final height =
+        double.tryParse(_heightCtrl.text.replaceAll(',', '.')) ?? 178;
     final restingHr = int.tryParse(_restingHrCtrl.text.trim());
 
     final profile = UserProfile(
@@ -256,13 +260,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     if (widget.onSave != null) {
       setState(() => _saving = true);
       try {
-        await widget.onSave!(ProfileSetupResult(
-          profile: profile,
-          studioName: _studioNameCtrl.text.trim(),
-          studioLocation: _studioLocationCtrl.text.trim(),
-          studioCapacity: _studioCapacity,
-          inviteCode: _inviteCode,
-        ));
+        await widget.onSave!(
+          ProfileSetupResult(
+            profile: profile,
+            studioName: _studioNameCtrl.text.trim(),
+            studioLocation: _studioLocationCtrl.text.trim(),
+            studioCapacity: _studioCapacity,
+            inviteCode: _inviteCode,
+          ),
+        );
       } catch (e) {
         if (!mounted) return;
         setState(() => _saving = false);
@@ -284,7 +290,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     // Prototype: light local save (noop on web).
     try {
       await StorageService.saveProfile(profile);
-    } catch (_) {/* prototype/web â€” ignore */}
+    } catch (_) {
+      /* prototype/web â€” ignore */
+    }
 
     widget.onComplete(_role);
   }
@@ -317,9 +325,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   /// the mock connect so the wizard stays walkable without hardware.
   Future<void> _searchStrap() async {
     if (AuthService.currentUid != null) {
-      await Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const DevicePairingScreen()),
-      );
+      await Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const DevicePairingScreen()));
       if (!mounted) return;
       final ble = BleHrService.instance;
       setState(() {
@@ -376,8 +384,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           selected: _fitnessLevel,
           onChanged: (lvl) => setState(() => _fitnessLevel = lvl),
           previewHrMax: _previewHrMax(),
-          formulaLabel:
-              _sex == Sex.female ? 'Gulati formula' : 'Tanaka formula',
         );
       case _PageType.strap:
         return _StrapPage(
@@ -419,41 +425,44 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   Widget build(BuildContext context) {
     return MobileFrame(
       child: Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _TopBar(
-              page: _page,
-              total: _totalPages,
-              onBack: _page == 0 ? null : _onBack,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (i) => setState(() => _page = i),
-                children: [
-                  for (final type in _pageTypes) _buildPage(type),
-                ],
+        backgroundColor: AppColors.bgPrimary,
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _TopBar(
+                page: _page,
+                total: _totalPages,
+                // Page 0 still gets a back arrow when there's a role picker to
+                // return to (onExit), so athlete ⇄ trainer stays changeable.
+                onBack: (_page == 0 && widget.onExit == null) ? null : _onBack,
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl, AppSpacing.xs, AppSpacing.xl, AppSpacing.md,
+              const SizedBox(height: AppSpacing.md),
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onPageChanged: (i) => setState(() => _page = i),
+                  children: [for (final type in _pageTypes) _buildPage(type)],
+                ),
               ),
-              child: BeatPrimaryButton(
-                label: _continueLabel(),
-                icon: _continueIcon(),
-                loading: _saving,
-                onPressed: _onContinue,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.xs,
+                  AppSpacing.xl,
+                  AppSpacing.md,
+                ),
+                child: BeatPrimaryButton(
+                  label: _continueLabel(),
+                  icon: _continueIcon(),
+                  loading: _saving,
+                  onPressed: _onContinue,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -473,7 +482,10 @@ class _TopBar extends StatelessWidget {
     final pct = ((page + 1) / total * 100).round();
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0,
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        0,
       ),
       child: Column(
         children: [
@@ -506,8 +518,7 @@ class _TopBar extends StatelessWidget {
               const Spacer(),
               Text(
                 'BEATSYNC',
-                style: AppTheme.micro(color: AppColors.textPrimary)
-                    .copyWith(
+                style: AppTheme.micro(color: AppColors.textPrimary).copyWith(
                   letterSpacing: 3,
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
@@ -527,8 +538,9 @@ class _TopBar extends StatelessWidget {
               ),
               Text(
                 '$pct% complete',
-                style: AppTheme.micro(color: AppColors.brandRed)
-                    .copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.2),
+                style: AppTheme.micro(
+                  color: AppColors.brandRed,
+                ).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.2),
               ),
             ],
           ),
@@ -593,8 +605,10 @@ class _PageHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(overline.toUpperCase(),
-            style: AppTheme.micro().copyWith(letterSpacing: 1.5)),
+        Text(
+          overline.toUpperCase(),
+          style: AppTheme.micro().copyWith(letterSpacing: 1.5),
+        ),
         const SizedBox(height: 4),
         Text(title, style: AppTheme.h1().copyWith(fontSize: 26)),
         if (subtitle != null) ...[
@@ -621,8 +635,9 @@ class _FieldLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Text(
         text.toUpperCase(),
-        style: AppTheme.micro(color: AppColors.textSecondary)
-            .copyWith(letterSpacing: 1.4),
+        style: AppTheme.micro(
+          color: AppColors.textSecondary,
+        ).copyWith(letterSpacing: 1.4),
       ),
     );
   }
@@ -729,15 +744,19 @@ class _PersonalPage extends StatelessWidget {
                         value: sex,
                         isExpanded: true,
                         underline: const SizedBox(),
-                        icon: Icon(Icons.expand_more_rounded,
-                            color: AppColors.textSecondary),
+                        icon: Icon(
+                          Icons.expand_more_rounded,
+                          color: AppColors.textSecondary,
+                        ),
                         dropdownColor: AppColors.bgSecondary,
                         style: AppTheme.bodyLarge(),
                         items: Sex.values
-                            .map((s) => DropdownMenuItem(
-                                  value: s,
-                                  child: Text(Strings.sexName(s)),
-                                ))
+                            .map(
+                              (s) => DropdownMenuItem(
+                                value: s,
+                                child: Text(Strings.sexName(s)),
+                              ),
+                            )
                             .toList(),
                         onChanged: (v) {
                           if (v != null) onSexChanged(v);
@@ -786,30 +805,15 @@ class _PersonalPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // Resting HR
-          Row(
-            children: [
-              _FieldLabel(Strings.restingHrOptional),
-              const SizedBox(width: 6),
-              Tooltip(
-                message: Strings.restingHrTip,
-                child: Icon(Icons.info_outline_rounded,
-                    size: 14, color: AppColors.textSecondary),
-              ),
-            ],
-          ),
+          // Resting HR (optional)
+          _FieldLabel(Strings.restingHrOptional),
           _NumericField(
             controller: restingHrCtrl,
             hint: 'e.g. 62',
             suffix: 'bpm',
           ),
           const SizedBox(height: AppSpacing.md),
-          Center(
-            child: Text(
-              nameHint,
-              style: AppTheme.caption(),
-            ),
-          ),
+          Center(child: Text(nameHint, style: AppTheme.caption())),
         ],
       ),
     );
@@ -823,13 +827,11 @@ class _FitnessPage extends StatelessWidget {
   final FitnessLevel selected;
   final ValueChanged<FitnessLevel> onChanged;
   final int previewHrMax;
-  final String formulaLabel;
 
   const _FitnessPage({
     required this.selected,
     required this.onChanged,
     required this.previewHrMax,
-    required this.formulaLabel,
   });
 
   static const _icons = {
@@ -876,24 +878,18 @@ class _FitnessPage extends StatelessWidget {
                     color: AppColors.brandRed.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.monitor_heart_rounded,
-                      color: AppColors.brandRed, size: 24),
+                  child: const Icon(
+                    Icons.monitor_heart_rounded,
+                    color: AppColors.brandRed,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(Strings.estimatedHrMax,
-                                style: AppTheme.caption()),
-                          ),
-                          const SizedBox(width: 2),
-                          const HrMaxInfoButton(),
-                        ],
-                      ),
+                      Text(Strings.estimatedHrMax, style: AppTheme.caption()),
                       Text(
                         '$previewHrMax bpm',
                         style: AppTheme.statNumber(
@@ -905,20 +901,7 @@ class _FitnessPage extends StatelessWidget {
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgTertiary,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    formulaLabel,
-                    style: AppTheme.micro(),
-                  ),
-                ),
+                const HrMaxInfoButton(size: 20),
               ],
             ),
           ),
@@ -966,10 +949,9 @@ class _FitnessOption extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: (selected
-                          ? AppColors.brandRed
-                          : AppColors.textSecondary)
-                      .withValues(alpha: 0.18),
+                  color:
+                      (selected ? AppColors.brandRed : AppColors.textSecondary)
+                          .withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -987,18 +969,20 @@ class _FitnessOption extends StatelessWidget {
                   children: [
                     Text(
                       Strings.fitnessName(level),
-                      style:
-                          AppTheme.bodyLarge(weight: FontWeight.w600).copyWith(
-                        fontSize: 15,
-                      ),
+                      style: AppTheme.bodyLarge(
+                        weight: FontWeight.w600,
+                      ).copyWith(fontSize: 15),
                     ),
                     Text(Strings.fitnessDesc(level), style: AppTheme.caption()),
                   ],
                 ),
               ),
               if (selected)
-                const Icon(Icons.check_circle_rounded,
-                    color: AppColors.brandRed, size: 22),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.brandRed,
+                  size: 22,
+                ),
             ],
           ),
         ),
@@ -1060,10 +1044,11 @@ class _StrapPage extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: AppColors.bgSecondary,
                     border: Border.all(
-                      color: (status == _StrapStatus.connected
-                              ? AppColors.success
-                              : AppColors.brandRed)
-                          .withValues(alpha: 0.45),
+                      color:
+                          (status == _StrapStatus.connected
+                                  ? AppColors.success
+                                  : AppColors.brandRed)
+                              .withValues(alpha: 0.45),
                       width: 1.5,
                     ),
                   ),
@@ -1088,28 +1073,25 @@ class _StrapPage extends StatelessWidget {
               onPressed: onSearch,
             ),
             const SizedBox(height: AppSpacing.sm),
-            Center(
-              child: Text(
-                Strings.pairLater,
-                style: AppTheme.caption(),
-              ),
-            ),
+            Center(child: Text(Strings.pairLater, style: AppTheme.caption())),
           ],
           if (status == _StrapStatus.searching) ...[
             const Center(
               child: SizedBox(
-                width: 24, height: 24,
+                width: 24,
+                height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(AppColors.brandRed),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandRed),
                 ),
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Center(
-              child: Text(Strings.searchingStraps,
-                  style: AppTheme.caption(color: AppColors.brandRed)),
+              child: Text(
+                Strings.searchingStraps,
+                style: AppTheme.caption(color: AppColors.brandRed),
+              ),
             ),
           ],
           if (status == _StrapStatus.connected) ...[
@@ -1124,8 +1106,11 @@ class _StrapPage extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle_rounded,
-                      color: AppColors.success, size: 22),
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: AppColors.success,
+                    size: 22,
+                  ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Column(
@@ -1133,13 +1118,15 @@ class _StrapPage extends StatelessWidget {
                       children: [
                         Text(
                           Strings.connected,
-                          style: AppTheme.caption(color: AppColors.success)
-                              .copyWith(fontWeight: FontWeight.w700),
+                          style: AppTheme.caption(
+                            color: AppColors.success,
+                          ).copyWith(fontWeight: FontWeight.w700),
                         ),
                         Text(
                           strapLabel,
-                          style: AppTheme.bodyLarge(weight: FontWeight.w600)
-                              .copyWith(fontSize: 15),
+                          style: AppTheme.bodyLarge(
+                            weight: FontWeight.w600,
+                          ).copyWith(fontSize: 15),
                         ),
                       ],
                     ),
@@ -1221,10 +1208,7 @@ class _StudioFormPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(
-            Strings.upgradeLater,
-            style: AppTheme.caption(),
-          ),
+          Text(Strings.upgradeLater, style: AppTheme.caption()),
         ],
       ),
     );
@@ -1278,9 +1262,7 @@ class _CapacityChip extends StatelessWidget {
                 '$value',
                 style: AppTheme.statNumber(
                   fontSize: 18,
-                  color: selected
-                      ? AppColors.brandRed
-                      : AppColors.textPrimary,
+                  color: selected ? AppColors.brandRed : AppColors.textPrimary,
                   weight: FontWeight.w700,
                 ).copyWith(height: 1.0),
               ),

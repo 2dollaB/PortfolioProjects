@@ -8,10 +8,10 @@ import '../widgets/beat_button.dart';
 import '../widgets/calc_info_button.dart';
 import '../widgets/mobile_frame.dart';
 import '../widgets/stat_chip.dart';
-import '../widgets/workout_type_sheet.dart';
 import '../widgets/zone_badge.dart';
 
 /// Post-workout summary. Hero stats + zone distribution + grid of metrics.
+/// Also reused as a read-only view when opened from History ([isHistorical]).
 class WorkoutSummaryScreen extends StatelessWidget {
   final UserProfile profile;
   final int durationMin;
@@ -19,7 +19,11 @@ class WorkoutSummaryScreen extends StatelessWidget {
   final int maxBpm;
   final int calories;
   final int trimp;
-  final WorkoutType? workoutType;
+  final bool isGroup;
+
+  /// True when opened from History for an already-saved workout — hides the
+  /// Save/Discard actions, which only make sense right after finishing.
+  final bool isHistorical;
 
   /// Real per-zone percentages (index 0-5) from the finished workout.
   /// Null keeps the demo constants (prototype path).
@@ -33,7 +37,8 @@ class WorkoutSummaryScreen extends StatelessWidget {
     required this.maxBpm,
     required this.calories,
     required this.trimp,
-    this.workoutType,
+    this.isGroup = false,
+    this.isHistorical = false,
     this.zoneDist,
   });
 
@@ -42,6 +47,19 @@ class WorkoutSummaryScreen extends StatelessWidget {
     final m = durationMin % 60;
     if (h > 0) return '${h}h ${m}m';
     return '${m}m';
+  }
+
+  /// Leaves the summary. For a freshly-finished workout this clears the
+  /// whole join → lobby → workout route chain back to the tab's Home root
+  /// (single `pop` isn't enough — Save/Discard should never reveal a stale
+  /// workout screen underneath). A historical view (opened from History)
+  /// only added itself to the stack, so a single pop is correct there.
+  void _close(BuildContext context) {
+    if (isHistorical) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   Future<void> _confirmDiscard(BuildContext context) async {
@@ -68,7 +86,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
-      Navigator.of(context).pop();
+      _close(context);
     }
   }
 
@@ -88,239 +106,258 @@ class WorkoutSummaryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MobileFrame(
-      child: Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      appBar: AppBar(
-        title: Text(Strings.workoutSummary),
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl,
+    return PopScope(
+      // Post-workout: the system back gesture must not slip past Save /
+      // Discard. History view stays freely dismissible.
+      canPop: isHistorical,
+      child: MobileFrame(
+        child: Scaffold(
+          backgroundColor: AppColors.bgPrimary,
+          appBar: AppBar(
+            title: Text(Strings.workoutSummary),
+            automaticallyImplyLeading: false,
+            // Post-workout: no corner close — Save / Discard at the bottom are
+            // the only exits, so you can't leave without deciding. History view
+            // is read-only, so it keeps a plain back arrow.
+            leading: isHistorical
+                ? IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    onPressed: () => _close(context),
+                  )
+                : null,
           ),
-          children: [
-            Row(
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                AppSpacing.md,
+                AppSpacing.xl,
+                AppSpacing.xl,
+              ),
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.brandRed.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: Icon(
-                    workoutType?.icon ?? Icons.local_fire_department_rounded,
-                    color: AppColors.brandRed,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.brandRed.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Icon(
+                        isGroup
+                            ? Icons.groups_rounded
+                            : Icons.directions_run_rounded,
+                        color: AppColors.brandRed,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isGroup
+                                ? Strings.groupWorkout
+                                : Strings.soloWorkout,
+                            style: AppTheme.h2().copyWith(fontSize: 18),
+                          ),
+                          Text(
+                            '${DateTime.now().toString().substring(0, 16)} · ${_formatDuration()}',
+                            style: AppTheme.caption(),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ZoneBadge(zone: _dominantZone),
+                  ],
                 ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: AppSpacing.xl),
+
+                // Hero stats
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgSecondary,
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
                     children: [
-                      Text(
-                          workoutType != null
-                              ? Strings.workoutTypeLabel(workoutType!.displayName)
-                              : Strings.workoutFallback,
-                          style: AppTheme.h2().copyWith(fontSize: 18)),
-                      Text(
-                        '${DateTime.now().toString().substring(0, 16)} · ${_formatDuration()}',
-                        style: AppTheme.caption(),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text(
+                              Strings.average,
+                              style: AppTheme.micro().copyWith(
+                                letterSpacing: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              '$avgBpm',
+                              style: AppTheme.statNumber(
+                                fontSize: 48,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            Text('bpm', style: AppTheme.caption()),
+                          ],
+                        ),
+                      ),
+                      Container(width: 1, height: 72, color: AppColors.border),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text(
+                              Strings.peak,
+                              style: AppTheme.micro().copyWith(
+                                letterSpacing: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              '$maxBpm',
+                              style: AppTheme.statNumber(
+                                fontSize: 48,
+                                color: AppColors.brandRed,
+                              ),
+                            ),
+                            Text('bpm', style: AppTheme.caption()),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-                ZoneBadge(zone: _dominantZone),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.lg),
 
-            // Hero stats
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: AppColors.bgSecondary,
-                borderRadius: BorderRadius.circular(AppRadius.xl),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Text(
-                          Strings.average,
-                          style: AppTheme.micro().copyWith(letterSpacing: 1.4),
+                Row(
+                  children: [
+                    Text(Strings.timeInZones, style: AppTheme.h2()),
+                    const SizedBox(width: 4),
+                    CalcInfoButton(
+                      title: Strings.zonesInfoTitle,
+                      steps: [
+                        InfoStep(
+                          title: Strings.zonesStep1Title,
+                          formula: Strings.zonesStep1Formula,
+                          body: Strings.zonesStep1Body,
                         ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          '$avgBpm',
-                          style: AppTheme.statNumber(
-                            fontSize: 48,
-                            color: AppColors.textPrimary,
-                          ),
+                        InfoStep(
+                          title: Strings.zonesStep2Title,
+                          formula: Strings.zonesStep2Formula,
+                          body: Strings.zonesStep2Body,
                         ),
-                        Text('bpm', style: AppTheme.caption()),
                       ],
                     ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _ZoneDistributionBar(distribution: _zoneDist),
+                const SizedBox(height: AppSpacing.md),
+                for (int z = 1; z <= 5; z++) ...[
+                  _ZoneRow(
+                    zone: z,
+                    percent: _zoneDist[z],
+                    seconds: durationMin * 60 * _zoneDist[z] ~/ 100,
                   ),
-                  Container(
-                    width: 1,
-                    height: 72,
-                    color: AppColors.border,
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Text(
-                          Strings.peak,
-                          style: AppTheme.micro().copyWith(letterSpacing: 1.4),
+                  if (z < 5) const SizedBox(height: 6),
+                ],
+
+                const SizedBox(height: AppSpacing.xl),
+                Row(
+                  children: [
+                    Text(Strings.details, style: AppTheme.h2()),
+                    const SizedBox(width: 4),
+                    CalcInfoButton(
+                      title: Strings.calcInfoTitle,
+                      steps: [
+                        InfoStep(
+                          title: Strings.calcCaloriesTitle,
+                          formula: Strings.calcCaloriesFormula,
+                          body: Strings.calcCaloriesBody,
                         ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          '$maxBpm',
-                          style: AppTheme.statNumber(
-                            fontSize: 48,
-                            color: AppColors.brandRed,
-                          ),
+                        InfoStep(
+                          title: Strings.calcTrimpTitle,
+                          formula: Strings.calcTrimpFormula,
+                          body: Strings.calcTrimpBody,
                         ),
-                        Text('bpm', style: AppTheme.caption()),
+                        InfoStep(
+                          title: Strings.calcHrMaxTitle,
+                          formula: Strings.calcHrMaxFormula,
+                          body: Strings.calcHrMaxBody,
+                        ),
                       ],
                     ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 3,
+                  mainAxisSpacing: AppSpacing.xs,
+                  crossAxisSpacing: AppSpacing.xs,
+                  childAspectRatio: 1.3,
+                  children: [
+                    StatChip(
+                      label: Strings.calories,
+                      value: '$calories',
+                      unit: 'kcal',
+                      icon: Icons.local_fire_department_rounded,
+                      accent: AppColors.brandRed,
+                    ),
+                    StatChip(
+                      label: 'TRIMP',
+                      value: '$trimp',
+                      icon: Icons.bolt_rounded,
+                      accent: AppColors.warning,
+                    ),
+                    StatChip(
+                      label: Strings.duration,
+                      value: _formatDuration(),
+                      icon: Icons.timer_outlined,
+                    ),
+                    StatChip(
+                      label: Strings.avgHr,
+                      value: '$avgBpm',
+                      unit: 'bpm',
+                      icon: Icons.favorite_outline_rounded,
+                    ),
+                    StatChip(
+                      label: Strings.maxHr,
+                      value: '$maxBpm',
+                      unit: 'bpm',
+                      icon: Icons.trending_up_rounded,
+                      accent: AppColors.brandRed,
+                    ),
+                    StatChip(
+                      label: Strings.hrMaxPct,
+                      value: '${(maxBpm / profile.hrMax * 100).round()}',
+                      unit: '%',
+                      icon: Icons.percent_rounded,
+                    ),
+                  ],
+                ),
+
+                if (!isHistorical) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  BeatPrimaryButton(
+                    label: Strings.saveWorkout,
+                    icon: Icons.check_rounded,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  BeatSecondaryButton(
+                    label: Strings.discard,
+                    onPressed: () => _confirmDiscard(context),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            Row(
-              children: [
-                Text(Strings.timeInZones, style: AppTheme.h2()),
-                const SizedBox(width: 4),
-                CalcInfoButton(
-                  title: Strings.zonesInfoTitle,
-                  steps: [
-                    InfoStep(
-                      title: Strings.zonesStep1Title,
-                      formula: Strings.zonesStep1Formula,
-                      body: Strings.zonesStep1Body,
-                    ),
-                    InfoStep(
-                      title: Strings.zonesStep2Title,
-                      formula: Strings.zonesStep2Formula,
-                      body: Strings.zonesStep2Body,
-                    ),
-                  ],
-                ),
               ],
             ),
-            const SizedBox(height: AppSpacing.sm),
-            _ZoneDistributionBar(distribution: _zoneDist),
-            const SizedBox(height: AppSpacing.md),
-            for (int z = 1; z <= 5; z++) ...[
-              _ZoneRow(
-                zone: z,
-                percent: _zoneDist[z],
-                seconds: durationMin * 60 * _zoneDist[z] ~/ 100,
-              ),
-              if (z < 5) const SizedBox(height: 6),
-            ],
-
-            const SizedBox(height: AppSpacing.xl),
-            Row(
-              children: [
-                Text(Strings.details, style: AppTheme.h2()),
-                const SizedBox(width: 4),
-                CalcInfoButton(
-                  title: Strings.calcInfoTitle,
-                  steps: [
-                    InfoStep(
-                      title: Strings.calcCaloriesTitle,
-                      formula: Strings.calcCaloriesFormula,
-                      body: Strings.calcCaloriesBody,
-                    ),
-                    InfoStep(
-                      title: Strings.calcTrimpTitle,
-                      formula: Strings.calcTrimpFormula,
-                      body: Strings.calcTrimpBody,
-                    ),
-                    InfoStep(
-                      title: Strings.calcHrMaxTitle,
-                      formula: Strings.calcHrMaxFormula,
-                      body: Strings.calcHrMaxBody,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 3,
-              mainAxisSpacing: AppSpacing.xs,
-              crossAxisSpacing: AppSpacing.xs,
-              childAspectRatio: 1.3,
-              children: [
-                StatChip(
-                  label: Strings.calories,
-                  value: '$calories',
-                  unit: 'kcal',
-                  icon: Icons.local_fire_department_rounded,
-                  accent: AppColors.brandRed,
-                ),
-                StatChip(
-                  label: 'TRIMP',
-                  value: '$trimp',
-                  icon: Icons.bolt_rounded,
-                  accent: AppColors.warning,
-                ),
-                StatChip(
-                  label: Strings.duration,
-                  value: _formatDuration(),
-                  icon: Icons.timer_outlined,
-                ),
-                StatChip(
-                  label: Strings.avgHr,
-                  value: '$avgBpm',
-                  unit: 'bpm',
-                  icon: Icons.favorite_outline_rounded,
-                ),
-                StatChip(
-                  label: Strings.maxHr,
-                  value: '$maxBpm',
-                  unit: 'bpm',
-                  icon: Icons.trending_up_rounded,
-                  accent: AppColors.brandRed,
-                ),
-                StatChip(
-                  label: Strings.hrMaxPct,
-                  value: '${(maxBpm / profile.hrMax * 100).round()}',
-                  unit: '%',
-                  icon: Icons.percent_rounded,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.xl),
-            BeatPrimaryButton(
-              label: Strings.saveWorkout,
-              icon: Icons.check_rounded,
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            BeatSecondaryButton(
-              label: Strings.discard,
-              onPressed: () => _confirmDiscard(context),
-            ),
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -365,8 +402,7 @@ class _ZoneRow extends StatelessWidget {
 
   /// "45s" under a minute, "12m" above — short workouts otherwise read
   /// "0m" for every zone (E2E-6).
-  String get _timeLabel =>
-      seconds < 60 ? '${seconds}s' : '${seconds ~/ 60}m';
+  String get _timeLabel => seconds < 60 ? '${seconds}s' : '${seconds ~/ 60}m';
 
   @override
   Widget build(BuildContext context) {
@@ -382,7 +418,12 @@ class _ZoneRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.xs),
-        Text('Z$zone', style: AppTheme.caption(color: c).copyWith(fontWeight: FontWeight.w600)),
+        Text(
+          'Z$zone',
+          style: AppTheme.caption(
+            color: c,
+          ).copyWith(fontWeight: FontWeight.w600),
+        ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Stack(

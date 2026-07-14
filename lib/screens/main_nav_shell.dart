@@ -10,7 +10,7 @@ import 'settings_screen.dart';
 import 'trainer_home_screen.dart';
 import 'member_list_screen.dart';
 import 'studio_analytics_screen.dart';
-import 'tv_host_screen.dart';
+import 'cast_to_tv_screen.dart';
 
 /// Role-aware bottom nav shell.
 /// Athlete tabs: Home · History · Profile
@@ -66,10 +66,12 @@ class _MainNavShellState extends State<MainNavShell> {
     if (recovered && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(Strings.pick(
-            'An interrupted workout was saved to your history.',
-            'Prekinuti trening spremljen je u vašu povijest.',
-          )),
+          content: Text(
+            Strings.pick(
+              'An interrupted workout was saved to your history.',
+              'Prekinuti trening spremljen je u vašu povijest.',
+            ),
+          ),
         ),
       );
     }
@@ -84,14 +86,11 @@ class _MainNavShellState extends State<MainNavShell> {
   List<Widget> _tabRoots(UserProfile profile) {
     return _isTrainer
         ? [
-            TrainerHomeScreen(
-              profile: profile,
-              onSignOut: widget.onSignOut,
-            ),
+            TrainerHomeScreen(profile: profile, onSignOut: widget.onSignOut),
             // Mock trainer profiles have no studioId, so the demo path holds.
             MemberListScreen(studioId: profile.studioId),
             StudioAnalyticsScreen(studioId: profile.studioId),
-            TvHostScreen(studioId: profile.studioId),
+            CastToTvScreen(studioId: profile.studioId),
           ]
         : [
             HomeScreen(
@@ -103,12 +102,8 @@ class _MainNavShellState extends State<MainNavShell> {
             // NOT const: an identical (const) instance short-circuits the
             // rebuild that _ProfileScope triggers on theme/language flips,
             // which left History painted in the old palette.
-            // ignore: prefer_const_constructors
-            WorkoutHistoryScreen(),
-            SettingsScreen(
-              profile: profile,
-              onSignOut: widget.onSignOut,
-            ),
+            WorkoutHistoryScreen(profile: profile),
+            SettingsScreen(profile: profile, onSignOut: widget.onSignOut),
           ];
   }
 
@@ -232,8 +227,8 @@ class _ProfileScope extends InheritedWidget {
   final AppLang lang;
 
   _ProfileScope({required this.profile, required super.child})
-      : brightness = AppColors.brightness,
-        lang = Strings.lang;
+    : brightness = AppColors.brightness,
+      lang = Strings.lang;
 
   static UserProfile of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<_ProfileScope>()!.profile;

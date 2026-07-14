@@ -14,6 +14,7 @@ import '../services/session_store.dart';
 import '../services/studio_repository.dart';
 import '../services/uid_name_cache.dart';
 import '../widgets/adaptive_grid.dart';
+import '../widgets/countdown_overlay.dart';
 import '../widgets/floating_pills.dart';
 import '../widgets/invite_sheet.dart';
 import '../widgets/participant_card.dart';
@@ -30,7 +31,11 @@ import '../widgets/session_status_banner.dart';
 /// local mock simulation.
 class TvHostScreen extends StatefulWidget {
   final String? studioId;
-  const TvHostScreen({super.key, this.studioId});
+
+  /// Hide the corner close control — true when this is the web TV board's
+  /// root route (nothing to pop back to).
+  final bool showClose;
+  const TvHostScreen({super.key, this.studioId, this.showClose = true});
 
   @override
   State<TvHostScreen> createState() => _TvHostScreenState();
@@ -59,6 +64,11 @@ class _TvHostScreenState extends State<TvHostScreen> {
 
   bool get _production => _liveStream != null;
 
+  /// Whether the board's tiles should render "live" (zone-colored) — false
+  /// during the pre-start countdown so tiles stay neutral grey. Demo is
+  /// always live.
+  bool get _boardLive => _live?.isWorkoutLive ?? true;
+
   @override
   void initState() {
     super.initState();
@@ -76,9 +86,11 @@ class _TvHostScreenState extends State<TvHostScreen> {
     final sid = widget.studioId;
     if (AuthService.currentUid != null && sid != null) {
       _liveStream = SessionRepository.watchLive(sid);
-      StudioRepository.load(sid).then((s) {
-        if (mounted && s != null) setState(() => _studio = s);
-      }).catchError((_) {});
+      StudioRepository.load(sid)
+          .then((s) {
+            if (mounted && s != null) setState(() => _studio = s);
+          })
+          .catchError((_) {});
     }
   }
 
@@ -184,13 +196,15 @@ class _TvHostScreenState extends State<TvHostScreen> {
       final hrMax = MockData.athleteProfile.hrMax;
       if (_runStateFor(null) == 'lobby') return _lobby(context, null);
       final athletes = MockData.liveOf(_athleteCount)
-          .map((p) => BoardAthlete(
-                id: p.id,
-                name: p.name,
-                bpm: _liveBpm[p.id] ?? p.bpm,
-                avgBpm: p.avgBpm,
-                hrMax: hrMax,
-              ))
+          .map(
+            (p) => BoardAthlete(
+              id: p.id,
+              name: p.name,
+              bpm: _liveBpm[p.id] ?? p.bpm,
+              avgBpm: p.avgBpm,
+              hrMax: hrMax,
+            ),
+          )
           .toList();
       return _buildBoard(context, null, athletes);
     }
@@ -229,13 +243,15 @@ class _TvHostScreenState extends State<TvHostScreen> {
               },
             );
             final athletes = entries
-                .map((e) => BoardAthlete(
-                      id: e.uid,
-                      name: e.name.isNotEmpty ? e.name : _names.nameFor(e.uid),
-                      bpm: e.bpm,
-                      avgBpm: e.avgBpm,
-                      hrMax: e.hrMax > 0 ? e.hrMax : 190,
-                    ))
+                .map(
+                  (e) => BoardAthlete(
+                    id: e.uid,
+                    name: e.name.isNotEmpty ? e.name : _names.nameFor(e.uid),
+                    bpm: e.bpm,
+                    avgBpm: e.avgBpm,
+                    hrMax: e.hrMax > 0 ? e.hrMax : 190,
+                  ),
+                )
                 .toList();
             return _buildBoard(context, live, athletes);
           },
@@ -289,13 +305,15 @@ class _TvHostScreenState extends State<TvHostScreen> {
     final avgHr = list.isEmpty
         ? 0
         : (list.map((a) => a.bpm).reduce((a, b) => a + b) / list.length)
-            .round();
-    final inZ4Plus =
-        list.where((a) => a.hrMax > 0 && a.bpm / a.hrMax >= 0.8).length;
+              .round();
+    final inZ4Plus = list
+        .where((a) => a.hrMax > 0 && a.bpm / a.hrMax >= 0.8)
+        .length;
 
-    final title = live?.name ?? 'Friday HIIT 18:00';
-    final studioName =
-        live == null ? MockData.studioName : (_studio?.name ?? '');
+    final title = live?.name ?? Strings.untitledSession;
+    final studioName = live == null
+        ? MockData.studioName
+        : (_studio?.name ?? '');
     final subtitle = '$studioName · ${Strings.athletesCount(list.length)}';
     final elapsed = _formatDuration(_elapsedFor(live));
     final paused = _runStateFor(live) == 'paused';
@@ -307,7 +325,18 @@ class _TvHostScreenState extends State<TvHostScreen> {
           children: [
             isMobile
                 ? _buildMobile(list, avgHr, inZ4Plus, title, subtitle, elapsed)
-                : _buildDesktop(list, avgHr, inZ4Plus, title, subtitle, elapsed),
+                : _buildDesktop(
+                    list,
+                    avgHr,
+                    inZ4Plus,
+                    title,
+                    subtitle,
+                    elapsed,
+                  ),
+            // Synced 3-2-1 → GO — the TV counts down with the trainer and
+            // athletes so the room starts together.
+            if (live != null && live.isCountingDown)
+              SyncedCountdownOverlay(target: live.runningSince!),
             if (paused)
               Positioned.fill(
                 child: Container(
@@ -316,12 +345,18 @@ class _TvHostScreenState extends State<TvHostScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.pause_circle_filled_rounded,
-                          color: AppColors.warning, size: 72),
+                      const Icon(
+                        Icons.pause_circle_filled_rounded,
+                        color: AppColors.warning,
+                        size: 72,
+                      ),
                       const SizedBox(height: AppSpacing.md),
-                      Text(Strings.pausedCaps,
-                          style: AppTheme.h1(color: AppColors.warning)
-                              .copyWith(fontSize: 40, letterSpacing: 4)),
+                      Text(
+                        Strings.pausedCaps,
+                        style: AppTheme.h1(
+                          color: AppColors.warning,
+                        ).copyWith(fontSize: 40, letterSpacing: 4),
+                      ),
                     ],
                   ),
                 ),
@@ -334,9 +369,10 @@ class _TvHostScreenState extends State<TvHostScreen> {
 
   /// Pre-start splash for the wall screen — invites athletes to join.
   Widget _lobby(BuildContext context, CloudSession? live) {
-    final title = live?.name ?? 'Friday HIIT 18:00';
-    final studioName =
-        live == null ? MockData.studioName : (_studio?.name ?? '');
+    final title = live?.name ?? Strings.untitledSession;
+    final studioName = live == null
+        ? MockData.studioName
+        : (_studio?.name ?? '');
     final code = _production ? live?.joinCode : null;
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
@@ -345,9 +381,12 @@ class _TvHostScreenState extends State<TvHostScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(studioName.toUpperCase(),
-                  style: AppTheme.micro(color: AppColors.textSecondary)
-                      .copyWith(letterSpacing: 2)),
+              Text(
+                studioName.toUpperCase(),
+                style: AppTheme.micro(
+                  color: AppColors.textSecondary,
+                ).copyWith(letterSpacing: 2),
+              ),
               const SizedBox(height: AppSpacing.sm),
               Text(title, style: AppTheme.h1().copyWith(fontSize: 44)),
               const SizedBox(height: AppSpacing.sm),
@@ -358,32 +397,45 @@ class _TvHostScreenState extends State<TvHostScreen> {
                     width: 10,
                     height: 10,
                     decoration: const BoxDecoration(
-                        color: AppColors.brandRed, shape: BoxShape.circle),
+                      color: AppColors.brandRed,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.xs),
-                  Text(Strings.startingSoon,
-                      style: AppTheme.micro(color: AppColors.brandRed).copyWith(
-                          letterSpacing: 2, fontWeight: FontWeight.w700)),
+                  Text(
+                    Strings.startingSoon,
+                    style: AppTheme.micro(
+                      color: AppColors.brandRed,
+                    ).copyWith(letterSpacing: 2, fontWeight: FontWeight.w700),
+                  ),
                 ],
               ),
               const SizedBox(height: AppSpacing.xl),
-              Text(Strings.getIntoPosition,
-                  style: AppTheme.bodyLarge(color: AppColors.textSecondary)),
+              Text(
+                Strings.getIntoPosition,
+                style: AppTheme.bodyLarge(color: AppColors.textSecondary),
+              ),
               if (code != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+                    horizontal: AppSpacing.xl,
+                    vertical: AppSpacing.md,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.bgSecondary,
                     borderRadius: BorderRadius.circular(AppRadius.lg),
                     border: Border.all(
-                        color: AppColors.brandRed.withValues(alpha: 0.3)),
+                      color: AppColors.brandRed.withValues(alpha: 0.3),
+                    ),
                   ),
-                  child: Text(code,
-                      style: AppTheme.statNumber(
-                              fontSize: 40, color: AppColors.brandRed)
-                          .copyWith(letterSpacing: 8)),
+                  child: Text(
+                    code,
+                    style: AppTheme.statNumber(
+                      fontSize: 40,
+                      color: AppColors.brandRed,
+                    ).copyWith(letterSpacing: 8),
+                  ),
                 ),
               ],
               if (live != null) ...[
@@ -393,7 +445,9 @@ class _TvHostScreenState extends State<TvHostScreen> {
                   builder: (context, snap) {
                     final n = snap.data?.length ?? 0;
                     return Text(
-                      n == 0 ? Strings.waitingForAthletesShort : Strings.nInTheRoom(n),
+                      n == 0
+                          ? Strings.waitingForAthletesShort
+                          : Strings.nInTheRoom(n),
                       style: AppTheme.caption(color: AppColors.success),
                     );
                   },
@@ -410,10 +464,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
   Widget _grid(List<BoardAthlete> list, EdgeInsets padding) {
     if (list.isEmpty) {
       return Center(
-        child: Text(
-          Strings.waitingToJoin,
-          style: AppTheme.caption(),
-        ),
+        child: Text(Strings.waitingToJoin, style: AppTheme.caption()),
       );
     }
     return ResponsiveParticipantGrid(
@@ -427,6 +478,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
           bpm: a.bpm,
           avgBpm: a.avgBpm,
           hrMax: a.hrMax,
+          isLive: _boardLive,
         );
       },
     );
@@ -445,13 +497,14 @@ class _TvHostScreenState extends State<TvHostScreen> {
       children: [
         Container(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.xs,
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.xs,
           ),
           decoration: BoxDecoration(
             color: AppColors.bgPrimary,
-            border: Border(
-              bottom: BorderSide(color: AppColors.border),
-            ),
+            border: Border(bottom: BorderSide(color: AppColors.border)),
           ),
           child: Column(
             children: [
@@ -473,16 +526,18 @@ class _TvHostScreenState extends State<TvHostScreen> {
                       size: 20,
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  GlassPill(
-                    padding: const EdgeInsets.all(8),
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Icon(
-                      Icons.close_rounded,
-                      color: AppColors.textPrimary,
-                      size: 20,
+                  if (widget.showClose) ...[
+                    const SizedBox(width: 6),
+                    GlassPill(
+                      padding: const EdgeInsets.all(8),
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: AppColors.textPrimary,
+                        size: 20,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
               const SizedBox(height: AppSpacing.xs),
@@ -502,8 +557,10 @@ class _TvHostScreenState extends State<TvHostScreen> {
                     const Spacer(),
                   const SizedBox(width: AppSpacing.xs),
                   GlassPill(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -528,9 +585,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
             ],
           ),
         ),
-        Expanded(
-          child: _grid(list, const EdgeInsets.all(AppSpacing.xs)),
-        ),
+        Expanded(child: _grid(list, const EdgeInsets.all(AppSpacing.xs))),
         Container(
           padding: const EdgeInsets.all(AppSpacing.xs),
           decoration: BoxDecoration(
@@ -567,10 +622,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
         Positioned(
           top: 16,
           left: 16,
-          child: SessionTitlePill(
-            sessionName: title,
-            subtitle: subtitle,
-          ),
+          child: SessionTitlePill(sessionName: title, subtitle: subtitle),
         ),
         Positioned(
           top: 16,
@@ -578,8 +630,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
           child: Row(
             children: [
               GlassPill(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -592,8 +643,7 @@ class _TvHostScreenState extends State<TvHostScreen> {
                     _SortChip(
                       label: Strings.intensity,
                       selected: _sort == _SortMode.intensity,
-                      onTap: () =>
-                          setState(() => _sort = _SortMode.intensity),
+                      onTap: () => setState(() => _sort = _SortMode.intensity),
                     ),
                   ],
                 ),
@@ -622,16 +672,18 @@ class _TvHostScreenState extends State<TvHostScreen> {
                   size: 22,
                 ),
               ),
-              const SizedBox(width: 8),
-              GlassPill(
-                padding: const EdgeInsets.all(8),
-                onTap: () => Navigator.of(context).pop(),
-                child: Icon(
-                  Icons.close_rounded,
-                  color: AppColors.textPrimary,
-                  size: 22,
+              if (widget.showClose) ...[
+                const SizedBox(width: 8),
+                GlassPill(
+                  padding: const EdgeInsets.all(8),
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textPrimary,
+                    size: 22,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -675,9 +727,7 @@ class _SortChip extends StatelessWidget {
         child: Text(
           label,
           style: AppTheme.caption(
-            color: selected
-                ? AppColors.brandRed
-                : AppColors.textSecondary,
+            color: selected ? AppColors.brandRed : AppColors.textSecondary,
           ).copyWith(fontWeight: FontWeight.w700, fontSize: 12),
         ),
       ),

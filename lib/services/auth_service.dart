@@ -81,6 +81,18 @@ class AuthService {
     }
   }
 
+  /// Anonymous sign-in — used only by the web TV board so it can read the
+  /// paired studio's live session under Firestore rules (which require an
+  /// authenticated request). Returns the anon uid, or null on failure.
+  static Future<String?> signInAnonymously() async {
+    try {
+      final cred = await _auth.signInAnonymously();
+      return cred.user?.uid;
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<void> signOut() => _auth.signOut();
 
   static String _message(FirebaseAuthException e) {

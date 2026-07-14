@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/clock_sync.dart';
 
 /// Read-side view of a `sessions/{id}` doc — a cloud group session hosted by
 /// the studio's trainer. (Write side lives in SessionRepository.)
@@ -7,8 +8,9 @@ class CloudSession {
   final String studioId;
   final String trainerUid;
   final String name;
-  final String type; // workout type enum name, e.g. 'hiit'
-  final String joinCode; // 6-digit code athletes enter/scan to join this session
+  final String type; // always 'group' — sessions are group workouts only
+  final String
+  joinCode; // 6-digit code athletes enter/scan to join this session
   final String status; // 'live' | 'ended' — permission/joinable state
   final DateTime startedAt; // creation time (recent-list ordering)
   final DateTime? endedAt;
@@ -16,7 +18,8 @@ class CloudSession {
   // ── lifecycle (orthogonal to status) ──────────────────────
   final String runState; // 'lobby' | 'running' | 'paused'
   final DateTime? workoutStartedAt; // first Start; null in lobby
-  final DateTime? runningSince; // start of current running segment; null if paused/lobby
+  final DateTime?
+  runningSince; // start of current running segment; null if paused/lobby
   final int accumulatedMs; // elapsed before the current running segment
   final List<String> kickedUids;
 
@@ -24,6 +27,11 @@ class CloudSession {
   final int workSec; // 0 = no interval timer
   final int restSec;
   final int rounds;
+
+  /// Shared 3-2-1 countdown length — [SessionRepository.beginWorkout] writes
+  /// `runningSince` this far in the future so every client (trainer +
+  /// athletes) counts down to the exact same instant.
+  static const Duration countdownDuration = Duration(seconds: 3);
 
   const CloudSession({
     required this.id,
@@ -53,25 +61,30 @@ class CloudSession {
   bool isKicked(String uid) => kickedUids.contains(uid);
   bool get hasIntervals => workSec > 0;
 
+  /// True while `runningSince` is still in the future — the trainer pressed
+  /// Start but the synced 3-2-1 countdown hasn't reached zero yet. Uses
+  /// [ClockSync.now] (not the raw device clock) since `runningSince` is
+  /// meant to land at the same real-world instant on every phone.
+  bool get isCountingDown =>
+      isRunning &&
+      runningSince != null &&
+      ClockSync.now().isBefore(runningSince!);
+
+  /// True once the workout is actually ticking (past the synced countdown).
+  bool get isWorkoutLive => isRunning && !isCountingDown;
+
   /// Pause-aware live clock (lobby/running/paused). Identical math on every
   /// client: accumulated time plus the current running segment.
   Duration get liveElapsed {
     final base = Duration(milliseconds: accumulatedMs);
     final since = runningSince;
     if (since == null) return base; // paused or lobby
-    return base + DateTime.now().difference(since);
+    final now = ClockSync.now();
+    if (now.isBefore(since)) return base; // still counting down
+    return base + now.difference(since);
   }
 
-  Duration get duration =>
-      (endedAt ?? DateTime.now()).difference(startedAt);
-
-  String get typeLabel {
-    final t = type.toLowerCase();
-    if (t == 'hiit') return 'HIIT';
-    if (t == 'crossfit') return 'CrossFit';
-    if (type.isEmpty) return 'Workout';
-    return type[0].toUpperCase() + type.substring(1);
-  }
+  Duration get duration => (endedAt ?? DateTime.now()).difference(startedAt);
 
   String get durationLabel {
     final m = duration.inMinutes;
@@ -89,17 +102,17 @@ class CloudSession {
       studioId: d['studioId'] as String? ?? '',
       trainerUid: d['trainerUid'] as String? ?? '',
       name: d['name'] as String? ?? 'Group session',
-      type: d['type'] as String? ?? 'free',
+      type: d['type'] as String? ?? 'group',
       joinCode: d['joinCode'] as String? ?? '',
       status: d['status'] as String? ?? 'ended',
       startedAt: ts(d['startedAt']),
       endedAt: d['endedAt'] == null ? null : ts(d['endedAt']),
       // Docs predating this feature have no runState — treat them as running.
       runState: d['runState'] as String? ?? 'running',
-      workoutStartedAt:
-          d['workoutStartedAt'] == null ? null : ts(d['workoutStartedAt']),
-      runningSince:
-          d['runningSince'] == null ? null : ts(d['runningSince']),
+      workoutStartedAt: d['workoutStartedAt'] == null
+          ? null
+          : ts(d['workoutStartedAt']),
+      runningSince: d['runningSince'] == null ? null : ts(d['runningSince']),
       accumulatedMs: (d['accumulatedMs'] as num?)?.toInt() ?? 0,
       kickedUids:
           (d['kickedUids'] as List?)?.whereType<String>().toList() ?? const [],

@@ -1,17 +1,20 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../config/app_spacing.dart';
 import '../config/strings.dart';
 import '../config/theme.dart';
 import '../models/cloud_session.dart';
+import '../models/hr_data.dart';
 import '../models/user_profile.dart';
 import '../services/auth_service.dart';
+import '../services/ble_hr_service.dart';
+import '../services/clock_sync.dart';
 import '../services/session_repository.dart';
 import '../widgets/beat_button.dart';
 import '../widgets/logo_heartbeat.dart';
 import '../widgets/mobile_frame.dart';
-import '../widgets/workout_type_sheet.dart';
 import 'workout_screen.dart';
 
 /// Athlete waiting room (production group sessions).
@@ -37,23 +40,49 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
   late final Stream<CloudSession?> _stream;
   bool _navigated = false;
 
+  // Real BPM ticks on the trainer's board the moment a paired strap is
+  // connected — the athlete doesn't have to wait for Start to be seen as
+  // more than "Ready". Falls back to the one-shot 0 ping if unpaired.
+  final _useBle = !kIsWeb && BleHrService.instance.isConnected;
+  HrData? _lastBle;
+  StreamSubscription<HrData>? _bleSub;
+  Timer? _hrTick;
+
   @override
   void initState() {
     super.initState();
-    // Mark "ready" presence (bpm 0) so the trainer sees us in the lobby.
     final uid = AuthService.currentUid;
     if (uid != null) {
-      SessionRepository.writeHr(
-        sessionId: widget.session.id,
-        uid: uid,
-        name: widget.profile.name,
-        bpm: 0,
-        avgBpm: 0,
-        zone: 0,
-        hrMax: widget.profile.hrMax,
-      ).catchError((_) {});
+      if (_useBle) {
+        _bleSub = BleHrService.instance.hrDataStream.listen((d) {
+          if (mounted) setState(() => _lastBle = d);
+        });
+        _hrTick = Timer.periodic(
+          const Duration(seconds: 1),
+          (_) => _publishHr(uid),
+        );
+      }
+      // Mark "ready" presence (bpm 0) so the trainer sees us in the lobby
+      // even before a strap is connected.
+      _publishHr(uid);
+      // Ahead of the Start-Training countdown, so it's accurate from the
+      // first tick instead of correcting itself mid-count.
+      unawaited(ClockSync.sync());
     }
     _stream = SessionRepository.watch(widget.session.id);
+  }
+
+  void _publishHr(String uid) {
+    final bpm = _lastBle?.bpm ?? 0;
+    SessionRepository.writeHr(
+      sessionId: widget.session.id,
+      uid: uid,
+      name: widget.profile.name,
+      bpm: bpm,
+      avgBpm: bpm,
+      zone: 0,
+      hrMax: widget.profile.hrMax,
+    ).catchError((_) {});
   }
 
   void _react(CloudSession? s) {
@@ -67,9 +96,9 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
       _navigated = true;
       _removePresence();
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(Strings.removedFromSession)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(Strings.removedFromSession)));
       return;
     }
     if (s.status == 'ended') {
@@ -86,21 +115,26 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
             profile: widget.profile,
             inGroupSession: true,
             session: s,
-            workoutType: WorkoutType.values.firstWhere(
-              (t) => t.name == s.type,
-              orElse: () => WorkoutType.hiit,
-            ),
           ),
         ),
       );
     }
   }
 
+  @override
+  void dispose() {
+    _hrTick?.cancel();
+    _bleSub?.cancel();
+    super.dispose();
+  }
+
   void _removePresence() {
     final uid = AuthService.currentUid;
     if (uid != null) {
-      SessionRepository.removeHr(sessionId: widget.session.id, uid: uid)
-          .catchError((_) {});
+      SessionRepository.removeHr(
+        sessionId: widget.session.id,
+        uid: uid,
+      ).catchError((_) {});
     }
   }
 
@@ -149,15 +183,20 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      '${session.name} · ${Strings.workoutTypeLabel(session.typeLabel)}',
+                      session.name,
                       style: AppTheme.bodyLarge(color: AppColors.textSecondary),
                       textAlign: TextAlign.center,
                     ),
+                    if (_useBle) ...[
+                      const SizedBox(height: AppSpacing.lg),
+                      _MyHrCard(bpm: _lastBle?.bpm),
+                    ],
                     const SizedBox(height: AppSpacing.md),
                     if (snap.hasError)
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md),
+                          horizontal: AppSpacing.md,
+                        ),
                         child: Text(
                           Strings.connectionIssue(snap.error ?? ''),
                           style: AppTheme.caption(color: AppColors.danger),
@@ -170,7 +209,9 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
                         builder: (context, hrSnap) {
                           final n = hrSnap.data?.length ?? 1;
                           return Text(
-                            n == 1 ? Strings.youreInTheRoom : Strings.nInTheRoom(n),
+                            n == 1
+                                ? Strings.youreInTheRoom
+                                : Strings.nInTheRoom(n),
                             style: AppTheme.caption(color: AppColors.success),
                           );
                         },
@@ -187,6 +228,70 @@ class _SessionLobbyScreenState extends State<SessionLobbyScreen> {
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The athlete's own live heart rate while they wait in the lobby — a
+/// reassuring "your strap is working" signal before the workout starts.
+class _MyHrCard extends StatelessWidget {
+  final int? bpm;
+  const _MyHrCard({required this.bpm});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasReading = bpm != null && bpm! > 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: AppColors.brandRed.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            Strings.yourHeartRate,
+            style: AppTheme.micro(
+              color: AppColors.textSecondary,
+            ).copyWith(letterSpacing: 1.4),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              const Icon(
+                Icons.favorite_rounded,
+                color: AppColors.brandRed,
+                size: 22,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                hasReading ? '$bpm' : '––',
+                style: AppTheme.statNumber(
+                  fontSize: 44,
+                  color: AppColors.brandRed,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text('bpm', style: AppTheme.caption()),
+            ],
+          ),
+          if (!hasReading) ...[
+            const SizedBox(height: 2),
+            Text(
+              Strings.waitingFirstBeat,
+              style: AppTheme.caption(color: AppColors.textTertiary),
+            ),
+          ],
+        ],
       ),
     );
   }
