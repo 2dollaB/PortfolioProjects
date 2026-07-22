@@ -114,8 +114,6 @@ class WorkoutAnalytics {
   final int maxHr;
   final int minHr;
   final double calories;
-  final double trimp;
-  final double trainingEffect;
   final int beatPoints; // effort currency — zone-weighted, HRmax-relative
   final int hrRecovery; // BPM drop in 60s after workout
   final Map<int, Duration> timeInZone; // zone → duration
@@ -126,8 +124,6 @@ class WorkoutAnalytics {
     required this.maxHr,
     required this.minHr,
     required this.calories,
-    required this.trimp,
-    required this.trainingEffect,
     required this.beatPoints,
     required this.hrRecovery,
     required this.timeInZone,
@@ -143,23 +139,11 @@ class WorkoutAnalytics {
     );
   }
 
-  /// Training Effect label
-  String get trainingEffectLabel {
-    if (trainingEffect < 1.0) return 'Minor';
-    if (trainingEffect < 2.0) return 'Maintaining';
-    if (trainingEffect < 3.0) return 'Improving';
-    if (trainingEffect < 4.0) return 'Highly Improving';
-    if (trainingEffect < 5.0) return 'Overreaching';
-    return 'Overreaching';
-  }
-
   Map<String, dynamic> toJson() => {
         'avgHr': avgHr,
         'maxHr': maxHr,
         'minHr': minHr,
         'calories': calories,
-        'trimp': trimp,
-        'trainingEffect': trainingEffect,
         'beatPoints': beatPoints,
         'hrRecovery': hrRecovery,
         'hrMax': hrMax,
@@ -173,8 +157,6 @@ class WorkoutAnalytics {
         maxHr: json['maxHr'] as int,
         minHr: json['minHr'] as int,
         calories: (json['calories'] as num).toDouble(),
-        trimp: (json['trimp'] as num).toDouble(),
-        trainingEffect: (json['trainingEffect'] as num).toDouble(),
         beatPoints: (json['beatPoints'] as num?)?.toInt() ?? 0,
         hrRecovery: json['hrRecovery'] as int,
         hrMax: json['hrMax'] as int,
@@ -200,8 +182,6 @@ class AnalyticsEngine {
         maxHr: 0,
         minHr: 0,
         calories: 0,
-        trimp: 0,
-        trainingEffect: 0,
         beatPoints: 0,
         hrRecovery: 0,
         timeInZone: {},
@@ -226,20 +206,6 @@ class AnalyticsEngine {
       met: workoutType.met,
     );
 
-    // TRIMP — Bannister exponential model
-    final trimp = _calculateTrimp(
-      dataPoints: dataPoints,
-      hrMax: profile.hrMax,
-      restingHr: profile.restingHr ?? 60,
-      genderFactor: profile.trimpGenderFactor,
-    );
-
-    // Training Effect — estimated from TRIMP
-    final trainingEffect = _calculateTrainingEffect(
-      trimp: trimp,
-      fitnessMultiplier: profile.fitnessMultiplier,
-    );
-
     // BeatPoints — zone-weighted effort currency
     final beatPoints = _calculateBeatPoints(
       dataPoints: dataPoints,
@@ -251,8 +217,6 @@ class AnalyticsEngine {
       maxHr: maxHr,
       minHr: minHr,
       calories: calories,
-      trimp: trimp,
-      trainingEffect: trainingEffect,
       beatPoints: beatPoints,
       hrRecovery: hrRecoveryBpm,
       timeInZone: timeInZone,
@@ -341,59 +305,5 @@ class AnalyticsEngine {
           kcalPerMlO2;
     }
     return total;
-  }
-
-  /// Bannister TRIMP (Training Impulse)
-  /// TRIMP = Σ (duration_i × ΔHR_ratio × 0.64 × e^(gender_factor × ΔHR_ratio))
-  ///
-  /// Where ΔHR_ratio = (HR - HRrest) / (HRmax - HRrest)
-  static double _calculateTrimp({
-    required List<HrDataPoint> dataPoints,
-    required int hrMax,
-    required int restingHr,
-    required double genderFactor,
-  }) {
-    double trimp = 0;
-    final hrRange = hrMax - restingHr;
-    if (hrRange <= 0) return 0;
-
-    for (int i = 0; i < dataPoints.length - 1; i++) {
-      final durationMin = dataPoints[i + 1]
-              .timestamp
-              .difference(dataPoints[i].timestamp)
-              .inSeconds /
-          60;
-      final hrReserve = (dataPoints[i].bpm - restingHr) / hrRange;
-      final clampedReserve = hrReserve.clamp(0.0, 1.0);
-
-      trimp += durationMin *
-          clampedReserve *
-          0.64 *
-          math.exp(genderFactor * clampedReserve);
-    }
-
-    return trimp;
-  }
-
-  /// Training Effect estimation from TRIMP
-  /// Scale: 1.0 (Minor) → 5.0 (Overreaching)
-  /// Based on Firstbeat model approximation
-  static double _calculateTrainingEffect({
-    required double trimp,
-    required double fitnessMultiplier,
-  }) {
-    // Adjusted TRIMP based on fitness level
-    final adjustedTrimp = trimp * fitnessMultiplier;
-
-    // Map TRIMP to 1-5 Training Effect scale
-    // Typical 30-min moderate workout = TRIMP ~50-80
-    // Typical 60-min intense workout = TRIMP ~150-250
-    if (adjustedTrimp < 10) return 0.5;
-    if (adjustedTrimp < 30) return 1.0 + (adjustedTrimp - 10) / 20 * 0.5;
-    if (adjustedTrimp < 60) return 1.5 + (adjustedTrimp - 30) / 30 * 0.5;
-    if (adjustedTrimp < 100) return 2.0 + (adjustedTrimp - 60) / 40 * 1.0;
-    if (adjustedTrimp < 180) return 3.0 + (adjustedTrimp - 100) / 80 * 1.0;
-    if (adjustedTrimp < 300) return 4.0 + (adjustedTrimp - 180) / 120 * 0.8;
-    return 5.0;
   }
 }

@@ -41,7 +41,6 @@ class MockData {
       avgBpm: 156,
       maxBpm: 184,
       calories: 487,
-      trimp: 92,
       beatPoints: 152,
       dominantZone: 4,
       zoneDist: [0, 5, 18, 42, 30, 5],
@@ -54,7 +53,6 @@ class MockData {
       avgBpm: 132,
       maxBpm: 168,
       calories: 412,
-      trimp: 68,
       beatPoints: 138,
       dominantZone: 3,
       zoneDist: [0, 12, 35, 38, 12, 3],
@@ -67,7 +65,6 @@ class MockData {
       avgBpm: 142,
       maxBpm: 162,
       calories: 612,
-      trimp: 110,
       beatPoints: 208,
       dominantZone: 3,
       zoneDist: [0, 8, 22, 55, 13, 2],
@@ -80,7 +77,6 @@ class MockData {
       avgBpm: 161,
       maxBpm: 189,
       calories: 522,
-      trimp: 98,
       beatPoints: 142,
       dominantZone: 4,
       zoneDist: [0, 3, 12, 35, 38, 12],
@@ -103,7 +99,6 @@ class MockData {
         avgHr: m.avgBpm,
         maxHr: m.maxBpm,
         calories: m.calories,
-        trimp: m.trimp,
         beatPoints: m.beatPoints,
         dominantZone: m.dominantZone,
         zoneDist: m.zoneDist,
@@ -169,7 +164,6 @@ class MockWorkout {
   final int avgBpm;
   final int maxBpm;
   final int calories;
-  final int trimp;
   final int beatPoints;
   final int dominantZone;
 
@@ -184,7 +178,6 @@ class MockWorkout {
     required this.avgBpm,
     required this.maxBpm,
     required this.calories,
-    required this.trimp,
     required this.beatPoints,
     required this.dominantZone,
     required this.zoneDist,

@@ -75,7 +75,6 @@ class _WorkoutScreenState extends State<WorkoutScreen>
   bool _paused = false;
   final _rng = math.Random();
   double _kcal = 0;
-  double _trimp = 0;
   double _beatPoints = 0;
 
   // Real strap: locked in at workout start. When connected, _step consumes
@@ -249,7 +248,6 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       if (_bpmHistory.length > 120) _bpmHistory.removeAt(0);
 
       final hrMax = widget.profile.hrMax;
-      final pct = (_bpm / hrMax).clamp(0.0, 1.5);
       // Calories — MET-per-type model, accumulated per ~0.8s tick. No workout
       // type picker feeds the live flow yet, so MET defaults to `free` (7.0).
       // Samples below 0.35×HRmax are gated out (rest doesn't count).
@@ -260,7 +258,6 @@ class _WorkoutScreenState extends State<WorkoutScreen>
             (0.8 / 60) *
             (3.5 / 200);
       }
-      _trimp += pct * pct * widget.profile.trimpGenderFactor * 0.05;
       // BeatPoints — points/min by current zone (z5 capped at z4, no bonus),
       // accumulated per ~0.8s tick. Paused ticks return early above, so a
       // paused clock earns nothing; signal gaps hold _bpm but stay in-band.
@@ -349,7 +346,6 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         'avgHr': _avgBpm,
         'maxHr': _maxBpm,
         'calories': _kcal.round(),
-        'trimp': _trimp.round(),
         'beatPoints': _beatPoints.round(),
         'zoneDist': stats.zoneDist,
         'dominantZone': stats.dominantZone,
@@ -483,7 +479,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     final avgBpm = _avgBpm;
     final maxBpm = _maxBpm;
     final calories = _kcal.round();
-    final trimp = _trimp.round();
+    final beatPoints = _beatPoints.round();
     final zoneDist = _zoneStats(widget.profile.hrMax).zoneDist;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
@@ -492,7 +488,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
           avgBpm: avgBpm,
           maxBpm: maxBpm,
           calories: calories,
-          trimp: trimp,
+          beatPoints: beatPoints,
           profile: widget.profile,
           isGroup: widget.session != null,
           zoneDist: zoneDist,
@@ -518,7 +514,6 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         avgHr: _avgBpm,
         maxHr: _maxBpm,
         calories: _kcal.round(),
-        trimp: _trimp.round(),
         beatPoints: _beatPoints.round(),
         zoneDist: stats.zoneDist,
         dominantZone: stats.dominantZone,
@@ -797,8 +792,8 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                         ),
                         Expanded(
                           child: _LiveStat(
-                            label: 'TRIMP',
-                            value: _trimp.toStringAsFixed(0),
+                            label: Strings.beatPoints,
+                            value: _beatPoints.toStringAsFixed(0),
                             color: AppColors.textPrimary,
                           ),
                         ),

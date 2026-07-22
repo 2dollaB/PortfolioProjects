@@ -11,19 +11,19 @@ class ActivityCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Build daily TRIMP map for last 182 days
+    // Build daily BeatPoints map for last 182 days
     final today = DateTime.now();
-    final dayMap = <int, double>{}; // dayIndex → total TRIMP
+    final dayMap = <int, double>{}; // dayIndex → total BeatPoints
 
     for (final w in workouts) {
       final dayDiff = today.difference(w.startTime).inDays;
       if (dayDiff < 182 && dayDiff >= 0) {
-        dayMap[dayDiff] = (dayMap[dayDiff] ?? 0) + w.analytics.trimp;
+        dayMap[dayDiff] = (dayMap[dayDiff] ?? 0) + w.analytics.beatPoints;
       }
     }
 
-    // Find max TRIMP for normalization
-    final maxTrimp = dayMap.values.isNotEmpty
+    // Find max BeatPoints for normalization
+    final maxBeatPoints = dayMap.values.isNotEmpty
         ? dayMap.values.reduce((a, b) => a > b ? a : b)
         : 1.0;
 
@@ -64,9 +64,9 @@ class ActivityCalendar extends StatelessWidget {
                             children: List.generate(7, (dayIdx) {
                               final totalDays =
                                   (25 - weekIdx) * 7 + (6 - dayIdx);
-                              final trimp = dayMap[totalDays] ?? 0;
+                              final bp = dayMap[totalDays] ?? 0;
                               final intensity =
-                                  maxTrimp > 0 ? (trimp / maxTrimp) : 0.0;
+                                  maxBeatPoints > 0 ? (bp / maxBeatPoints) : 0.0;
 
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 2),

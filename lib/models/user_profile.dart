@@ -64,30 +64,6 @@ class UserProfile {
     _dynamicHrMax = calculatedHrMax;
   }
 
-  /// TRIMP gender coefficient (Bannister model)
-  /// Male: 1.92, Female: 1.67
-  double get trimpGenderFactor {
-    switch (sex) {
-      case Sex.female:
-        return 1.67;
-      case Sex.male:
-      case Sex.other:
-        return 1.92;
-    }
-  }
-
-  /// Fitness level multiplier for Training Effect estimation
-  double get fitnessMultiplier {
-    switch (fitnessLevel) {
-      case FitnessLevel.beginner:
-        return 1.2; // Lower threshold for effect
-      case FitnessLevel.casual:
-        return 1.0; // Baseline
-      case FitnessLevel.advanced:
-        return 0.85; // Needs more to feel effect
-    }
-  }
-
   UserProfile copyWith({
     String? id,
     String? name,

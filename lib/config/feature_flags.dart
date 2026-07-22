@@ -10,7 +10,7 @@ class FeatureFlags {
   static const bool prototypeMode = false;
 
   // ── MVP gating (post-launch features hidden until ready) ──
-  static const bool trends           = false;  // ACWR, weekly TRIMP, zone trends
+  static const bool trends           = false;  // sessions, minutes, BeatPoints, zone trends
   static const bool hrv              = false;  // RMSSD/SDNN display
   static const bool audioCues        = false;  // TTS announcements
   static const bool healthSync       = false;  // Apple Health / Health Connect

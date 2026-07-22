@@ -156,13 +156,9 @@ class StorageService {
     final mostCalPrev = previous.map((w) => w.analytics.calories).reduce((a, b) => a > b ? a : b);
     if (a.calories > mostCalPrev) prs.add('🔥 Most Calories');
 
-    // Highest TRIMP
-    final mostTrimpPrev = previous.map((w) => w.analytics.trimp).reduce((a, b) => a > b ? a : b);
-    if (a.trimp > mostTrimpPrev) prs.add('⚡ Highest Load');
-
-    // Best Training Effect
-    final bestTePrev = previous.map((w) => w.analytics.trainingEffect).reduce((a, b) => a > b ? a : b);
-    if (a.trainingEffect > bestTePrev) prs.add('📈 Best Training Effect');
+    // Highest BeatPoints
+    final mostBpPrev = previous.map((w) => w.analytics.beatPoints).reduce((a, b) => a > b ? a : b);
+    if (a.beatPoints > mostBpPrev) prs.add('⚡ Highest Load');
 
     return prs;
   }
@@ -207,13 +203,13 @@ class StorageService {
   }
 
   /// Weekly summary: total time, calories, sessions
-  static Future<({int sessions, int minutes, int calories, int trimp})> weeklyStats() async {
+  static Future<({int sessions, int minutes, int calories, int beatPoints})> weeklyStats() async {
     final week = await loadWeeklyWorkouts();
     return (
       sessions: week.length,
       minutes: week.fold(0, (sum, w) => sum + w.duration.inMinutes),
       calories: week.fold(0, (sum, w) => sum + w.analytics.calories.round()),
-      trimp: week.fold(0, (sum, w) => sum + w.analytics.trimp.round()),
+      beatPoints: week.fold(0, (sum, w) => sum + w.analytics.beatPoints),
     );
   }
 

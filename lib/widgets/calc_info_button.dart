@@ -25,7 +25,7 @@ void showInfoSheet(BuildContext context, String title, List<InfoStep> steps) {
 }
 
 /// Small tappable info icon that opens a stepped explainer of how a displayed
-/// number is calculated (zones, TRIMP, calories, HR max…).
+/// number is calculated (zones, BeatPoints, calories, HR max…).
 class CalcInfoButton extends StatelessWidget {
   final String title;
   final List<InfoStep> steps;

@@ -440,7 +440,7 @@ class _WeeklyStats extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final all = workouts;
-    var sessions = '–', time = '–', trimp = '–';
+    var sessions = '–', time = '–', beatPoints = '–';
     if (all != null) {
       final now = DateTime.now();
       // Same rolling-7-day window as the history screen's "This week" filter.
@@ -452,7 +452,7 @@ class _WeeklyStats extends StatelessWidget {
       final m = minutes % 60;
       sessions = '${week.length}';
       time = h > 0 ? '${h}h ${m}m' : '${m}m';
-      trimp = '${week.fold(0, (sum, w) => sum + w.trimp)}';
+      beatPoints = '${week.fold(0, (sum, w) => sum + w.beatPoints)}';
     }
     return Row(
       children: [
@@ -467,7 +467,7 @@ class _WeeklyStats extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.xs),
         Expanded(
-          child: StatChip(label: 'TRIMP', value: trimp),
+          child: StatChip(label: Strings.beatPoints, value: beatPoints),
         ),
       ],
     );
@@ -538,7 +538,7 @@ class _WorkoutRow extends StatelessWidget {
               avgBpm: workout.avgHr,
               maxBpm: workout.maxHr,
               calories: workout.calories,
-              trimp: workout.trimp,
+              beatPoints: workout.beatPoints,
               isGroup: _isGroup,
               zoneDist: workout.zoneDist,
               isHistorical: true,
