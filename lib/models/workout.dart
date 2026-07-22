@@ -97,10 +97,7 @@ class Workout {
             .toList(),
         analytics:
             WorkoutAnalytics.fromJson(json['analytics'] as Map<String, dynamic>),
-        workoutType: WorkoutType.values.firstWhere(
-          (e) => e.name == json['workoutType'],
-          orElse: () => WorkoutType.free,
-        ),
+        workoutType: WorkoutType.fromName(json['workoutType'] as String?),
         lapMarkers: (json['lapMarkers'] as List? ?? [])
             .map((s) => Duration(seconds: s as int))
             .toList(),
@@ -189,6 +186,7 @@ class AnalyticsEngine {
     required List<HrDataPoint> dataPoints,
     required UserProfile profile,
     required Duration totalDuration,
+    WorkoutType workoutType = WorkoutType.free,
     int hrRecoveryBpm = 0,
   }) {
     if (dataPoints.isEmpty) {
@@ -214,13 +212,12 @@ class AnalyticsEngine {
     // Time in zones
     final timeInZone = _calculateTimeInZones(dataPoints);
 
-    // Calories — Keytel formula (2005)
+    // Calories — MET-per-type, per-sample with a resting-HR gate
     final calories = _calculateCalories(
-      avgHr: avgHr,
-      durationMinutes: totalDuration.inSeconds / 60,
+      dataPoints: dataPoints,
+      hrMax: profile.hrMax,
       weightKg: profile.weightKg,
-      sex: profile.sex,
-      age: profile.age,
+      met: workoutType.met,
     );
 
     // TRIMP — Bannister exponential model
@@ -270,31 +267,40 @@ class AnalyticsEngine {
     return timeInZone.map((k, v) => MapEntry(k, Duration(seconds: v)));
   }
 
-  /// Keytel Calorie Formula (2005)
-  /// Male:   kcal/min = (-55.0969 + 0.6309×HR + 0.1988×weight + 0.2017×age) / 4.184
-  /// Female: kcal/min = (-20.4022 + 0.4472×HR - 0.1263×weight + 0.074×age) / 4.184
+  /// MET-per-type calorie model, summed incrementally per sample.
+  ///
+  ///   ΔCal = MET × (HR / HRmax × 0.95) × weight_kg × (Δs / 60) × (3.5 / 200)
+  ///
+  /// Samples below 0.35 × HRmax are gated out (rest doesn't count). Δs is the
+  /// real gap between consecutive samples, so signal gaps and irregular
+  /// sampling stay physically accurate. 3.5/200 is the ACSM MET→kcal (via O2
+  /// uptake) constant; 0.95 is a deliberate calibration multiplier.
   static double _calculateCalories({
-    required int avgHr,
-    required double durationMinutes,
+    required List<HrDataPoint> dataPoints,
+    required int hrMax,
     required double weightKg,
-    required Sex sex,
-    required int age,
+    required double met,
   }) {
-    double kcalPerMin;
-    switch (sex) {
-      case Sex.female:
-        kcalPerMin =
-            (-20.4022 + 0.4472 * avgHr - 0.1263 * weightKg + 0.074 * age) /
-                4.184;
-        break;
-      case Sex.male:
-      case Sex.other:
-        kcalPerMin =
-            (-55.0969 + 0.6309 * avgHr + 0.1988 * weightKg + 0.2017 * age) /
-                4.184;
-        break;
+    if (dataPoints.length < 2 || hrMax <= 0) return 0;
+    const kcalPerMlO2 = 3.5 / 200;
+    const calibration = 0.95;
+    final gate = 0.35 * hrMax;
+    double total = 0;
+    for (int i = 0; i < dataPoints.length - 1; i++) {
+      final hr = dataPoints[i].bpm;
+      if (hr < gate) continue;
+      final deltaSec = dataPoints[i + 1]
+          .timestamp
+          .difference(dataPoints[i].timestamp)
+          .inSeconds;
+      if (deltaSec <= 0) continue;
+      total += met *
+          (hr / hrMax * calibration) *
+          weightKg *
+          (deltaSec / 60) *
+          kcalPerMlO2;
     }
-    return math.max(0, kcalPerMin * durationMinutes);
+    return total;
   }
 
   /// Bannister TRIMP (Training Impulse)

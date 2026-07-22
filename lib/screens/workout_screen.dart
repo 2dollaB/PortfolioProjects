@@ -12,6 +12,7 @@ import '../config/theme.dart';
 import '../models/cloud_session.dart';
 import '../models/hr_data.dart';
 import '../models/user_profile.dart';
+import '../models/workout_type.dart';
 import '../services/auth_service.dart';
 import '../services/ble_hr_service.dart';
 import '../services/clock_sync.dart';
@@ -248,7 +249,16 @@ class _WorkoutScreenState extends State<WorkoutScreen>
 
       final hrMax = widget.profile.hrMax;
       final pct = (_bpm / hrMax).clamp(0.0, 1.5);
-      _kcal += 0.18 * pct * widget.profile.weightKg / 60;
+      // Calories — MET-per-type model, accumulated per ~0.8s tick. No workout
+      // type picker feeds the live flow yet, so MET defaults to `free` (7.0).
+      // Samples below 0.35×HRmax are gated out (rest doesn't count).
+      if (_bpm >= 0.35 * hrMax) {
+        _kcal += WorkoutType.free.met *
+            (_bpm / hrMax * 0.95) *
+            widget.profile.weightKg *
+            (0.8 / 60) *
+            (3.5 / 200);
+      }
       _trimp += pct * pct * widget.profile.trimpGenderFactor * 0.05;
     });
     _publishHr();

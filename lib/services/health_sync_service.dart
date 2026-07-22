@@ -156,9 +156,7 @@ class HealthSyncService {
   static HealthWorkoutActivityType _mapWorkoutType(Workout w) {
     switch (w.workoutType.name) {
       case 'hiit':       return HealthWorkoutActivityType.HIGH_INTENSITY_INTERVAL_TRAINING;
-      case 'running':    return HealthWorkoutActivityType.RUNNING;
-      case 'cycling':    return HealthWorkoutActivityType.BIKING;
-      case 'yoga':       return HealthWorkoutActivityType.YOGA;
+      case 'crossfit':   return HealthWorkoutActivityType.HIGH_INTENSITY_INTERVAL_TRAINING;
       case 'strength':   return HealthWorkoutActivityType.STRENGTH_TRAINING;
       case 'cardio':
       default:           return HealthWorkoutActivityType.CARDIO_DANCE;
