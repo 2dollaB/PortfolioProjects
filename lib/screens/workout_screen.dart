@@ -76,6 +76,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
   final _rng = math.Random();
   double _kcal = 0;
   double _trimp = 0;
+  double _beatPoints = 0;
 
   // Real strap: locked in at workout start. When connected, _step consumes
   // the latest BLE sample instead of the simulated curve.
@@ -260,6 +261,12 @@ class _WorkoutScreenState extends State<WorkoutScreen>
             (3.5 / 200);
       }
       _trimp += pct * pct * widget.profile.trimpGenderFactor * 0.05;
+      // BeatPoints — points/min by current zone (z5 capped at z4, no bonus),
+      // accumulated per ~0.8s tick. Paused ticks return early above, so a
+      // paused clock earns nothing; signal gaps hold _bpm but stay in-band.
+      final bpZone = HrZones.fromBpm(_bpm, hrMax);
+      final bpPerMin = bpZone == 0 ? 0 : math.min(bpZone, 4);
+      _beatPoints += bpPerMin * (0.8 / 60);
     });
     _publishHr();
     _maybeSnapshot();
@@ -343,6 +350,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         'maxHr': _maxBpm,
         'calories': _kcal.round(),
         'trimp': _trimp.round(),
+        'beatPoints': _beatPoints.round(),
         'zoneDist': stats.zoneDist,
         'dominantZone': stats.dominantZone,
         'sessionId': widget.session?.id,
@@ -511,6 +519,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         maxHr: _maxBpm,
         calories: _kcal.round(),
         trimp: _trimp.round(),
+        beatPoints: _beatPoints.round(),
         zoneDist: stats.zoneDist,
         dominantZone: stats.dominantZone,
         sessionId: widget.session?.id,

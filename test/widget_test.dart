@@ -50,7 +50,7 @@ void main() {
     WorkoutAnalytics makeAnalytics({int avgHr = 140, int maxHr = 180}) {
       return WorkoutAnalytics(
         avgHr: avgHr, maxHr: maxHr, minHr: 80,
-        calories: 350, trimp: 65, trainingEffect: 3.2, hrRecovery: 25,
+        calories: 350, trimp: 65, trainingEffect: 3.2, beatPoints: 120, hrRecovery: 25,
         timeInZone: {1: const Duration(minutes: 5), 2: const Duration(minutes: 10),
           3: const Duration(minutes: 8), 4: const Duration(minutes: 5), 5: const Duration(minutes: 2)},
         hrMax: 190,
@@ -116,7 +116,7 @@ void main() {
           dataPoints: points,
           analytics: WorkoutAnalytics(
             avgHr: 155, maxHr: 180, minHr: 100,
-            calories: 400, trimp: 75, trainingEffect: 3.5, hrRecovery: 20,
+            calories: 400, trimp: 75, trainingEffect: 3.5, beatPoints: 140, hrRecovery: 20,
             timeInZone: {1: const Duration(minutes: 2), 2: const Duration(minutes: 5),
               3: const Duration(minutes: 8), 4: const Duration(minutes: 10), 5: const Duration(minutes: 5)},
             hrMax: 190,

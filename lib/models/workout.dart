@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../config/hr_zones.dart';
 import 'user_profile.dart';
 import 'workout_type.dart';
 
@@ -115,6 +116,7 @@ class WorkoutAnalytics {
   final double calories;
   final double trimp;
   final double trainingEffect;
+  final int beatPoints; // effort currency — zone-weighted, HRmax-relative
   final int hrRecovery; // BPM drop in 60s after workout
   final Map<int, Duration> timeInZone; // zone → duration
   final int hrMax; // HRmax used for this workout
@@ -126,6 +128,7 @@ class WorkoutAnalytics {
     required this.calories,
     required this.trimp,
     required this.trainingEffect,
+    required this.beatPoints,
     required this.hrRecovery,
     required this.timeInZone,
     required this.hrMax,
@@ -157,6 +160,7 @@ class WorkoutAnalytics {
         'calories': calories,
         'trimp': trimp,
         'trainingEffect': trainingEffect,
+        'beatPoints': beatPoints,
         'hrRecovery': hrRecovery,
         'hrMax': hrMax,
         'timeInZone':
@@ -171,6 +175,7 @@ class WorkoutAnalytics {
         calories: (json['calories'] as num).toDouble(),
         trimp: (json['trimp'] as num).toDouble(),
         trainingEffect: (json['trainingEffect'] as num).toDouble(),
+        beatPoints: (json['beatPoints'] as num?)?.toInt() ?? 0,
         hrRecovery: json['hrRecovery'] as int,
         hrMax: json['hrMax'] as int,
         timeInZone: (json['timeInZone'] as Map<String, dynamic>).map(
@@ -197,6 +202,7 @@ class AnalyticsEngine {
         calories: 0,
         trimp: 0,
         trainingEffect: 0,
+        beatPoints: 0,
         hrRecovery: 0,
         timeInZone: {},
         hrMax: profile.hrMax,
@@ -234,6 +240,12 @@ class AnalyticsEngine {
       fitnessMultiplier: profile.fitnessMultiplier,
     );
 
+    // BeatPoints — zone-weighted effort currency
+    final beatPoints = _calculateBeatPoints(
+      dataPoints: dataPoints,
+      hrMax: profile.hrMax,
+    );
+
     return WorkoutAnalytics(
       avgHr: avgHr,
       maxHr: maxHr,
@@ -241,10 +253,38 @@ class AnalyticsEngine {
       calories: calories,
       trimp: trimp,
       trainingEffect: trainingEffect,
+      beatPoints: beatPoints,
       hrRecovery: hrRecoveryBpm,
       timeInZone: timeInZone,
       hrMax: profile.hrMax,
     );
+  }
+
+  /// BeatPoints — points/min by the zone the athlete is in, summed per sample.
+  ///
+  ///   z1 50-59% → 1   z2 60-69% → 2   z3 70-79% → 3
+  ///   z4 80-89% → 4   z5 90%+   → 4 (no redlining bonus)   z0 <50% → 0
+  ///
+  /// HRmax-relative, so it's fair to beginners and advanced alike. Signal gaps
+  /// contribute nothing (no sample → no points).
+  static int _calculateBeatPoints({
+    required List<HrDataPoint> dataPoints,
+    required int hrMax,
+  }) {
+    if (dataPoints.length < 2 || hrMax <= 0) return 0;
+    double total = 0;
+    for (int i = 0; i < dataPoints.length - 1; i++) {
+      final zone = HrZones.fromBpm(dataPoints[i].bpm, hrMax);
+      final perMin = zone == 0 ? 0 : math.min(zone, 4);
+      if (perMin == 0) continue;
+      final deltaSec = dataPoints[i + 1]
+          .timestamp
+          .difference(dataPoints[i].timestamp)
+          .inSeconds;
+      if (deltaSec <= 0) continue;
+      total += perMin * (deltaSec / 60);
+    }
+    return total.round();
   }
 
   /// Time spent in each zone

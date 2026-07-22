@@ -16,6 +16,7 @@ class WorkoutSummary {
   final int maxHr;
   final int calories;
   final int trimp;
+  final int beatPoints;
   final int dominantZone;
   final List<int> zoneDist; // 6 entries (zone 0-5), percentages
 
@@ -29,6 +30,7 @@ class WorkoutSummary {
     required this.maxHr,
     required this.calories,
     required this.trimp,
+    required this.beatPoints,
     required this.dominantZone,
     required this.zoneDist,
   });
@@ -73,6 +75,7 @@ class WorkoutSummary {
       maxHr: (d['maxHr'] as num?)?.toInt() ?? 0,
       calories: (d['calories'] as num?)?.toInt() ?? 0,
       trimp: (d['trimp'] as num?)?.toInt() ?? 0,
+      beatPoints: (d['beatPoints'] as num?)?.toInt() ?? 0,
       dominantZone: (d['dominantZone'] as num?)?.toInt() ?? 1,
       zoneDist:
           (d['zoneDist'] as List?)?.map((e) => (e as num).toInt()).toList() ??
