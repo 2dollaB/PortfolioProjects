@@ -70,6 +70,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       fitnessLevel: _fitnessLevel,
       role: _role,
       manualHrMax: widget.profile.manualHrMax,
+      profileConfirmed: true,
     );
     await StorageService.saveProfile(updated);
     widget.onSaved(updated);

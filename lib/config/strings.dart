@@ -202,6 +202,11 @@ class Strings {
     'Height must be between 100 and 230 cm',
     'Visina mora biti između 100 i 230 cm',
   );
+  static String get sexRequired => _pick(
+    'Please select your gender',
+    'Molimo odaberite spol',
+  );
+  static String get selectSex => _pick('Select', 'Odaberi');
   static String get restingHrRange => _pick(
     'Resting HR must be between 30 and 120 bpm',
     'Puls u mirovanju mora biti između 30 i 120 bpm',

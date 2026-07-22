@@ -16,6 +16,7 @@ class MockData {
     restingHr: 54,
     fitnessLevel: FitnessLevel.advanced,
     role: UserRole.athlete,
+    profileConfirmed: true,
   );
 
   static final UserProfile trainerProfile = UserProfile(

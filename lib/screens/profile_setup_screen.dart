@@ -85,11 +85,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   bool _saving = false;
 
   // â”€â”€ Page 1: Personal â”€â”€
-  final _ageCtrl = TextEditingController(text: '30');
-  final _weightCtrl = TextEditingController(text: '75');
+  // Age/weight start empty so athletes must enter their own values — the old
+  // 30y/75kg defaults made zones and calories systematically wrong for anyone
+  // who skipped the fields.
+  final _ageCtrl = TextEditingController();
+  final _weightCtrl = TextEditingController();
   final _heightCtrl = TextEditingController(text: '178');
   final _restingHrCtrl = TextEditingController();
-  Sex _sex = Sex.male;
+  Sex? _sex;
 
   // â”€â”€ Page 2: Fitness â”€â”€
   FitnessLevel _fitnessLevel = FitnessLevel.casual;
@@ -169,6 +172,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         if (h == null || h < 100 || h > 230) {
           return Strings.heightRange;
         }
+        if (_sex == null) {
+          return Strings.sexRequired;
+        }
         final rhrText = _restingHrCtrl.text.trim();
         if (rhrText.isNotEmpty) {
           final rhr = int.tryParse(rhrText);
@@ -247,12 +253,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           ? 'Athlete'
           : widget.initialName!.trim(),
       age: age,
-      sex: _sex,
+      sex: _sex ?? Sex.male,
       weightKg: weight,
       heightCm: height,
       restingHr: restingHr,
       fitnessLevel: _fitnessLevel,
       role: _role,
+      // Athletes reach here only after entering age/sex/weight (validated),
+      // so their numbers are trustworthy. Trainers never run workouts.
+      profileConfirmed: _role == UserRole.athlete,
     );
 
     // Production: persist to Firebase via the injected hook. On failure, keep
@@ -686,7 +695,7 @@ class _PersonalPage extends StatelessWidget {
   final TextEditingController weightCtrl;
   final TextEditingController heightCtrl;
   final TextEditingController restingHrCtrl;
-  final Sex sex;
+  final Sex? sex;
   final ValueChanged<Sex> onSexChanged;
 
   const _PersonalPage({
@@ -744,6 +753,12 @@ class _PersonalPage extends StatelessWidget {
                         value: sex,
                         isExpanded: true,
                         underline: const SizedBox(),
+                        hint: Text(
+                          Strings.selectSex,
+                          style: AppTheme.bodyLarge(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                         icon: Icon(
                           Icons.expand_more_rounded,
                           color: AppColors.textSecondary,
