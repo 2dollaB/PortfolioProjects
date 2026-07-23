@@ -58,6 +58,16 @@ class WorkoutRepository {
         .toList();
   }
 
+  /// Every workout owned by [uid] (no limit) — used to recompute the user's
+  /// leaderboard totals. Plain equality filter, so no composite index; the
+  /// caller sums client-side.
+  static Future<List<WorkoutSummary>> fetchAllForUser(String uid) async {
+    final snap = await _workouts.where('userId', isEqualTo: uid).get();
+    return snap.docs
+        .map((d) => WorkoutSummary.fromDoc(d.id, d.data()))
+        .toList();
+  }
+
   /// All athletes' workouts recorded in one cloud group session (rules allow
   /// this cross-user query for the session's host). Plain equality filter —
   /// no composite index needed; callers sort the handful of results.

@@ -762,6 +762,24 @@ class Strings {
   static String get zoneMatchLabel => _pick('Zone match', 'Pogodak zone');
   static String get profileUnconfirmed =>
       _pick('Profile not confirmed', 'Profil nije potvrđen');
+
+  // ── Leaderboard ──────────────────────────────────────────────
+  static String get leaderboard => _pick('Leaderboard', 'Ljestvica');
+  static String get leaderboardSubtitle =>
+      _pick('Studio ranking by BeatPoints', 'Poredak studija po BeatPointsima');
+  static String get lbWeek => _pick('Week', 'Tjedan');
+  static String get lbMonth => _pick('Month', 'Mjesec');
+  static String get lbYear => _pick('Year', 'Godina');
+  static String get lbAllTime => _pick('All time', 'Ukupno');
+  static String get lbYou => _pick('You', 'Vi');
+  static String get lbEmpty => _pick(
+    'No BeatPoints yet — finish a workout to get on the board.',
+    'Još nema BeatPointsa — odradi trening da uđeš na ljestvicu.',
+  );
+  static String get lbNoStudio => _pick(
+    'Join a studio to see its leaderboard.',
+    'Pridruži se studiju da vidiš ljestvicu.',
+  );
   static String get avgPerAthlete =>
       _pick('avg per athlete', 'prosj. po sportašu');
   static String avgPeak(int avg, int peak) =>

@@ -105,6 +105,20 @@ service cloud.firestore {
                 || isSelfLeave()));
       allow delete: if isAdmin()
         || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
+
+      // ── studios/{studioId}/leaderboard/{uid} ─────────────────
+      // Denormalized per-athlete BeatPoints totals so members can see a studio
+      // ranking without reading each other's raw workouts. Every member (plus
+      // the owner and a paired TV) reads the whole board; an athlete writes
+      // only their own entry, and only for a studio they belong to.
+      match /leaderboard/{uid} {
+        allow read: if isStudioMember(studioId)
+          || isStudioTv(studioId)
+          || (isSignedIn() && studioData(studioId).ownerUid == request.auth.uid)
+          || isAdmin();
+        allow write: if isUser(uid)
+          && request.auth.uid in studioData(studioId).memberUids;
+      }
     }
 
     // ── invite_codes/{code} ──────────────────────────────────
