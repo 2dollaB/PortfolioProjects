@@ -17,7 +17,6 @@ import '../widgets/stat_chip.dart';
 import '../widgets/zone_badge.dart';
 import 'workout_history_screen.dart';
 import 'workout_summary_screen.dart';
-import 'leaderboard_screen.dart';
 import 'solo_setup_screen.dart';
 import 'join_session_screen.dart';
 import 'join_studio_screen.dart';
@@ -131,28 +130,6 @@ class HomeScreen extends StatelessWidget {
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => SoloSetupScreen(profile: profile),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              // LEADERBOARD — studio ranking by BeatPoints.
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.xl,
-                  AppSpacing.sm,
-                  AppSpacing.xl,
-                  0,
-                ),
-                sliver: SliverToBoxAdapter(
-                  child: _JoinCard(
-                    icon: Icons.leaderboard_rounded,
-                    title: Strings.leaderboard,
-                    subtitle: Strings.leaderboardSubtitle,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => LeaderboardScreen(profile: profile),
                       ),
                     ),
                   ),
