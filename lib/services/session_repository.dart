@@ -209,6 +209,8 @@ class SessionRepository {
     required int avgBpm,
     required int zone,
     required int hrMax,
+    int beatPoints = 0,
+    bool profileConfirmed = true,
   }) {
     return _sessions.doc(sessionId).collection('hr').doc(uid).set({
       // Denormalized so co-athletes' boards can show names without users/
@@ -218,8 +220,17 @@ class SessionRepository {
       'avgBpm': avgBpm,
       'zone': zone,
       'hrMax': hrMax,
+      'beatPoints': beatPoints,
+      'profileConfirmed': profileConfirmed,
       'lastUpdate': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  /// Trainer sets the session's target zone (1-5, or 0 to clear). The trainer
+  /// already owns full update rights on the session doc, so no rule change is
+  /// needed. Purely a coaching layer — it never touches BeatPoints.
+  static Future<void> setTargetZone(String sessionId, int zone) {
+    return _sessions.doc(sessionId).update({'targetZone': zone});
   }
 
   /// Removes the athlete's row when they leave (only works while the session

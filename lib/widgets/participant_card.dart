@@ -31,6 +31,17 @@ class ParticipantCard extends StatelessWidget {
   /// [isLive] is false. Ignored once live.
   final VoidCallback? onKick;
 
+  /// Live BeatPoints total, shown on tall tiles. Null hides it.
+  final int? beatPoints;
+
+  /// True when a target zone is set and this athlete is currently in it —
+  /// the tile gets a green outline + check. Purely visual coaching.
+  final bool inTargetZone;
+
+  /// True when the athlete trains on a default/unconfirmed profile — the tile
+  /// flags that their zones/calories are unreliable.
+  final bool unconfirmed;
+
   const ParticipantCard({
     super.key,
     required this.name,
@@ -41,6 +52,9 @@ class ParticipantCard extends StatelessWidget {
     this.onTap,
     this.isLive = true,
     this.onKick,
+    this.beatPoints,
+    this.inTargetZone = false,
+    this.unconfirmed = false,
   });
 
   String get _initials {
@@ -61,6 +75,12 @@ class ParticipantCard extends StatelessWidget {
         ? AppColors.zoneColor(activeZone)
         : AppColors.textTertiary;
     final pct = hrMax > 0 ? (bpm / hrMax).clamp(0.0, 1.0) : 0.0;
+    // In-target athletes get a green outline so the trainer can read the room
+    // at a glance; otherwise the zone color tints the border.
+    final borderColor = (isLive && inTargetZone)
+        ? AppColors.success
+        : color.withValues(alpha: 0.45);
+    final borderWidth = (isLive && inTargetZone) ? 2.0 : 1.2;
 
     return LayoutBuilder(
       builder: (context, c) {
@@ -84,8 +104,8 @@ class ParticipantCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 // Zone color tints the border, so identity is readable even at distance
                 border: Border.all(
-                  color: color.withValues(alpha: 0.45),
-                  width: 1.2,
+                  color: borderColor,
+                  width: borderWidth,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -117,6 +137,8 @@ class ParticipantCard extends StatelessWidget {
                               dense: !tall,
                               isLive: isLive,
                               onKick: onKick,
+                              inTargetZone: isLive && inTargetZone,
+                              unconfirmed: unconfirmed,
                             ),
                             const SizedBox(height: 2),
                             // ── BPM ──
@@ -149,6 +171,15 @@ class ParticipantCard extends StatelessWidget {
                                     'avg ${avgBpm > 0 ? avgBpm : "--"}',
                                     style: AppTheme.micro(),
                                   ),
+                                  if (beatPoints != null) ...[
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '⚡$beatPoints',
+                                      style: AppTheme.micro(
+                                        color: color,
+                                      ).copyWith(fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
                                   const Spacer(),
                                   Text(
                                     '${(pct * 100).round()}%',
@@ -184,6 +215,8 @@ class _TopRow extends StatelessWidget {
   final bool dense;
   final bool isLive;
   final VoidCallback? onKick;
+  final bool inTargetZone;
+  final bool unconfirmed;
 
   const _TopRow({
     required this.initials,
@@ -194,6 +227,8 @@ class _TopRow extends StatelessWidget {
     required this.dense,
     required this.isLive,
     this.onKick,
+    this.inTargetZone = false,
+    this.unconfirmed = false,
   });
 
   @override
@@ -226,6 +261,14 @@ class _TopRow extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
+          if (unconfirmed) ...[
+            Icon(
+              Icons.warning_amber_rounded,
+              size: dense ? 14 : 16,
+              color: AppColors.warning,
+            ),
+            const SizedBox(width: 4),
+          ],
           Expanded(
             child: FittedBox(
               fit: BoxFit.scaleDown,
@@ -243,6 +286,14 @@ class _TopRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
+          if (isLive && inTargetZone) ...[
+            Icon(
+              Icons.check_circle_rounded,
+              size: dense ? 18 : 20,
+              color: AppColors.success,
+            ),
+            const SizedBox(width: 6),
+          ],
           // Pre-live with a kick handler (trainer): "X" to remove — there's no
           // zone yet. Pre-live without one (TV board): nothing, the neutral
           // grey border alone signals "not started". Live: solid zone-color

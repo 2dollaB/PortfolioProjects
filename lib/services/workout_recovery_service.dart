@@ -56,6 +56,7 @@ class WorkoutRecoveryService {
         maxHr: m['maxHr'] as int,
         calories: m['calories'] as int,
         beatPoints: (m['beatPoints'] as int?) ?? 0,
+        zoneMatchPct: (m['zoneMatchPct'] as int?) ?? -1,
         zoneDist: (m['zoneDist'] as List).cast<int>(),
         dominantZone: m['dominantZone'] as int,
         sessionId: m['sessionId'] as String?,

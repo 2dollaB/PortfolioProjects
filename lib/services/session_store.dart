@@ -333,6 +333,10 @@ class AthleteResult {
   final int beatPoints;
   final int calories;
 
+  /// Zone Match % (time in the trainer's target zone while it was set), or -1
+  /// when the session had no target zone.
+  final int zoneMatch;
+
   /// Zone distribution Z0..Z5 as integer percentages (sum ≈ 100).
   final List<int> timeInZones;
 
@@ -343,6 +347,7 @@ class AthleteResult {
     required this.maxBpm,
     required this.beatPoints,
     required this.calories,
+    this.zoneMatch = -1,
     required this.timeInZones,
   });
 

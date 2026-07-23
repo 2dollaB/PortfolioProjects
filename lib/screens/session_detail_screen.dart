@@ -405,6 +405,13 @@ class _AthleteRow extends StatelessWidget {
                   Text(Strings.beatPoints, style: AppTheme.micro()),
                 ],
               ),
+              if (result.zoneMatch >= 0) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '${result.zoneMatch}% ${Strings.zoneMatchLabel.toLowerCase()}',
+                  style: AppTheme.micro(color: AppColors.success),
+                ),
+              ],
               const SizedBox(height: 2),
               ZoneBadge(zone: result.dominantZone, height: 18),
             ],

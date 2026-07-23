@@ -89,6 +89,7 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
           maxBpm: w.maxHr,
           beatPoints: w.beatPoints,
           calories: w.calories,
+          zoneMatch: w.zoneMatchPct,
           timeInZones: w.zoneDist,
         ),
     ]..sort((a, b) => b.beatPoints.compareTo(a.beatPoints));

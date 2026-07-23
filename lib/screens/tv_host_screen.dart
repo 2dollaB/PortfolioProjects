@@ -250,6 +250,8 @@ class _TvHostScreenState extends State<TvHostScreen> {
                     bpm: e.bpm,
                     avgBpm: e.avgBpm,
                     hrMax: e.hrMax > 0 ? e.hrMax : 190,
+                    beatPoints: e.beatPoints,
+                    profileConfirmed: e.profileConfirmed,
                   ),
                 )
                 .toList();
@@ -473,12 +475,16 @@ class _TvHostScreenState extends State<TvHostScreen> {
       gap: 8,
       tileBuilder: (context, i) {
         final a = list[i];
+        final targetZone = _live?.targetZone ?? 0;
         return ParticipantCard(
           name: a.name,
           bpm: a.bpm,
           avgBpm: a.avgBpm,
           hrMax: a.hrMax,
           isLive: _boardLive,
+          beatPoints: a.beatPoints > 0 ? a.beatPoints : null,
+          inTargetZone: targetZone > 0 && a.zone == targetZone,
+          unconfirmed: !a.profileConfirmed,
         );
       },
     );

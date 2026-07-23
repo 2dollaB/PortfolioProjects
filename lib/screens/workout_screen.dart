@@ -77,6 +77,17 @@ class _WorkoutScreenState extends State<WorkoutScreen>
   double _kcal = 0;
   double _beatPoints = 0;
 
+  // Zone Match (target-zone coaching) — seconds the workout ran while a target
+  // was set, and the subset of those spent in the target zone.
+  int _targetZone = 0;
+  double _targetActiveSec = 0;
+  double _matchSec = 0;
+
+  /// % of active-with-target time spent in the target zone, or -1 when no
+  /// target was ever set during the workout.
+  int get _zoneMatchPct =>
+      _targetActiveSec > 0 ? (_matchSec / _targetActiveSec * 100).round() : -1;
+
   // Real strap: locked in at workout start. When connected, _step consumes
   // the latest BLE sample instead of the simulated curve.
   late final bool _useBle;
@@ -186,8 +197,10 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       _goToSummary();
       return;
     }
-    // Mirror the trainer's pause/resume onto the local clock + tracking.
+    // Mirror the trainer's pause/resume onto the local clock + tracking, and
+    // track the trainer's current target zone for Zone Match %.
     setState(() {
+      _targetZone = s.targetZone;
       if (s.isPaused && !_paused) {
         _paused = true;
         _stopwatch.stop();
@@ -264,6 +277,12 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       final bpZone = HrZones.fromBpm(_bpm, hrMax);
       final bpPerMin = bpZone == 0 ? 0 : math.min(bpZone, 4);
       _beatPoints += bpPerMin * (0.8 / 60);
+      // Zone Match — only while the clock is actually running and a target is
+      // set. Time-weighted against the target that was active at the moment.
+      if (_stopwatch.isRunning && _targetZone >= 1 && _targetZone <= 5) {
+        _targetActiveSec += 0.8;
+        if (bpZone == _targetZone) _matchSec += 0.8;
+      }
     });
     _publishHr();
     _maybeSnapshot();
@@ -347,6 +366,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         'maxHr': _maxBpm,
         'calories': _kcal.round(),
         'beatPoints': _beatPoints.round(),
+        'zoneMatchPct': _zoneMatchPct,
         'zoneDist': stats.zoneDist,
         'dominantZone': stats.dominantZone,
         'sessionId': widget.session?.id,
@@ -376,6 +396,8 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       avgBpm: _avgBpm,
       zone: HrZones.fromBpm(_bpm, hrMax).clamp(0, 5),
       hrMax: hrMax,
+      beatPoints: _beatPoints.round(),
+      profileConfirmed: widget.profile.profileConfirmed,
     ).catchError((_) {});
   }
 
@@ -515,6 +537,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         maxHr: _maxBpm,
         calories: _kcal.round(),
         beatPoints: _beatPoints.round(),
+        zoneMatchPct: _zoneMatchPct,
         zoneDist: stats.zoneDist,
         dominantZone: stats.dominantZone,
         sessionId: widget.session?.id,

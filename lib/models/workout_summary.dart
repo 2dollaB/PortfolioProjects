@@ -16,6 +16,10 @@ class WorkoutSummary {
   final int maxHr;
   final int calories;
   final int beatPoints;
+
+  /// % of target-zone time spent on target (Zone Match), or -1 when the
+  /// session had no target zone set.
+  final int zoneMatchPct;
   final int dominantZone;
   final List<int> zoneDist; // 6 entries (zone 0-5), percentages
 
@@ -29,6 +33,7 @@ class WorkoutSummary {
     required this.maxHr,
     required this.calories,
     required this.beatPoints,
+    this.zoneMatchPct = -1,
     required this.dominantZone,
     required this.zoneDist,
   });
@@ -73,6 +78,7 @@ class WorkoutSummary {
       maxHr: (d['maxHr'] as num?)?.toInt() ?? 0,
       calories: (d['calories'] as num?)?.toInt() ?? 0,
       beatPoints: (d['beatPoints'] as num?)?.toInt() ?? 0,
+      zoneMatchPct: (d['zoneMatchPct'] as num?)?.toInt() ?? -1,
       dominantZone: (d['dominantZone'] as num?)?.toInt() ?? 1,
       zoneDist:
           (d['zoneDist'] as List?)?.map((e) => (e as num).toInt()).toList() ??

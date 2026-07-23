@@ -749,6 +749,19 @@ class Strings {
   static String get avgGroupHr => _pick('AVG GROUP HR', 'PROS. GRUPNI PULS');
   static String get groupBeatPointsCaps =>
       _pick('GROUP BEATPOINTS', 'GRUPNI BEATPOINTS');
+
+  // ── Target zone (live coaching layer) ────────────────────────
+  static String get targetZoneLabel => _pick('Target', 'Cilj');
+  static String get targetOff => _pick('Off', 'Isklj.');
+  static String inTargetCount(int inT, int total) =>
+      _pick('$inT/$total in zone', '$inT/$total u zoni');
+  static String get couldNotSetTarget => _pick(
+    'Could not set target zone.',
+    'Postavljanje ciljne zone nije uspjelo.',
+  );
+  static String get zoneMatchLabel => _pick('Zone match', 'Pogodak zone');
+  static String get profileUnconfirmed =>
+      _pick('Profile not confirmed', 'Profil nije potvrđen');
   static String get avgPerAthlete =>
       _pick('avg per athlete', 'prosj. po sportašu');
   static String avgPeak(int avg, int peak) =>
