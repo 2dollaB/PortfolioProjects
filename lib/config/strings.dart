@@ -778,7 +778,7 @@ class Strings {
     'Join a studio to see its leaderboard.',
     'Pridruži se studiju da vidiš ljestvicu.',
   );
-  static String get navLeaderboard => _pick('Ranks', 'Ljestvica');
+  static String get navLeaderboard => _pick('Leaderboards', 'Ljestvice');
   static String get lbYourBeatPoints =>
       _pick('Your BeatPoints', 'Tvoji BeatPoints');
   static String get lbAllTimeCaps => _pick('ALL TIME', 'UKUPNO');
