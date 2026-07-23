@@ -13,6 +13,11 @@ class UserProfile {
   final UserRole role;
   final bool banned; // Set by the admin panel; read-only here (never written back)
   final int? manualHrMax; // User override
+
+  /// True once the athlete has explicitly entered age/sex/weight in onboarding
+  /// (not the silent defaults). Drives the board's "profile not confirmed"
+  /// warning — a default profile makes zones and calories unreliable.
+  final bool profileConfirmed;
   int _dynamicHrMax; // Adjusted during workouts
 
   UserProfile({
@@ -29,6 +34,7 @@ class UserProfile {
     this.role = UserRole.athlete,
     this.banned = false,
     this.manualHrMax,
+    this.profileConfirmed = false,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
        _dynamicHrMax = 0 {
     _dynamicHrMax = calculatedHrMax;
@@ -64,30 +70,6 @@ class UserProfile {
     _dynamicHrMax = calculatedHrMax;
   }
 
-  /// TRIMP gender coefficient (Bannister model)
-  /// Male: 1.92, Female: 1.67
-  double get trimpGenderFactor {
-    switch (sex) {
-      case Sex.female:
-        return 1.67;
-      case Sex.male:
-      case Sex.other:
-        return 1.92;
-    }
-  }
-
-  /// Fitness level multiplier for Training Effect estimation
-  double get fitnessMultiplier {
-    switch (fitnessLevel) {
-      case FitnessLevel.beginner:
-        return 1.2; // Lower threshold for effect
-      case FitnessLevel.casual:
-        return 1.0; // Baseline
-      case FitnessLevel.advanced:
-        return 0.85; // Needs more to feel effect
-    }
-  }
-
   UserProfile copyWith({
     String? id,
     String? name,
@@ -102,6 +84,7 @@ class UserProfile {
     UserRole? role,
     bool? banned,
     int? manualHrMax,
+    bool? profileConfirmed,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -117,6 +100,7 @@ class UserProfile {
       role: role ?? this.role,
       banned: banned ?? this.banned,
       manualHrMax: manualHrMax ?? this.manualHrMax,
+      profileConfirmed: profileConfirmed ?? this.profileConfirmed,
     );
   }
 
@@ -134,6 +118,7 @@ class UserProfile {
         'fitnessLevel': fitnessLevel.name,
         'role': role.name,
         'manualHrMax': manualHrMax,
+        'profileConfirmed': profileConfirmed,
         'dynamicHrMax': _dynamicHrMax,
       };
 
@@ -159,6 +144,7 @@ class UserProfile {
       ),
       banned: json['banned'] as bool? ?? false,
       manualHrMax: json['manualHrMax'] as int?,
+      profileConfirmed: json['profileConfirmed'] as bool? ?? false,
     );
     profile._dynamicHrMax = json['dynamicHrMax'] as int? ?? profile.calculatedHrMax;
     return profile;

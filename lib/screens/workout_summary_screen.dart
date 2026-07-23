@@ -18,7 +18,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
   final int avgBpm;
   final int maxBpm;
   final int calories;
-  final int trimp;
+  final int beatPoints;
   final bool isGroup;
 
   /// True when opened from History for an already-saved workout — hides the
@@ -36,7 +36,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
     required this.avgBpm,
     required this.maxBpm,
     required this.calories,
-    required this.trimp,
+    required this.beatPoints,
     this.isGroup = false,
     this.isHistorical = false,
     this.zoneDist,
@@ -279,9 +279,9 @@ class WorkoutSummaryScreen extends StatelessWidget {
                           body: Strings.calcCaloriesBody,
                         ),
                         InfoStep(
-                          title: Strings.calcTrimpTitle,
-                          formula: Strings.calcTrimpFormula,
-                          body: Strings.calcTrimpBody,
+                          title: Strings.calcBeatPointsTitle,
+                          formula: Strings.calcBeatPointsFormula,
+                          body: Strings.calcBeatPointsBody,
                         ),
                         InfoStep(
                           title: Strings.calcHrMaxTitle,
@@ -309,8 +309,8 @@ class WorkoutSummaryScreen extends StatelessWidget {
                       accent: AppColors.brandRed,
                     ),
                     StatChip(
-                      label: 'TRIMP',
-                      value: '$trimp',
+                      label: Strings.beatPoints,
+                      value: '$beatPoints',
                       icon: Icons.bolt_rounded,
                       accent: AppColors.warning,
                     ),

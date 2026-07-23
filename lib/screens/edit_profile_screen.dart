@@ -121,6 +121,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       fitnessLevel: _fitnessLevel,
       role: widget.profile.role,
       manualHrMax: widget.profile.manualHrMax,
+      // Editing is an explicit re-entry of age/sex/weight → profile is trusted.
+      profileConfirmed: true,
     );
     // Persist to Firestore when signed in (production); prototype has no user.
     // Local-first: the write lands in the local cache instantly and syncs in

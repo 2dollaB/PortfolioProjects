@@ -498,10 +498,10 @@ class _RecentSessionsList extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                '${s.groupTrimp}',
+                                '${s.groupBeatPoints}',
                                 style: AppTheme.statNumber(fontSize: 18),
                               ),
-                              Text('TRIMP', style: AppTheme.micro()),
+                              Text(Strings.beatPoints, style: AppTheme.micro()),
                             ],
                           ),
                           const SizedBox(width: AppSpacing.xs),

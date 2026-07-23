@@ -246,10 +246,10 @@ class _SessionRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '${record.groupTrimp}',
+                    '${record.groupBeatPoints}',
                     style: AppTheme.statNumber(fontSize: 18),
                   ),
-                  Text('TRIMP', style: AppTheme.micro()),
+                  Text(Strings.beatPoints, style: AppTheme.micro()),
                 ],
               ),
               const SizedBox(width: AppSpacing.xs),

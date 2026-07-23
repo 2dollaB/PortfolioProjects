@@ -87,11 +87,12 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
           name: names[w.userId] ?? Strings.athlete,
           avgBpm: w.avgHr,
           maxBpm: w.maxHr,
-          trimp: w.trimp,
+          beatPoints: w.beatPoints,
           calories: w.calories,
+          zoneMatch: w.zoneMatchPct,
           timeInZones: w.zoneDist,
         ),
-    ]..sort((a, b) => b.trimp.compareTo(a.trimp));
+    ]..sort((a, b) => b.beatPoints.compareTo(a.beatPoints));
     final n = results.length;
     return SessionRecord(
       id: s.id,
@@ -102,7 +103,8 @@ class _CloudSessionDetailScreenState extends State<CloudSessionDetailScreen> {
       athleteCount: n,
       avgGroupBpm: (results.fold<int>(0, (sum, r) => sum + r.avgBpm) / n)
           .round(),
-      groupTrimp: (results.fold<int>(0, (sum, r) => sum + r.trimp) / n).round(),
+      groupBeatPoints: (results.fold<int>(0, (sum, r) => sum + r.beatPoints) / n)
+          .round(),
       results: results,
     );
   }

@@ -16,7 +16,7 @@ import '../widgets/mobile_frame.dart';
 import '../widgets/stat_chip.dart';
 
 /// Trainer-side detail view of a single member.
-/// Shows profile + attendance heatmap + TRIMP trend + notes.
+/// Shows profile + attendance heatmap + BeatPoints trend + notes.
 class MemberDetailScreen extends StatefulWidget {
   /// Demo (prototype) payload — seeded-random visuals. Null in production.
   final MockMember? member;
@@ -105,7 +105,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
   }
 
   /// 7×12 cell intensities (0 = rest day) from real workouts: cell brightness
-  /// follows that day's TRIMP relative to the member's best day.
+  /// follows that day's BeatPoints relative to the member's best day.
   List<List<double>> _heatmapFrom(List<WorkoutSummary> all) {
     final firstCol = _weekStart.subtract(
       Duration(days: 7 * (_heatmapWeeks - 1)),
@@ -113,21 +113,21 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
     final byDay = <DateTime, int>{};
     for (final w in all) {
       final d = DateTime(w.startTime.year, w.startTime.month, w.startTime.day);
-      byDay[d] = (byDay[d] ?? 0) + w.trimp;
+      byDay[d] = (byDay[d] ?? 0) + w.beatPoints;
     }
-    final maxTrimp = byDay.values.isEmpty
+    final maxBeatPoints = byDay.values.isEmpty
         ? 1
         : byDay.values.reduce(math.max).clamp(1, 1 << 31);
     return List.generate(7, (row) {
       return List.generate(_heatmapWeeks, (col) {
         final day = firstCol.add(Duration(days: col * 7 + row));
         final t = byDay[day];
-        return t == null ? 0.0 : (t / maxTrimp).clamp(0.25, 1.0).toDouble();
+        return t == null ? 0.0 : (t / maxBeatPoints).clamp(0.25, 1.0).toDouble();
       });
     });
   }
 
-  /// Weekly TRIMP sums, oldest → newest, current week last.
+  /// Weekly BeatPoints sums, oldest → newest, current week last.
   List<int> _trendFrom(List<WorkoutSummary> all) {
     return List.generate(_trendWeeks, (i) {
       final start = _weekStart.subtract(
@@ -138,7 +138,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
           .where(
             (w) => !w.startTime.isBefore(start) && w.startTime.isBefore(end),
           )
-          .fold(0, (s, w) => s + w.trimp);
+          .fold(0, (s, w) => s + w.beatPoints);
     });
   }
 
@@ -170,7 +170,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
         lastSeen: m.lastSeen,
         active: m.lastSeen.contains('Active'),
         sessions: '${m.sessions}',
-        avgTrimp: '78',
+        avgBeatPoints: '128',
         avgHr: '142',
         heatmap: _demoHeatmap(m.name.hashCode),
         trend: _demoTrend(m.name.hashCode),
@@ -194,7 +194,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
               : Strings.lastWorkout(all.first.dateLabel),
           active: false,
           sessions: loaded ? '${all.length}' : '–',
-          avgTrimp: loaded && all.isNotEmpty ? '${avg((w) => w.trimp)}' : '–',
+          avgBeatPoints: loaded && all.isNotEmpty
+              ? '${avg((w) => w.beatPoints)}'
+              : '–',
           avgHr: loaded && all.isNotEmpty ? '${avg((w) => w.avgHr)}' : '–',
           heatmap: loaded
               ? _heatmapFrom(all)
@@ -212,7 +214,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
     required String lastSeen,
     required bool active,
     required String sessions,
-    required String avgTrimp,
+    required String avgBeatPoints,
     required String avgHr,
     required List<List<double>> heatmap,
     required List<int> trend,
@@ -323,7 +325,10 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
-                    child: StatChip(label: Strings.avgTrimp, value: avgTrimp),
+                    child: StatChip(
+                      label: Strings.avgBeatPoints,
+                      value: avgBeatPoints,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
@@ -342,9 +347,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
               _AttendanceHeatmap(intensities: heatmap),
 
               const SizedBox(height: AppSpacing.lg),
-              Text(Strings.trimpTrend8w, style: AppTheme.h2()),
+              Text(Strings.beatPointsTrend8w, style: AppTheme.h2()),
               const SizedBox(height: AppSpacing.sm),
-              _TrimpTrend(values: trend),
+              _BeatPointsTrend(values: trend),
 
               const SizedBox(height: AppSpacing.lg),
               Text(Strings.trainerNotes, style: AppTheme.h2()),
@@ -428,10 +433,10 @@ class _Cell extends StatelessWidget {
   }
 }
 
-/// 8-week TRIMP line chart.
-class _TrimpTrend extends StatelessWidget {
+/// 8-week BeatPoints line chart.
+class _BeatPointsTrend extends StatelessWidget {
   final List<int> values;
-  const _TrimpTrend({required this.values});
+  const _BeatPointsTrend({required this.values});
 
   @override
   Widget build(BuildContext context) {
@@ -454,7 +459,7 @@ class _TrimpTrend extends StatelessWidget {
                 ),
               )
             : CustomPaint(
-                painter: _TrimpLinePainter(values: values),
+                painter: _BeatPointsLinePainter(values: values),
                 size: Size.infinite,
               ),
       ),
@@ -462,9 +467,9 @@ class _TrimpTrend extends StatelessWidget {
   }
 }
 
-class _TrimpLinePainter extends CustomPainter {
+class _BeatPointsLinePainter extends CustomPainter {
   final List<int> values;
-  _TrimpLinePainter({required this.values});
+  _BeatPointsLinePainter({required this.values});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -513,5 +518,6 @@ class _TrimpLinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _TrimpLinePainter old) => old.values != values;
+  bool shouldRepaint(covariant _BeatPointsLinePainter old) =>
+      old.values != values;
 }

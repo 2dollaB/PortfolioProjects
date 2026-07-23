@@ -48,6 +48,28 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
   _SortMode _sort = _SortMode.alphabet;
   int _athleteCount = 10;
 
+  /// Demo target zone (no cloud session to store it on). Production reads it
+  /// from the session doc instead.
+  int _demoTargetZone = 0;
+
+  int get _targetZone => widget.session == null
+      ? _demoTargetZone
+      : (_session?.targetZone ?? 0);
+
+  Future<void> _setTargetZone(int zone) async {
+    final next = _targetZone == zone ? 0 : zone; // tap again to clear
+    if (widget.session == null) {
+      setState(() => _demoTargetZone = next);
+      return;
+    }
+    // The session stream reflects the new value back into _session ~instantly.
+    try {
+      await SessionRepository.setTargetZone(widget.session!.id, next);
+    } catch (_) {
+      _snack(Strings.couldNotSetTarget);
+    }
+  }
+
   Stream<List<SessionHrEntry>>? _hrStream;
   final _names = UidNameCache();
 
@@ -320,6 +342,8 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
                 bpm: e.bpm,
                 avgBpm: e.avgBpm,
                 hrMax: e.hrMax > 0 ? e.hrMax : 190,
+                beatPoints: e.beatPoints,
+                profileConfirmed: e.profileConfirmed,
               ),
             )
             .where((a) => !_kicked.contains(a.id))
@@ -457,6 +481,57 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
     );
   }
 
+  /// Trainer's target-zone picker + a live "X/Y in zone" counter. A coaching
+  /// layer only — it never affects BeatPoints.
+  Widget _targetBar(List<BoardAthlete> sorted) {
+    final inTarget = _targetZone > 0
+        ? sorted.where((a) => a.zone == _targetZone).length
+        : 0;
+    return GlassPill(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            Strings.targetZoneLabel.toUpperCase(),
+            style: AppTheme.micro().copyWith(letterSpacing: 1.2),
+          ),
+          const SizedBox(width: 8),
+          _TargetChip(
+            label: Strings.targetOff,
+            color: AppColors.textSecondary,
+            selected: _targetZone == 0,
+            onTap: () => _setTargetZone(0),
+          ),
+          for (var z = 1; z <= 5; z++) ...[
+            const SizedBox(width: 4),
+            _TargetChip(
+              label: 'Z$z',
+              color: AppColors.zoneColor(z),
+              selected: _targetZone == z,
+              onTap: () => _setTargetZone(z),
+            ),
+          ],
+          if (_targetZone > 0) ...[
+            const SizedBox(width: 10),
+            Icon(
+              Icons.check_circle_rounded,
+              size: 14,
+              color: AppColors.success,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              Strings.inTargetCount(inTarget, sorted.length),
+              style: AppTheme.caption(
+                color: AppColors.success,
+              ).copyWith(fontWeight: FontWeight.w700),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   String get _sessionName => widget.session?.name ?? Strings.untitledSession;
 
   /// Header subtitle — "Lobby · waiting to start" pre-Start, athlete count +
@@ -490,6 +565,9 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
           hrMax: a.hrMax,
           isLive: _isWorkoutLive,
           onKick: () => _onKick(a.id, a.name),
+          beatPoints: a.beatPoints > 0 ? a.beatPoints : null,
+          inTargetZone: _targetZone > 0 && a.zone == _targetZone,
+          unconfirmed: !a.profileConfirmed,
         );
       },
     );
@@ -661,6 +739,13 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
           ),
           child: Column(
             children: [
+              if (_runState != 'lobby') ...[
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: _targetBar(sorted),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+              ],
               Center(
                 child: GroupStatsPill(
                   avgBpm: avgBpm,
@@ -763,6 +848,8 @@ class _TrainerMonitorScreenState extends State<TrainerMonitorScreen> {
             ],
           ),
         ),
+        if (_runState != 'lobby')
+          Positioned(bottom: 76, left: 16, child: _targetBar(sorted)),
         Positioned(
           bottom: 76,
           right: 16,
@@ -806,6 +893,41 @@ class _SortChip extends StatelessWidget {
           style: AppTheme.caption(
             color: selected ? AppColors.brandRed : AppColors.textSecondary,
           ).copyWith(fontWeight: FontWeight.w700, fontSize: 12),
+        ),
+      ),
+    );
+  }
+}
+
+/// One zone chip in the trainer's target-zone picker.
+class _TargetChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+  const _TargetChip({
+    required this.label,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: BoxDecoration(
+          color: selected ? color : color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: selected ? 1 : 0.4)),
+        ),
+        child: Text(
+          label,
+          style: AppTheme.caption(
+            color: selected ? Colors.white : color,
+          ).copyWith(fontWeight: FontWeight.w800, fontSize: 12),
         ),
       ),
     );

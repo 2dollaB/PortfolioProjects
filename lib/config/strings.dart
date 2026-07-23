@@ -202,6 +202,11 @@ class Strings {
     'Height must be between 100 and 230 cm',
     'Visina mora biti između 100 i 230 cm',
   );
+  static String get sexRequired => _pick(
+    'Please select your gender',
+    'Molimo odaberite spol',
+  );
+  static String get selectSex => _pick('Select', 'Odaberi');
   static String get restingHrRange => _pick(
     'Resting HR must be between 30 and 120 bpm',
     'Puls u mirovanju mora biti između 30 i 120 bpm',
@@ -343,18 +348,19 @@ class Strings {
     'Objavljeni regresijski model, ne paušalna procjena. Uzima vaš stvarni '
         'prosječni puls, pa napornija sesija troši više.',
   );
-  static String get calcTrimpTitle => _pick('TRIMP', 'TRIMP');
-  static String get calcTrimpFormula => _pick(
-    'Σ  t · ΔHR · 0.64 · e^(k · ΔHR)\nΔHR = (HR - rest) ÷ (max - rest)',
-    'Σ  t · ΔHR · 0,64 · e^(k · ΔHR)\nΔHR = (puls - mir) ÷ (maks - mir)',
+  static String get calcBeatPointsTitle => _pick('BeatPoints', 'BeatPoints');
+  static String get calcBeatPointsFormula => _pick(
+    'points/min by zone\nz1 → 1 · z2 → 2 · z3 → 3 · z4 → 4 · z5 → 4',
+    'bodova/min po zoni\nz1 → 1 · z2 → 2 · z3 → 3 · z4 → 4 · z5 → 4',
   );
-  static String get calcTrimpBody => _pick(
-    'Training Impulse (Bannister). Each second is weighted by how close you '
-        'were to your max, so hard minutes count exponentially more. Around 50 '
-        'to 80 is a moderate 30 minute session; 150 plus is a hard hour.',
-    'Training Impulse (Bannister). Svaka sekunda ponderira se prema blizini '
-        'maksimuma, pa teške minute vrijede eksponencijalno više. Oko 50 do 80 '
-        'je umjeren 30 minutni trening; 150 plus je naporan sat.',
+  static String get calcBeatPointsBody => _pick(
+    'Effort points earned each minute by the zone you are in — zone 1 gives 1, '
+        'up to 4 in zone 4. Zone 5 also gives 4: no bonus for redlining. It is '
+        'relative to your own HR max, so it is fair for every fitness level.',
+    'Bodovi napora koje skupljate svake minute prema zoni u kojoj ste — zona 1 '
+        'daje 1, do 4 u zoni 4. Zona 5 također daje 4: nema bonusa za '
+        'forsiranje. Računa se prema vašem maks. pulsu, pa je pošten za svaku '
+        'razinu spremnosti.',
   );
   static String get calcHrMaxTitle => _pick('HR max', 'Maks. puls');
   static String get calcHrMaxFormula => _pick(
@@ -362,10 +368,10 @@ class Strings {
     'Tanaka:        208 - 0,7 × dob\nGulati (žene):  206 - 0,88 × dob',
   );
   static String get calcHrMaxBody => _pick(
-    'Your zones and TRIMP are all relative to this. Estimated from age, '
+    'Your zones and BeatPoints are all relative to this. Estimated from age, '
         'more accurate than the classic 220 formula, and raised automatically '
         'if you beat it in a workout.',
-    'Vaše zone i TRIMP računaju se u odnosu na ovo. Procijenjeno iz dobi, '
+    'Vaše zone i BeatPoints računaju se u odnosu na ovo. Procijenjeno iz dobi, '
         'preciznije od klasične formule 220, i automatski se povećava ako ga '
         'premašite tijekom treninga.',
   );
@@ -682,11 +688,14 @@ class Strings {
       _pick('No workouts yet', 'Još nema treninga');
   static String lastWorkout(String date) =>
       _pick('Last workout · $date', 'Zadnji trening · $date');
-  static String get avgTrimp => _pick('Avg TRIMP', 'Pros. TRIMP');
+  static String get beatPoints => _pick('BeatPoints', 'BeatPoints');
+  static String get avgBeatPoints => _pick('Avg BeatPoints', 'Pros. BeatPoints');
   static String get attendance12w =>
       _pick('Attendance · last 12 weeks', 'Dolasci · zadnjih 12 tjedana');
-  static String get trimpTrend8w =>
-      _pick('TRIMP trend · last 8 weeks', 'TRIMP trend · zadnjih 8 tjedana');
+  static String get beatPointsTrend8w => _pick(
+    'BeatPoints trend · last 8 weeks',
+    'BeatPoints trend · zadnjih 8 tjedana',
+  );
   static String get trainerNotes => _pick('Trainer notes', 'Bilješke trenera');
   static String get onlyYouSee =>
       _pick('Only you can see these.', 'Samo vi ovo vidite.');
@@ -704,7 +713,8 @@ class Strings {
   static String get attendanceTitle => _pick('Attendance', 'Dolasci');
   static String get athletesPerWeek =>
       _pick('Athletes per week', 'Sportaša tjedno');
-  static String get groupTrimp => _pick('Group TRIMP', 'Grupni TRIMP');
+  static String get groupBeatPoints =>
+      _pick('Group BeatPoints', 'Grupni BeatPoints');
   static String get averagePerSession =>
       _pick('Average per session', 'Prosjek po treningu');
   static String get topAthletes =>
@@ -737,7 +747,21 @@ class Strings {
   static String participated(int n) =>
       _pick('$n participated', '$n sudjelovalo');
   static String get avgGroupHr => _pick('AVG GROUP HR', 'PROS. GRUPNI PULS');
-  static String get groupTrimpCaps => _pick('GROUP TRIMP', 'GRUPNI TRIMP');
+  static String get groupBeatPointsCaps =>
+      _pick('GROUP BEATPOINTS', 'GRUPNI BEATPOINTS');
+
+  // ── Target zone (live coaching layer) ────────────────────────
+  static String get targetZoneLabel => _pick('Target', 'Cilj');
+  static String get targetOff => _pick('Off', 'Isklj.');
+  static String inTargetCount(int inT, int total) =>
+      _pick('$inT/$total in zone', '$inT/$total u zoni');
+  static String get couldNotSetTarget => _pick(
+    'Could not set target zone.',
+    'Postavljanje ciljne zone nije uspjelo.',
+  );
+  static String get zoneMatchLabel => _pick('Zone match', 'Pogodak zone');
+  static String get profileUnconfirmed =>
+      _pick('Profile not confirmed', 'Profil nije potvrđen');
   static String get avgPerAthlete =>
       _pick('avg per athlete', 'prosj. po sportašu');
   static String avgPeak(int avg, int peak) =>

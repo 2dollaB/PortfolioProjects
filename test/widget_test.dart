@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:beatsync/config/hr_zones.dart';
+import 'package:beatsync/models/user_profile.dart';
 import 'package:beatsync/models/workout.dart';
 import 'package:beatsync/models/workout_type.dart';
-import 'package:beatsync/services/training_load_service.dart';
 
 void main() {
   // ── HrDataPoint ──
@@ -50,7 +51,7 @@ void main() {
     WorkoutAnalytics makeAnalytics({int avgHr = 140, int maxHr = 180}) {
       return WorkoutAnalytics(
         avgHr: avgHr, maxHr: maxHr, minHr: 80,
-        calories: 350, trimp: 65, trainingEffect: 3.2, hrRecovery: 25,
+        calories: 350, beatPoints: 120, hrRecovery: 25,
         timeInZone: {1: const Duration(minutes: 5), 2: const Duration(minutes: 10),
           3: const Duration(minutes: 8), 4: const Duration(minutes: 5), 5: const Duration(minutes: 2)},
         hrMax: 190,
@@ -101,54 +102,43 @@ void main() {
     });
   });
 
-  // ── TrainingLoadService ──
-  group('TrainingLoadService', () {
-    List<Workout> makeWorkouts(int count) {
-      return List.generate(count, (i) {
-        final start = DateTime.now().subtract(Duration(days: i));
-        final end = start.add(const Duration(minutes: 30));
-        final points = List.generate(60, (j) => HrDataPoint(
-          bpm: 155, zone: 4,
-          timestamp: start.add(Duration(seconds: j * 30)),
-        ));
-        return Workout(
-          id: 'w-$i', startTime: start, endTime: end,
+  // ── BeatPoints ──
+  group('BeatPoints', () {
+    Workout beatWorkout(int bpm, int hrMax, int minutes) {
+      final start = DateTime(2025, 1, 1, 10, 0);
+      final samples = minutes * 6; // one every 10s
+      final points = List.generate(samples, (i) => HrDataPoint(
+        bpm: bpm, zone: HrZones.fromBpm(bpm, hrMax),
+        timestamp: start.add(Duration(seconds: i * 10)),
+      ));
+      return Workout(
+        id: 't', startTime: start,
+        endTime: start.add(Duration(minutes: minutes)),
+        dataPoints: points,
+        analytics: AnalyticsEngine.calculate(
           dataPoints: points,
-          analytics: WorkoutAnalytics(
-            avgHr: 155, maxHr: 180, minHr: 100,
-            calories: 400, trimp: 75, trainingEffect: 3.5, hrRecovery: 20,
-            timeInZone: {1: const Duration(minutes: 2), 2: const Duration(minutes: 5),
-              3: const Duration(minutes: 8), 4: const Duration(minutes: 10), 5: const Duration(minutes: 5)},
-            hrMax: 190,
-          ),
-          workoutType: WorkoutType.hiit,
-        );
-      });
+          profile: UserProfile(age: 30, sex: Sex.male, weightKg: 80, heightCm: 180, manualHrMax: hrMax),
+          totalDuration: Duration(minutes: minutes),
+        ),
+      );
     }
 
-    test('acuteLoad sums 7-day TRIMP', () {
-      final workouts = makeWorkouts(3);
-      final acute = TrainingLoadService.acuteLoad(workouts);
-      expect(acute, greaterThan(0));
+    test('zone 4 earns ~4 points/min', () {
+      // 85% of 190 = ~161 bpm → zone 4 → 4 pts/min over 10 min ≈ 40.
+      final w = beatWorkout(161, 190, 10);
+      expect(w.analytics.beatPoints, closeTo(40, 4));
     });
 
-    test('chronicLoad averages 28-day TRIMP to weekly', () {
-      final workouts = makeWorkouts(10);
-      final chronic = TrainingLoadService.chronicLoad(workouts);
-      expect(chronic, greaterThan(0));
+    test('below zone 1 earns nothing', () {
+      // 40% of 190 = 76 bpm → zone 0 → 0 points.
+      final w = beatWorkout(76, 190, 10);
+      expect(w.analytics.beatPoints, 0);
     });
 
-    test('acwr returns 0 when no data', () {
-      final ratio = TrainingLoadService.acwr([]);
-      expect(ratio, 0);
-    });
-
-    test('acwrStatus returns known zones', () {
-      expect(TrainingLoadService.acwrStatus(0).label, 'No Data');
-      expect(TrainingLoadService.acwrStatus(0.5).label, 'Undertraining');
-      expect(TrainingLoadService.acwrStatus(1.0).label, 'Sweet Spot');
-      expect(TrainingLoadService.acwrStatus(1.4).label, 'High Risk');
-      expect(TrainingLoadService.acwrStatus(2.0).label, 'Danger Zone');
+    test('zone 5 is capped at zone-4 rate (no redline bonus)', () {
+      final z4 = beatWorkout(161, 190, 10).analytics.beatPoints; // ~85%
+      final z5 = beatWorkout(180, 190, 10).analytics.beatPoints; // ~95%
+      expect(z5, z4);
     });
   });
 }

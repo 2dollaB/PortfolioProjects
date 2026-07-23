@@ -14,9 +14,9 @@ import '../widgets/zone_badge.dart';
 ///
 /// Layout:
 ///   Header: type icon + session name + date + duration
-///   Hero stats: avg group BPM + group TRIMP
+///   Hero stats: avg group BPM + group BeatPoints
 ///   Time-in-zones donut
-///   Athletes list â€” per-athlete name, BPM, TRIMP, dominant zone
+///   Athletes list â€” per-athlete name, BPM, BeatPoints, dominant zone
 class SessionDetailScreen extends StatelessWidget {
   final SessionRecord record;
 
@@ -215,12 +215,12 @@ class _HeroStats extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  Strings.groupTrimpCaps,
+                  Strings.groupBeatPointsCaps,
                   style: AppTheme.micro().copyWith(letterSpacing: 1.4),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '${record.groupTrimp}',
+                  '${record.groupBeatPoints}',
                   style: AppTheme.statNumber(
                     fontSize: 44,
                     color: AppColors.warning,
@@ -398,13 +398,20 @@ class _AthleteRow extends StatelessWidget {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    '${result.trimp}',
+                    '${result.beatPoints}',
                     style: AppTheme.statNumber(fontSize: 16),
                   ),
                   const SizedBox(width: 3),
-                  Text('TRIMP', style: AppTheme.micro()),
+                  Text(Strings.beatPoints, style: AppTheme.micro()),
                 ],
               ),
+              if (result.zoneMatch >= 0) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '${result.zoneMatch}% ${Strings.zoneMatchLabel.toLowerCase()}',
+                  style: AppTheme.micro(color: AppColors.success),
+                ),
+              ],
               const SizedBox(height: 2),
               ZoneBadge(zone: result.dominantZone, height: 18),
             ],

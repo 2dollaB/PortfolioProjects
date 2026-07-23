@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../config/hr_zones.dart';
 import 'user_profile.dart';
 import 'workout_type.dart';
 
@@ -97,10 +98,7 @@ class Workout {
             .toList(),
         analytics:
             WorkoutAnalytics.fromJson(json['analytics'] as Map<String, dynamic>),
-        workoutType: WorkoutType.values.firstWhere(
-          (e) => e.name == json['workoutType'],
-          orElse: () => WorkoutType.free,
-        ),
+        workoutType: WorkoutType.fromName(json['workoutType'] as String?),
         lapMarkers: (json['lapMarkers'] as List? ?? [])
             .map((s) => Duration(seconds: s as int))
             .toList(),
@@ -116,8 +114,7 @@ class WorkoutAnalytics {
   final int maxHr;
   final int minHr;
   final double calories;
-  final double trimp;
-  final double trainingEffect;
+  final int beatPoints; // effort currency — zone-weighted, HRmax-relative
   final int hrRecovery; // BPM drop in 60s after workout
   final Map<int, Duration> timeInZone; // zone → duration
   final int hrMax; // HRmax used for this workout
@@ -127,8 +124,7 @@ class WorkoutAnalytics {
     required this.maxHr,
     required this.minHr,
     required this.calories,
-    required this.trimp,
-    required this.trainingEffect,
+    required this.beatPoints,
     required this.hrRecovery,
     required this.timeInZone,
     required this.hrMax,
@@ -143,23 +139,12 @@ class WorkoutAnalytics {
     );
   }
 
-  /// Training Effect label
-  String get trainingEffectLabel {
-    if (trainingEffect < 1.0) return 'Minor';
-    if (trainingEffect < 2.0) return 'Maintaining';
-    if (trainingEffect < 3.0) return 'Improving';
-    if (trainingEffect < 4.0) return 'Highly Improving';
-    if (trainingEffect < 5.0) return 'Overreaching';
-    return 'Overreaching';
-  }
-
   Map<String, dynamic> toJson() => {
         'avgHr': avgHr,
         'maxHr': maxHr,
         'minHr': minHr,
         'calories': calories,
-        'trimp': trimp,
-        'trainingEffect': trainingEffect,
+        'beatPoints': beatPoints,
         'hrRecovery': hrRecovery,
         'hrMax': hrMax,
         'timeInZone':
@@ -172,8 +157,7 @@ class WorkoutAnalytics {
         maxHr: json['maxHr'] as int,
         minHr: json['minHr'] as int,
         calories: (json['calories'] as num).toDouble(),
-        trimp: (json['trimp'] as num).toDouble(),
-        trainingEffect: (json['trainingEffect'] as num).toDouble(),
+        beatPoints: (json['beatPoints'] as num?)?.toInt() ?? 0,
         hrRecovery: json['hrRecovery'] as int,
         hrMax: json['hrMax'] as int,
         timeInZone: (json['timeInZone'] as Map<String, dynamic>).map(
@@ -189,6 +173,7 @@ class AnalyticsEngine {
     required List<HrDataPoint> dataPoints,
     required UserProfile profile,
     required Duration totalDuration,
+    WorkoutType workoutType = WorkoutType.free,
     int hrRecoveryBpm = 0,
   }) {
     if (dataPoints.isEmpty) {
@@ -197,8 +182,7 @@ class AnalyticsEngine {
         maxHr: 0,
         minHr: 0,
         calories: 0,
-        trimp: 0,
-        trainingEffect: 0,
+        beatPoints: 0,
         hrRecovery: 0,
         timeInZone: {},
         hrMax: profile.hrMax,
@@ -214,27 +198,18 @@ class AnalyticsEngine {
     // Time in zones
     final timeInZone = _calculateTimeInZones(dataPoints);
 
-    // Calories — Keytel formula (2005)
+    // Calories — MET-per-type, per-sample with a resting-HR gate
     final calories = _calculateCalories(
-      avgHr: avgHr,
-      durationMinutes: totalDuration.inSeconds / 60,
-      weightKg: profile.weightKg,
-      sex: profile.sex,
-      age: profile.age,
-    );
-
-    // TRIMP — Bannister exponential model
-    final trimp = _calculateTrimp(
       dataPoints: dataPoints,
       hrMax: profile.hrMax,
-      restingHr: profile.restingHr ?? 60,
-      genderFactor: profile.trimpGenderFactor,
+      weightKg: profile.weightKg,
+      met: workoutType.met,
     );
 
-    // Training Effect — estimated from TRIMP
-    final trainingEffect = _calculateTrainingEffect(
-      trimp: trimp,
-      fitnessMultiplier: profile.fitnessMultiplier,
+    // BeatPoints — zone-weighted effort currency
+    final beatPoints = _calculateBeatPoints(
+      dataPoints: dataPoints,
+      hrMax: profile.hrMax,
     );
 
     return WorkoutAnalytics(
@@ -242,12 +217,38 @@ class AnalyticsEngine {
       maxHr: maxHr,
       minHr: minHr,
       calories: calories,
-      trimp: trimp,
-      trainingEffect: trainingEffect,
+      beatPoints: beatPoints,
       hrRecovery: hrRecoveryBpm,
       timeInZone: timeInZone,
       hrMax: profile.hrMax,
     );
+  }
+
+  /// BeatPoints — points/min by the zone the athlete is in, summed per sample.
+  ///
+  ///   z1 50-59% → 1   z2 60-69% → 2   z3 70-79% → 3
+  ///   z4 80-89% → 4   z5 90%+   → 4 (no redlining bonus)   z0 <50% → 0
+  ///
+  /// HRmax-relative, so it's fair to beginners and advanced alike. Signal gaps
+  /// contribute nothing (no sample → no points).
+  static int _calculateBeatPoints({
+    required List<HrDataPoint> dataPoints,
+    required int hrMax,
+  }) {
+    if (dataPoints.length < 2 || hrMax <= 0) return 0;
+    double total = 0;
+    for (int i = 0; i < dataPoints.length - 1; i++) {
+      final zone = HrZones.fromBpm(dataPoints[i].bpm, hrMax);
+      final perMin = zone == 0 ? 0 : math.min(zone, 4);
+      if (perMin == 0) continue;
+      final deltaSec = dataPoints[i + 1]
+          .timestamp
+          .difference(dataPoints[i].timestamp)
+          .inSeconds;
+      if (deltaSec <= 0) continue;
+      total += perMin * (deltaSec / 60);
+    }
+    return total.round();
   }
 
   /// Time spent in each zone
@@ -270,84 +271,39 @@ class AnalyticsEngine {
     return timeInZone.map((k, v) => MapEntry(k, Duration(seconds: v)));
   }
 
-  /// Keytel Calorie Formula (2005)
-  /// Male:   kcal/min = (-55.0969 + 0.6309×HR + 0.1988×weight + 0.2017×age) / 4.184
-  /// Female: kcal/min = (-20.4022 + 0.4472×HR - 0.1263×weight + 0.074×age) / 4.184
-  static double _calculateCalories({
-    required int avgHr,
-    required double durationMinutes,
-    required double weightKg,
-    required Sex sex,
-    required int age,
-  }) {
-    double kcalPerMin;
-    switch (sex) {
-      case Sex.female:
-        kcalPerMin =
-            (-20.4022 + 0.4472 * avgHr - 0.1263 * weightKg + 0.074 * age) /
-                4.184;
-        break;
-      case Sex.male:
-      case Sex.other:
-        kcalPerMin =
-            (-55.0969 + 0.6309 * avgHr + 0.1988 * weightKg + 0.2017 * age) /
-                4.184;
-        break;
-    }
-    return math.max(0, kcalPerMin * durationMinutes);
-  }
-
-  /// Bannister TRIMP (Training Impulse)
-  /// TRIMP = Σ (duration_i × ΔHR_ratio × 0.64 × e^(gender_factor × ΔHR_ratio))
+  /// MET-per-type calorie model, summed incrementally per sample.
   ///
-  /// Where ΔHR_ratio = (HR - HRrest) / (HRmax - HRrest)
-  static double _calculateTrimp({
+  ///   ΔCal = MET × (HR / HRmax × 0.95) × weight_kg × (Δs / 60) × (3.5 / 200)
+  ///
+  /// Samples below 0.35 × HRmax are gated out (rest doesn't count). Δs is the
+  /// real gap between consecutive samples, so signal gaps and irregular
+  /// sampling stay physically accurate. 3.5/200 is the ACSM MET→kcal (via O2
+  /// uptake) constant; 0.95 is a deliberate calibration multiplier.
+  static double _calculateCalories({
     required List<HrDataPoint> dataPoints,
     required int hrMax,
-    required int restingHr,
-    required double genderFactor,
+    required double weightKg,
+    required double met,
   }) {
-    double trimp = 0;
-    final hrRange = hrMax - restingHr;
-    if (hrRange <= 0) return 0;
-
+    if (dataPoints.length < 2 || hrMax <= 0) return 0;
+    const kcalPerMlO2 = 3.5 / 200;
+    const calibration = 0.95;
+    final gate = 0.35 * hrMax;
+    double total = 0;
     for (int i = 0; i < dataPoints.length - 1; i++) {
-      final durationMin = dataPoints[i + 1]
-              .timestamp
-              .difference(dataPoints[i].timestamp)
-              .inSeconds /
-          60;
-      final hrReserve = (dataPoints[i].bpm - restingHr) / hrRange;
-      final clampedReserve = hrReserve.clamp(0.0, 1.0);
-
-      trimp += durationMin *
-          clampedReserve *
-          0.64 *
-          math.exp(genderFactor * clampedReserve);
+      final hr = dataPoints[i].bpm;
+      if (hr < gate) continue;
+      final deltaSec = dataPoints[i + 1]
+          .timestamp
+          .difference(dataPoints[i].timestamp)
+          .inSeconds;
+      if (deltaSec <= 0) continue;
+      total += met *
+          (hr / hrMax * calibration) *
+          weightKg *
+          (deltaSec / 60) *
+          kcalPerMlO2;
     }
-
-    return trimp;
-  }
-
-  /// Training Effect estimation from TRIMP
-  /// Scale: 1.0 (Minor) → 5.0 (Overreaching)
-  /// Based on Firstbeat model approximation
-  static double _calculateTrainingEffect({
-    required double trimp,
-    required double fitnessMultiplier,
-  }) {
-    // Adjusted TRIMP based on fitness level
-    final adjustedTrimp = trimp * fitnessMultiplier;
-
-    // Map TRIMP to 1-5 Training Effect scale
-    // Typical 30-min moderate workout = TRIMP ~50-80
-    // Typical 60-min intense workout = TRIMP ~150-250
-    if (adjustedTrimp < 10) return 0.5;
-    if (adjustedTrimp < 30) return 1.0 + (adjustedTrimp - 10) / 20 * 0.5;
-    if (adjustedTrimp < 60) return 1.5 + (adjustedTrimp - 30) / 30 * 0.5;
-    if (adjustedTrimp < 100) return 2.0 + (adjustedTrimp - 60) / 40 * 1.0;
-    if (adjustedTrimp < 180) return 3.0 + (adjustedTrimp - 100) / 80 * 1.0;
-    if (adjustedTrimp < 300) return 4.0 + (adjustedTrimp - 180) / 120 * 0.8;
-    return 5.0;
+    return total;
   }
 }

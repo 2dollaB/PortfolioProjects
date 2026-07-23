@@ -40,7 +40,7 @@ class _StudioAnalyticsScreenState extends State<StudioAnalyticsScreen> {
     hours: '142',
     athletes: '34',
     attendance: const [18, 22, 25, 24, 28, 31, 29, 34],
-    groupTrimp: const [62, 71, 68, 84, 78, 92, 88, 95],
+    groupBeatPoints: const [96, 108, 102, 128, 118, 140, 134, 145],
     top: const [
       ('Marko Šarić', 24),
       ('Petra Lešić', 21),
@@ -203,12 +203,12 @@ class _StudioAnalyticsScreenState extends State<StudioAnalyticsScreen> {
             const SizedBox(height: AppSpacing.md),
 
             _ChartCard(
-              title: Strings.groupTrimp,
+              title: Strings.groupBeatPoints,
               subtitle: Strings.averagePerSession,
-              child: a.groupTrimp.every((v) => v == 0)
+              child: a.groupBeatPoints.every((v) => v == 0)
                   ? const _EmptyChartHint()
                   : _LineChart(
-                      values: a.groupTrimp,
+                      values: a.groupBeatPoints,
                       color: AppColors.warning,
                     ),
             ),
@@ -242,7 +242,7 @@ class _Analytics {
   final String hours;
   final String athletes;
   final List<int> attendance; // distinct athletes per week, oldest first
-  final List<int> groupTrimp; // avg TRIMP per session per week
+  final List<int> groupBeatPoints; // avg BeatPoints per session per week
   final List<(String, int)> top; // name + sessions in the last 30 days
 
   const _Analytics({
@@ -250,7 +250,7 @@ class _Analytics {
     required this.hours,
     required this.athletes,
     required this.attendance,
-    required this.groupTrimp,
+    required this.groupBeatPoints,
     required this.top,
   });
 
@@ -267,8 +267,8 @@ class _Analytics {
     var sessions = 0;
     var minutes = 0;
     final attendance = List<int>.filled(8, 0);
-    final trimpSum = List<int>.filled(8, 0);
-    final trimpCount = List<int>.filled(8, 0);
+    final bpSum = List<int>.filled(8, 0);
+    final bpCount = List<int>.filled(8, 0);
     final top = <(String, int)>[];
 
     for (var i = 0; i < members.length; i++) {
@@ -280,8 +280,8 @@ class _Analytics {
         sessions++;
         minutes += w.durationMin;
         weeksAttended.add(week);
-        trimpSum[week] += w.trimp;
-        trimpCount[week]++;
+        bpSum[week] += w.beatPoints;
+        bpCount[week]++;
         if (now.difference(w.startTime).inDays <= 30) monthCount++;
       }
       for (final week in weeksAttended) {
@@ -296,9 +296,9 @@ class _Analytics {
       hours: '${(minutes / 60).round()}',
       athletes: '${members.length}',
       attendance: attendance,
-      groupTrimp: List.generate(
+      groupBeatPoints: List.generate(
         8,
-        (i) => trimpCount[i] == 0 ? 0 : (trimpSum[i] / trimpCount[i]).round(),
+        (i) => bpCount[i] == 0 ? 0 : (bpSum[i] / bpCount[i]).round(),
       ),
       top: top.take(5).toList(),
     );

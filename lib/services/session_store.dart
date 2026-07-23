@@ -100,7 +100,7 @@ class SessionStore {
       // Realistic per-athlete numbers based on baseline BPM + duration.
       final avg = p.avgBpm + rng.nextInt(8) - 4;
       final max = avg + 18 + rng.nextInt(15);
-      final trimp = (durationMin * (avg / 180) * 1.85).round();
+      final beatPoints = (durationMin * (avg / 180) * 4).round();
       final cal = (durationMin * (avg / 180) * 8.5 * 1.0).round();
       // Zone distribution (Z0..Z5) percentages summing to 100.
       final dist = _mockZoneDistribution(rng);
@@ -110,7 +110,7 @@ class SessionStore {
           name: p.name,
           avgBpm: avg,
           maxBpm: max,
-          trimp: trimp,
+          beatPoints: beatPoints,
           calories: cal,
           timeInZones: dist,
         ),
@@ -119,8 +119,9 @@ class SessionStore {
 
     final avgGroupBpm =
         results.map((r) => r.avgBpm).reduce((a, b) => a + b) ~/ results.length;
-    final groupTrimp =
-        results.map((r) => r.trimp).reduce((a, b) => a + b) ~/ results.length;
+    final groupBeatPoints =
+        results.map((r) => r.beatPoints).reduce((a, b) => a + b) ~/
+        results.length;
 
     final record = SessionRecord(
       id: l.id,
@@ -130,7 +131,7 @@ class SessionStore {
       durationMin: durationMin,
       athleteCount: l.athleteCount,
       avgGroupBpm: avgGroupBpm,
-      groupTrimp: groupTrimp,
+      groupBeatPoints: groupBeatPoints,
       results: results,
     );
 
@@ -173,21 +174,21 @@ class SessionStore {
         startedAt: now.subtract(const Duration(hours: 18)),
         durationMin: 42,
         athleteCount: 14,
-        groupTrimp: 92,
+        groupBeatPoints: 138,
       ),
       _fakeRecord(
         name: 'Wednesday 07:00',
         startedAt: now.subtract(const Duration(days: 2)),
         durationMin: 55,
         athleteCount: 9,
-        groupTrimp: 68,
+        groupBeatPoints: 102,
       ),
       _fakeRecord(
         name: 'Monday 06:30',
         startedAt: now.subtract(const Duration(days: 4)),
         durationMin: 72,
         athleteCount: 12,
-        groupTrimp: 104,
+        groupBeatPoints: 156,
       ),
     ];
   }
@@ -197,7 +198,7 @@ class SessionStore {
     required DateTime startedAt,
     required int durationMin,
     required int athleteCount,
-    required int groupTrimp,
+    required int groupBeatPoints,
   }) {
     final rng = math.Random(name.hashCode);
     final participants = MockData.liveOf(athleteCount);
@@ -208,7 +209,7 @@ class SessionStore {
             name: p.name,
             avgBpm: p.avgBpm + rng.nextInt(8) - 4,
             maxBpm: p.bpm + 8 + rng.nextInt(15),
-            trimp: groupTrimp + rng.nextInt(20) - 10,
+            beatPoints: groupBeatPoints + rng.nextInt(20) - 10,
             calories: (durationMin * 7.5 + rng.nextInt(50)).round(),
             timeInZones: _mockZoneDistribution(rng),
           ),
@@ -224,7 +225,7 @@ class SessionStore {
       durationMin: durationMin,
       athleteCount: athleteCount,
       avgGroupBpm: avgGroupBpm,
-      groupTrimp: groupTrimp,
+      groupBeatPoints: groupBeatPoints,
       results: results,
     );
   }
@@ -301,7 +302,7 @@ class SessionRecord {
   final int durationMin;
   final int athleteCount;
   final int avgGroupBpm;
-  final int groupTrimp;
+  final int groupBeatPoints;
   final List<AthleteResult> results;
 
   SessionRecord({
@@ -312,7 +313,7 @@ class SessionRecord {
     required this.durationMin,
     required this.athleteCount,
     required this.avgGroupBpm,
-    required this.groupTrimp,
+    required this.groupBeatPoints,
     required this.results,
   });
 
@@ -329,8 +330,12 @@ class AthleteResult {
   final String name;
   final int avgBpm;
   final int maxBpm;
-  final int trimp;
+  final int beatPoints;
   final int calories;
+
+  /// Zone Match % (time in the trainer's target zone while it was set), or -1
+  /// when the session had no target zone.
+  final int zoneMatch;
 
   /// Zone distribution Z0..Z5 as integer percentages (sum ≈ 100).
   final List<int> timeInZones;
@@ -340,8 +345,9 @@ class AthleteResult {
     required this.name,
     required this.avgBpm,
     required this.maxBpm,
-    required this.trimp,
+    required this.beatPoints,
     required this.calories,
+    this.zoneMatch = -1,
     required this.timeInZones,
   });
 

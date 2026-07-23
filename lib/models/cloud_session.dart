@@ -28,6 +28,10 @@ class CloudSession {
   final int restSec;
   final int rounds;
 
+  /// Trainer-chosen target zone (1-5), or 0 for none. A coaching layer only —
+  /// it highlights on-target athletes and never affects BeatPoints.
+  final int targetZone;
+
   /// Shared 3-2-1 countdown length — [SessionRepository.beginWorkout] writes
   /// `runningSince` this far in the future so every client (trainer +
   /// athletes) counts down to the exact same instant.
@@ -51,6 +55,7 @@ class CloudSession {
     this.workSec = 0,
     this.restSec = 0,
     this.rounds = 1,
+    this.targetZone = 0,
   });
 
   bool get isLive => status == 'live';
@@ -119,6 +124,7 @@ class CloudSession {
       workSec: (d['workSec'] as num?)?.toInt() ?? 0,
       restSec: (d['restSec'] as num?)?.toInt() ?? 0,
       rounds: (d['rounds'] as num?)?.toInt() ?? 1,
+      targetZone: (d['targetZone'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -131,13 +137,33 @@ class BoardAthlete {
   final int bpm;
   final int avgBpm;
   final int hrMax;
+  final int beatPoints;
+
+  /// False when the athlete is training on a default/unconfirmed profile, so
+  /// the board can flag that their zones and calories are unreliable.
+  final bool profileConfirmed;
   const BoardAthlete({
     required this.id,
     required this.name,
     required this.bpm,
     required this.avgBpm,
     required this.hrMax,
+    this.beatPoints = 0,
+    this.profileConfirmed = true,
   });
+
+  /// Current zone (0-5) from the live BPM + this athlete's HRmax.
+  int get zone => hrMax > 0 ? _zoneFor(bpm, hrMax) : 0;
+
+  static int _zoneFor(int bpm, int hrMax) {
+    final pct = (bpm / hrMax * 100).round();
+    if (pct < 50) return 0;
+    if (pct < 60) return 1;
+    if (pct < 70) return 2;
+    if (pct < 80) return 3;
+    if (pct < 90) return 4;
+    return 5;
+  }
 }
 
 /// One athlete's row on the live HR board (`sessions/{id}/hr/{uid}`).
@@ -152,6 +178,8 @@ class SessionHrEntry {
   final int avgBpm; // athlete-computed running session average
   final int zone;
   final int hrMax;
+  final int beatPoints; // athlete-computed running BeatPoints total
+  final bool profileConfirmed;
   final DateTime lastUpdate;
 
   const SessionHrEntry({
@@ -161,6 +189,8 @@ class SessionHrEntry {
     required this.avgBpm,
     required this.zone,
     required this.hrMax,
+    this.beatPoints = 0,
+    this.profileConfirmed = true,
     required this.lastUpdate,
   });
 
@@ -173,6 +203,9 @@ class SessionHrEntry {
       avgBpm: (d['avgBpm'] as num?)?.toInt() ?? bpm,
       zone: (d['zone'] as num?)?.toInt() ?? 0,
       hrMax: (d['hrMax'] as num?)?.toInt() ?? 0,
+      beatPoints: (d['beatPoints'] as num?)?.toInt() ?? 0,
+      // Legacy hr docs predate the flag — assume confirmed so we don't false-warn.
+      profileConfirmed: (d['profileConfirmed'] as bool?) ?? true,
       lastUpdate: d['lastUpdate'] is Timestamp
           ? (d['lastUpdate'] as Timestamp).toDate()
           : DateTime.now(),

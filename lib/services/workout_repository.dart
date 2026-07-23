@@ -20,9 +20,10 @@ class WorkoutRepository {
     required int avgHr,
     required int maxHr,
     required int calories,
-    required int trimp,
+    required int beatPoints,
     required List<int> zoneDist,
     required int dominantZone,
+    int zoneMatchPct = -1,
     String? sessionId,
   }) async {
     final ref = await _workouts.add({
@@ -33,7 +34,8 @@ class WorkoutRepository {
       'avgHr': avgHr,
       'maxHr': maxHr,
       'calories': calories,
-      'trimp': trimp,
+      'beatPoints': beatPoints,
+      'zoneMatchPct': zoneMatchPct,
       'zoneDist': zoneDist,
       'dominantZone': dominantZone,
       'sessionId': ?sessionId,
