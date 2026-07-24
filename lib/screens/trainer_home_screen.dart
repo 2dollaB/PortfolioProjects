@@ -18,6 +18,7 @@ import '../widgets/mobile_frame.dart';
 import '../widgets/stat_chip.dart';
 import 'all_sessions_screen.dart';
 import 'cloud_session_detail_screen.dart';
+import 'leaderboard_screen.dart';
 import 'session_detail_screen.dart';
 import 'session_host_screen.dart';
 import 'settings_screen.dart';
@@ -150,6 +151,17 @@ class TrainerHomeScreen extends StatelessWidget {
                       members: '34',
                       sessionsPerWeek: '12',
                     ),
+
+              const SizedBox(height: AppSpacing.md),
+              BeatSecondaryButton(
+                label: Strings.leaderboard,
+                icon: Icons.leaderboard_rounded,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => LeaderboardScreen(profile: profile),
+                  ),
+                ),
+              ),
 
               const SizedBox(height: AppSpacing.xl),
               Row(

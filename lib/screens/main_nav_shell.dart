@@ -5,6 +5,7 @@ import '../models/user_profile.dart';
 import '../services/auth_service.dart';
 import '../services/workout_recovery_service.dart';
 import 'home_screen.dart';
+import 'leaderboard_screen.dart';
 import 'workout_history_screen.dart';
 import 'settings_screen.dart';
 import 'trainer_home_screen.dart';
@@ -52,7 +53,7 @@ class _MainNavShellState extends State<MainNavShell> {
   @override
   void initState() {
     super.initState();
-    final tabCount = _isTrainer ? 4 : 3;
+    final tabCount = 4;
     _navKeys = List.generate(tabCount, (_) => GlobalKey<NavigatorState>());
     _recoverInterruptedWorkout();
   }
@@ -99,6 +100,7 @@ class _MainNavShellState extends State<MainNavShell> {
               onSignOut: widget.onSignOut,
               enableStudioJoin: widget.enableStudioJoin,
             ),
+            LeaderboardScreen(profile: profile, asTab: true),
             // NOT const: an identical (const) instance short-circuits the
             // rebuild that _ProfileScope triggers on theme/language flips,
             // which left History painted in the old palette.
@@ -136,6 +138,11 @@ class _MainNavShellState extends State<MainNavShell> {
             icon: const Icon(Icons.home_outlined),
             selectedIcon: const Icon(Icons.home_outlined),
             label: Strings.navHome,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.emoji_events_outlined),
+            selectedIcon: const Icon(Icons.emoji_events_rounded),
+            label: Strings.navLeaderboard,
           ),
           NavigationDestination(
             icon: const Icon(Icons.history_outlined),

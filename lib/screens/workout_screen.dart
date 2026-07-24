@@ -17,6 +17,7 @@ import '../services/auth_service.dart';
 import '../services/ble_hr_service.dart';
 import '../services/clock_sync.dart';
 import '../services/foreground_service.dart';
+import '../services/leaderboard_repository.dart';
 import '../services/session_repository.dart';
 import '../services/workout_recovery_service.dart';
 import '../services/workout_repository.dart';
@@ -542,6 +543,17 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         dominantZone: stats.dominantZone,
         sessionId: widget.session?.id,
       );
+      // Refresh this athlete's studio leaderboard entry from their workouts.
+      final studioId = widget.profile.studioId;
+      if (studioId != null) {
+        unawaited(
+          LeaderboardRepository.recomputeSelf(
+            studioId: studioId,
+            uid: uid,
+            name: widget.profile.name,
+          ).catchError((_) {}),
+        );
+      }
     } catch (_) {
       // Non-blocking; ignore transient write failures.
     }

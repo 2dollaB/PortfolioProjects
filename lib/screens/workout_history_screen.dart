@@ -296,7 +296,7 @@ class _HistoryRow extends StatelessWidget {
                   const SizedBox(width: AppSpacing.md),
                   _MiniStat(label: 'KCAL', value: '${workout.calories}'),
                   const Spacer(),
-                  _MiniStat(label: Strings.beatPoints, value: '${workout.beatPoints}'),
+                  _MiniStat(label: '⚡', value: '${workout.beatPoints}'),
                 ],
               ),
             ],

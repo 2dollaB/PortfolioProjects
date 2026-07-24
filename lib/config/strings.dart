@@ -762,6 +762,41 @@ class Strings {
   static String get zoneMatchLabel => _pick('Zone match', 'Pogodak zone');
   static String get profileUnconfirmed =>
       _pick('Profile not confirmed', 'Profil nije potvrđen');
+
+  // ── Leaderboard ──────────────────────────────────────────────
+  static String get leaderboard => _pick('Leaderboard', 'Ljestvica');
+  static String get lbWeek => _pick('Week', 'Tjedan');
+  static String get lbMonth => _pick('Month', 'Mjesec');
+  static String get lbYear => _pick('Year', 'Godina');
+  static String get lbAllTime => _pick('All time', 'Ukupno');
+  static String get lbYou => _pick('You', 'Vi');
+  static String get lbEmpty => _pick(
+    'No BeatPoints yet — finish a workout to get on the board.',
+    'Još nema BeatPointsa — odradi trening da uđeš na ljestvicu.',
+  );
+  static String get lbNoStudio => _pick(
+    'Join a studio to see its leaderboard.',
+    'Pridruži se studiju da vidiš ljestvicu.',
+  );
+  static String get navLeaderboard => _pick('Leaderboards', 'Ljestvice');
+  static String get lbYourBeatPoints =>
+      _pick('Your BeatPoints', 'Tvoji BeatPoints');
+  static String get lbAllTimeCaps => _pick('ALL TIME', 'UKUPNO');
+  static String lbTier(int i) {
+    const en = ['Rookie', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Elite'];
+    const hr = ['Početnik', 'Bronca', 'Srebro', 'Zlato', 'Platina', 'Elita'];
+    return _pick(en[i], hr[i]);
+  }
+
+  static String lbToNext(int remaining, String nextTier) => _pick(
+    '$remaining to $nextTier',
+    '$remaining do razine $nextTier',
+  );
+  static String get lbMaxTier => _pick('Top tier reached', 'Najviši rang');
+  static String lbRankInStudio(int n) =>
+      _pick('#$n in studio', '#$n u studiju');
+  static String get lbNotRanked =>
+      _pick('Unranked this period', 'Bez ranga ovo razdoblje');
   static String get avgPerAthlete =>
       _pick('avg per athlete', 'prosj. po sportašu');
   static String avgPeak(int avg, int peak) =>
